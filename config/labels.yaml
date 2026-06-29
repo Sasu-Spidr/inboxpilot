@@ -1,16 +1,24 @@
 gmail:
-  Client: Client
-  Prospect: Prospect
-  Facture: Facture
-  Administratif: Administratif
+  "[Imap]/Drafts": "[Imap]/Drafts"
+  À répondre: À répondre
+  Commentaire: Commentaire
+  En attente de réponse: En attente de réponse
+  FYI: FYI
+  Marketing: Marketing
+  Mise à jour de réunion: Mise à jour de réunion
   Newsletter: Newsletter
-  Spam: Spam
-  À vérifier: À vérifier
+  Notification: Notification
+  Relance: Relance
+  Traité: Traité
 hotmail:
-  Client: Client
-  Prospect: Prospect
-  Facture: Facture
-  Administratif: Administratif
+  "[Imap]/Drafts": "[Imap]/Drafts"
+  À répondre: À répondre
+  Commentaire: Commentaire
+  En attente de réponse: En attente de réponse
+  FYI: FYI
+  Marketing: Marketing
+  Mise à jour de réunion: Mise à jour de réunion
   Newsletter: Newsletter
-  Spam: Spam
-  À vérifier: À vérifier
+  Notification: Notification
+  Relance: Relance
+  Traité: Traité

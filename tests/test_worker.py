@@ -12,7 +12,7 @@ class Connector:
     def archive(self,*args): self.calls.append(("archive",args))
     def move(self,*args): self.calls.append(("move",args))
 class Classifier:
-    def safe_classify(self,*args): return {"label":"Prospect","action":"keep","priority":"high","confidence":0.9,"reason":"Needs reply"}
+    def safe_classify(self,*args): return {"label":"À répondre","action":"keep","priority":"high","confidence":0.9,"reason":"Needs reply"}
 class Drafts:
     def generate(self,*args): return "Hello"
 class State:

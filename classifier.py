@@ -1,11 +1,26 @@
 from __future__ import annotations
+
 import json
 import logging
+
 from groq import Groq
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 LOG = logging.getLogger(__name__)
-LABELS = ("Client", "Prospect", "Facture", "Administratif", "Newsletter", "Spam", "À vérifier")
+
+LABELS = (
+    "[Imap]/Drafts",
+    "À répondre",
+    "Commentaire",
+    "En attente de réponse",
+    "FYI",
+    "Marketing",
+    "Mise à jour de réunion",
+    "Newsletter",
+    "Notification",
+    "Relance",
+    "Traité",
+)
 ACTIONS = ("keep", "trash", "draft", "archive", "mark_read", "move")
 PRIORITIES = ("low", "medium", "high")
 MIN_CONFIDENCE = 0.75
@@ -18,19 +33,42 @@ class EmailClassifier:
         self.client = client or Groq(api_key=api_key)
         self.model = model
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True,
-           retry=retry_if_exception_type(Exception))
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(min=1, max=8),
+        reraise=True,
+        retry=retry_if_exception_type(Exception),
+    )
     def classify(self, subject: str, sender: str, body: str) -> dict:
-        prompt = f'''Classify this incoming email. Return only strict JSON with keys label, action, priority, confidence and reason.
+        prompt = f"""Classify this incoming email. Return only strict JSON with keys label, action, priority, confidence and reason.
 Allowed labels: {", ".join(LABELS)}. Allowed actions: {", ".join(ACTIONS)}.
 Allowed priorities: {", ".join(PRIORITIES)}. Confidence must be a number from 0 to 1.
-Use trash for obvious spam/newsletters, draft for client/prospect messages needing a response, else keep.
-Use archive when the email is useful but does not need to stay in the inbox. Use mark_read for low-value informational messages.
-Subject: {subject}\nSender: {sender}\nBody: {body[:12000]}'''
+
+Label guidance:
+- À répondre: the sender expects a direct answer.
+- Relance: a follow-up is needed.
+- En attente de réponse: we are waiting for the other person.
+- FYI: useful information that does not need a reply.
+- Marketing: promotional or commercial content.
+- Newsletter: newsletter content.
+- Notification: automatic service/app notification.
+- Mise à jour de réunion: calendar or meeting update.
+- Traité: already handled or no further action needed.
+- Commentaire: general message, uncertain message, or manual review.
+- [Imap]/Drafts: only if the email clearly belongs to imported drafts.
+
+Use draft only when a reply is actually needed. Use trash for obvious newsletters/marketing. Else keep.
+Subject: {subject}
+Sender: {sender}
+Body: {body[:12000]}"""
         response = self.client.chat.completions.create(
-            model=self.model, temperature=0, max_completion_tokens=100,
-            messages=[{"role": "system", "content": "You are a precise email triage assistant. Output JSON only."},
-                      {"role": "user", "content": prompt}],
+            model=self.model,
+            temperature=0,
+            max_completion_tokens=150,
+            messages=[
+                {"role": "system", "content": "You are a precise email triage assistant. Output JSON only."},
+                {"role": "user", "content": prompt},
+            ],
             response_format={"type": "json_object"},
         )
         result = json.loads(response.choices[0].message.content)
@@ -55,7 +93,7 @@ Subject: {subject}\nSender: {sender}\nBody: {body[:12000]}'''
 
 def low_confidence_result(reason: str) -> dict:
     return {
-        "label": "À vérifier",
+        "label": "Commentaire",
         "action": "keep",
         "priority": "medium",
         "confidence": 0.0,
