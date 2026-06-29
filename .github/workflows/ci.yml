@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile Python
+        run: python -m py_compile main.py gmail_connector.py hotmail_connector.py classifier.py draft_generator.py rules_engine.py token_store.py state_store.py json_logging.py
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Prepare non-secret runtime files for Docker config check
+        run: |
+          mkdir -p secrets/exuvie data/tokens data/state logs
+          python - <<'PY' > .env
+          from cryptography.fernet import Fernet
+          print("GROQ_API_KEY=dummy")
+          print("EXUVIE_MICROSOFT_CLIENT_ID=dummy")
+          print(f"TOKEN_ENCRYPTION_KEY={Fernet.generate_key().decode()}")
+          PY
+          printf '{"installed":{"client_id":"dummy","client_secret":"dummy","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","redirect_uris":["http://localhost"]}}' > secrets/exuvie/gmail-client-secret.json
+
+      - name: Validate Docker Compose
+        run: docker compose config

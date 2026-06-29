@@ -1,0 +1,107 @@
+name: Mailbox smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      gmail_enabled:
+        description: "Test Gmail"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      hotmail_enabled:
+        description: "Test Hotmail/Outlook"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      run_once:
+        description: "Run one processing cycle after restoring encrypted OAuth tokens"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare runtime from GitHub secrets
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
+          EXUVIE_MICROSOFT_CLIENT_ID: ${{ secrets.EXUVIE_MICROSOFT_CLIENT_ID }}
+          GMAIL_CLIENT_SECRET_JSON: ${{ secrets.GMAIL_CLIENT_SECRET_JSON }}
+          GMAIL_TOKEN_ENC_B64: ${{ secrets.GMAIL_TOKEN_ENC_B64 }}
+          HOTMAIL_TOKEN_ENC_B64: ${{ secrets.HOTMAIL_TOKEN_ENC_B64 }}
+          GMAIL_ENABLED: ${{ inputs.gmail_enabled }}
+          HOTMAIL_ENABLED: ${{ inputs.hotmail_enabled }}
+          RUN_ONCE: ${{ inputs.run_once }}
+        run: |
+          test -n "$GROQ_API_KEY"
+          test -n "$TOKEN_ENCRYPTION_KEY"
+          mkdir -p secrets/exuvie data/tokens data/state logs
+          {
+            echo "GROQ_API_KEY=$GROQ_API_KEY"
+            echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
+            echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
+          } > .env
+
+          if [ "$GMAIL_ENABLED" = "true" ]; then
+            test -n "$GMAIL_CLIENT_SECRET_JSON"
+            printf '%s' "$GMAIL_CLIENT_SECRET_JSON" > secrets/exuvie/gmail-client-secret.json
+            if [ "$RUN_ONCE" = "true" ]; then
+              test -n "$GMAIL_TOKEN_ENC_B64"
+            fi
+            if [ -n "$GMAIL_TOKEN_ENC_B64" ]; then
+              printf '%s' "$GMAIL_TOKEN_ENC_B64" | base64 -d > data/tokens/exuvie-gmail-main.token.enc
+            fi
+          fi
+
+          if [ "$HOTMAIL_ENABLED" = "true" ]; then
+            test -n "$EXUVIE_MICROSOFT_CLIENT_ID"
+            if [ "$RUN_ONCE" = "true" ]; then
+              test -n "$HOTMAIL_TOKEN_ENC_B64"
+            fi
+            if [ -n "$HOTMAIL_TOKEN_ENC_B64" ]; then
+              printf '%s' "$HOTMAIL_TOKEN_ENC_B64" | base64 -d > data/tokens/exuvie-hotmail-main.token.enc
+            fi
+          fi
+
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          import yaml
+
+          path = Path("config/settings.yaml")
+          settings = yaml.safe_load(path.read_text(encoding="utf-8"))
+          connectors = settings["clients"]["exuvie"]["connectors"]
+          connectors["gmail"]["enabled"] = os.environ["GMAIL_ENABLED"] == "true"
+          connectors["hotmail"]["enabled"] = os.environ["HOTMAIL_ENABLED"] == "true"
+          path.write_text(yaml.safe_dump(settings, allow_unicode=True, sort_keys=False), encoding="utf-8")
+          PY
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Run one mailbox cycle
+        if: ${{ inputs.run_once == 'true' }}
+        run: python main.py --once
