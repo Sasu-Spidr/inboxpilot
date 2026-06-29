@@ -1,0 +1,8 @@
+.env
+secrets/
+data/
+logs/*.log
+__pycache__/
+.pytest_cache/
+.pytest_tmp/
+.git_empty_backup/

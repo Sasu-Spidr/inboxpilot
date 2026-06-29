@@ -1,0 +1,14 @@
+Newsletter:
+  action: trash
+Spam:
+  action: trash
+Facture:
+  action: keep
+Administratif:
+  action: keep
+Client:
+  action: draft
+Prospect:
+  action: draft
+À vérifier:
+  action: keep

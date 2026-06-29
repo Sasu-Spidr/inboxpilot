@@ -1,0 +1,16 @@
+gmail:
+  Client: SPIDR/Client
+  Prospect: SPIDR/Prospect
+  Facture: SPIDR/Facture
+  Administratif: SPIDR/Administratif
+  Newsletter: SPIDR/Newsletter
+  Spam: SPIDR/Spam
+  À vérifier: SPIDR/À vérifier
+hotmail:
+  Client: SPIDR-Client
+  Prospect: SPIDR-Prospect
+  Facture: SPIDR-Facture
+  Administratif: SPIDR-Administratif
+  Newsletter: SPIDR-Newsletter
+  Spam: SPIDR-Spam
+  À vérifier: SPIDR-À vérifier
