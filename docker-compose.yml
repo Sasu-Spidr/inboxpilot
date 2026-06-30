@@ -20,8 +20,15 @@ services:
     restart: unless-stopped
     env_file: .env
     command: ["python", "oauth_server.py"]
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
+      EXUVIE_MICROSOFT_CLIENT_ID: ${EXUVIE_MICROSOFT_CLIENT_ID:-}
+      COLLEGUE_MICROSOFT_CLIENT_ID: ${COLLEGUE_MICROSOFT_CLIENT_ID:-}
+      OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
+      OAUTH_PORT: 8080
     ports:
-      - "8080:8080"
+      - "${OAUTH_HOST_PORT:-8080}:8080"
     volumes:
       - ./config:/app/config:ro
       - ./secrets:/app/secrets
