@@ -32,6 +32,22 @@ def test_classification():
     assert result["reason"] == "Sender expects a reply"
 
 
+def test_deterministic_gmail_examples():
+    classifier = EmailClassifier("", client=Client())
+
+    notification = classifier.classify("Notification", "me@example.com", "Votre compte a été mis à jour.")
+    assert notification["label"] == "Notification"
+    assert notification["action"] == "mark_read"
+
+    newsletter = classifier.classify("Newsletter", "me@example.com", "Découvrez nos nouveautés de la semaine.")
+    assert newsletter["label"] == "Newsletter"
+    assert newsletter["action"] == "trash"
+
+    reply = classifier.classify("Demande de reponse", "me@example.com", "Bonjour, pouvez-vous me rappeler pour discuter de votre offre ?")
+    assert reply["label"] == "À répondre"
+    assert reply["action"] == "draft"
+
+
 def test_low_confidence_goes_to_manual_review():
     class LowResponse:
         class Choice:
