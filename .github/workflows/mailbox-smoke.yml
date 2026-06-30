@@ -64,6 +64,11 @@ jobs:
             echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
             echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
           } > .env
+          {
+            echo "GROQ_API_KEY=$GROQ_API_KEY"
+            echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
+            echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
+          } >> "$GITHUB_ENV"
 
           if [ "$GMAIL_ENABLED" = "true" ]; then
             test -n "$GMAIL_CLIENT_SECRET_JSON"
