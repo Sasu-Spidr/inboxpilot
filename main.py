@@ -26,6 +26,20 @@ def load_settings(path: str = "config/settings.yaml") -> dict:
     return yaml.safe_load(os.path.expandvars(raw))
 
 
+def filter_settings(settings: dict, client: str | None = None, connector: str | None = None, account: str | None = None) -> dict:
+    if not any((client, connector, account)):
+        return settings
+    clients = settings.get("clients", {})
+    for client_id, client_cfg in clients.items():
+        client_cfg["enabled"] = client_id == client if client else bool(client_cfg.get("enabled", True))
+        for connector_name, connector_cfg in client_cfg.get("connectors", {}).items():
+            connector_cfg["enabled"] = connector_name == connector if connector else bool(connector_cfg.get("enabled", False))
+            for account_cfg in connector_cfg.get("accounts", []):
+                account_name = account_cfg.get("account") or account_cfg.get("id") or connector_name
+                account_cfg["enabled"] = account_name == account if account else bool(account_cfg.get("enabled", True))
+    return settings
+
+
 class MailWorker:
     def __init__(self, settings, connectors=None, classifier=None, drafts=None, rules=None, state=None):
         self.settings = settings
@@ -183,8 +197,11 @@ def main() -> None:
     parser.add_argument("--once", action="store_true")
     parser.add_argument("--authenticate", action="store_true", help="Connect enabled accounts without processing messages")
     parser.add_argument("--config", default="config/settings.yaml")
+    parser.add_argument("--client", help="Only process/authenticate one configured client id")
+    parser.add_argument("--connector", choices=["gmail", "hotmail"], help="Only process/authenticate one connector")
+    parser.add_argument("--account", help="Only process/authenticate one account name")
     args = parser.parse_args()
-    settings = load_settings(args.config)
+    settings = filter_settings(load_settings(args.config), args.client, args.connector, args.account)
     configure_logging(settings.get("log_level", "INFO"), settings.get("json_logs", True))
     worker = MailWorker(settings)
     if args.authenticate:

@@ -3,6 +3,14 @@ name: Mailbox smoke test
 on:
   workflow_dispatch:
     inputs:
+      target_client:
+        description: "Client to test"
+        required: true
+        default: "exuvie"
+        type: choice
+        options:
+          - "exuvie"
+          - "collegue"
       gmail_enabled:
         description: "Test Gmail"
         required: true
@@ -49,45 +57,64 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
           EXUVIE_MICROSOFT_CLIENT_ID: ${{ secrets.EXUVIE_MICROSOFT_CLIENT_ID }}
+          COLLEGUE_MICROSOFT_CLIENT_ID: ${{ secrets.COLLEGUE_MICROSOFT_CLIENT_ID }}
           GMAIL_CLIENT_SECRET_JSON: ${{ secrets.GMAIL_CLIENT_SECRET_JSON }}
           GMAIL_TOKEN_ENC_B64: ${{ secrets.GMAIL_TOKEN_ENC_B64 }}
+          COLLEGUE_GMAIL_TOKEN_ENC_B64: ${{ secrets.COLLEGUE_GMAIL_TOKEN_ENC_B64 }}
           HOTMAIL_TOKEN_ENC_B64: ${{ secrets.HOTMAIL_TOKEN_ENC_B64 }}
+          COLLEGUE_HOTMAIL_TOKEN_ENC_B64: ${{ secrets.COLLEGUE_HOTMAIL_TOKEN_ENC_B64 }}
+          TARGET_CLIENT: ${{ inputs.target_client }}
           GMAIL_ENABLED: ${{ inputs.gmail_enabled }}
           HOTMAIL_ENABLED: ${{ inputs.hotmail_enabled }}
           RUN_ONCE: ${{ inputs.run_once }}
         run: |
           test -n "$GROQ_API_KEY"
           test -n "$TOKEN_ENCRYPTION_KEY"
-          mkdir -p secrets/exuvie data/tokens data/state logs
+          mkdir -p secrets/exuvie secrets/collegue data/tokens data/state logs
           {
             echo "GROQ_API_KEY=$GROQ_API_KEY"
             echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
+            echo "COLLEGUE_MICROSOFT_CLIENT_ID=$COLLEGUE_MICROSOFT_CLIENT_ID"
             echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
           } > .env
           {
             echo "GROQ_API_KEY=$GROQ_API_KEY"
             echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
+            echo "COLLEGUE_MICROSOFT_CLIENT_ID=$COLLEGUE_MICROSOFT_CLIENT_ID"
             echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
           } >> "$GITHUB_ENV"
 
+          if [ "$TARGET_CLIENT" = "exuvie" ]; then
+            ACTIVE_GMAIL_TOKEN="$GMAIL_TOKEN_ENC_B64"
+            ACTIVE_HOTMAIL_TOKEN="$HOTMAIL_TOKEN_ENC_B64"
+            ACTIVE_MICROSOFT_CLIENT_ID="$EXUVIE_MICROSOFT_CLIENT_ID"
+          elif [ "$TARGET_CLIENT" = "collegue" ]; then
+            ACTIVE_GMAIL_TOKEN="$COLLEGUE_GMAIL_TOKEN_ENC_B64"
+            ACTIVE_HOTMAIL_TOKEN="$COLLEGUE_HOTMAIL_TOKEN_ENC_B64"
+            ACTIVE_MICROSOFT_CLIENT_ID="$COLLEGUE_MICROSOFT_CLIENT_ID"
+          else
+            echo "Unknown target client: $TARGET_CLIENT"
+            exit 1
+          fi
+
           if [ "$GMAIL_ENABLED" = "true" ]; then
             test -n "$GMAIL_CLIENT_SECRET_JSON"
-            printf '%s' "$GMAIL_CLIENT_SECRET_JSON" > secrets/exuvie/gmail-client-secret.json
+            printf '%s' "$GMAIL_CLIENT_SECRET_JSON" > "secrets/$TARGET_CLIENT/gmail-client-secret.json"
             if [ "$RUN_ONCE" = "true" ]; then
-              test -n "$GMAIL_TOKEN_ENC_B64"
+              test -n "$ACTIVE_GMAIL_TOKEN"
             fi
-            if [ -n "$GMAIL_TOKEN_ENC_B64" ]; then
-              printf '%s' "$GMAIL_TOKEN_ENC_B64" | base64 -d > data/tokens/exuvie-gmail-main.token.enc
+            if [ -n "$ACTIVE_GMAIL_TOKEN" ]; then
+              printf '%s' "$ACTIVE_GMAIL_TOKEN" | base64 -d > "data/tokens/$TARGET_CLIENT-gmail-main.token.enc"
             fi
           fi
 
           if [ "$HOTMAIL_ENABLED" = "true" ]; then
-            test -n "$EXUVIE_MICROSOFT_CLIENT_ID"
+            test -n "$ACTIVE_MICROSOFT_CLIENT_ID"
             if [ "$RUN_ONCE" = "true" ]; then
-              test -n "$HOTMAIL_TOKEN_ENC_B64"
+              test -n "$ACTIVE_HOTMAIL_TOKEN"
             fi
-            if [ -n "$HOTMAIL_TOKEN_ENC_B64" ]; then
-              printf '%s' "$HOTMAIL_TOKEN_ENC_B64" | base64 -d > data/tokens/exuvie-hotmail-main.token.enc
+            if [ -n "$ACTIVE_HOTMAIL_TOKEN" ]; then
+              printf '%s' "$ACTIVE_HOTMAIL_TOKEN" | base64 -d > "data/tokens/$TARGET_CLIENT-hotmail-main.token.enc"
             fi
           fi
 
@@ -98,9 +125,12 @@ jobs:
 
           path = Path("config/settings.yaml")
           settings = yaml.safe_load(path.read_text(encoding="utf-8"))
-          connectors = settings["clients"]["exuvie"]["connectors"]
-          connectors["gmail"]["enabled"] = os.environ["GMAIL_ENABLED"] == "true"
-          connectors["hotmail"]["enabled"] = os.environ["HOTMAIL_ENABLED"] == "true"
+          target_client = os.environ["TARGET_CLIENT"]
+          for client_id, client in settings["clients"].items():
+              client["enabled"] = client_id == target_client
+              connectors = client["connectors"]
+              connectors["gmail"]["enabled"] = client_id == target_client and os.environ["GMAIL_ENABLED"] == "true"
+              connectors["hotmail"]["enabled"] = client_id == target_client and os.environ["HOTMAIL_ENABLED"] == "true"
           path.write_text(yaml.safe_dump(settings, allow_unicode=True, sort_keys=False), encoding="utf-8")
           PY
 

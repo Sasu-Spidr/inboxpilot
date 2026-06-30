@@ -1,5 +1,5 @@
 from pathlib import Path
-from main import MailWorker
+from main import MailWorker, filter_settings
 
 class Connector:
     def __init__(self, email_id="1"): self.calls=[]; self.email_id=email_id
@@ -64,3 +64,16 @@ def test_multi_client_multi_mailbox(monkeypatch):
     worker.run_cycle()
     assert [x[0] for x in g.calls] == ["label", "draft", "read"]
     assert [x[0] for x in h.calls] == ["label", "draft", "read"]
+
+def test_filter_settings_targets_one_client_connector_account():
+    settings = {
+        "clients": {
+            "exuvie": {"enabled": True, "connectors": {"gmail": {"enabled": True, "accounts": [{"account": "main"}]}}},
+            "collegue": {"enabled": False, "connectors": {"gmail": {"enabled": True, "accounts": [{"account": "main"}]}, "hotmail": {"enabled": True, "accounts": [{"account": "main"}]}}},
+        }
+    }
+    filtered = filter_settings(settings, client="collegue", connector="gmail", account="main")
+    assert filtered["clients"]["exuvie"]["enabled"] is False
+    assert filtered["clients"]["collegue"]["enabled"] is True
+    assert filtered["clients"]["collegue"]["connectors"]["gmail"]["enabled"] is True
+    assert filtered["clients"]["collegue"]["connectors"]["hotmail"]["enabled"] is False

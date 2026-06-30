@@ -24,3 +24,19 @@ clients:
             client_id_env: EXUVIE_MICROSOFT_CLIENT_ID
             tenant_id: consumers
             token_file: ./data/tokens/exuvie-hotmail-main.token.enc
+  collegue:
+    enabled: false
+    connectors:
+      gmail:
+        enabled: true
+        accounts:
+          - account: main
+            credentials_file: ./secrets/collegue/gmail-client-secret.json
+            token_file: ./data/tokens/collegue-gmail-main.token.enc
+      hotmail:
+        enabled: false
+        accounts:
+          - account: main
+            client_id_env: COLLEGUE_MICROSOFT_CLIENT_ID
+            tenant_id: consumers
+            token_file: ./data/tokens/collegue-hotmail-main.token.enc
