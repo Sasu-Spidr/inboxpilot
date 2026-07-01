@@ -2,6 +2,8 @@
   action: keep
 À répondre:
   action: draft
+À traiter:
+  action: keep
 Commentaire:
   action: keep
 En attente de réponse:

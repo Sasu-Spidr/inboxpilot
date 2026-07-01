@@ -1,6 +1,7 @@
 gmail:
   "[Imap]/Drafts": "[Imap]/Drafts"
   À répondre: À répondre
+  À traiter: À traiter
   Commentaire: Commentaire
   En attente de réponse: En attente de réponse
   FYI: FYI
@@ -13,6 +14,7 @@ gmail:
 hotmail:
   "[Imap]/Drafts": "[Imap]/Drafts"
   À répondre: À répondre
+  À traiter: À traiter
   Commentaire: Commentaire
   En attente de réponse: En attente de réponse
   FYI: FYI

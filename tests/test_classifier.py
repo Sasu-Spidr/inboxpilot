@@ -40,6 +40,14 @@ def test_parse_json_object_from_markdown():
 def test_deterministic_gmail_examples():
     classifier = EmailClassifier("", client=Client())
 
+    invoice = classifier.classify("Factures", "billing@example.com", "Bonjour, voici votre facture numéro 123 en pièce jointe.")
+    assert invoice["label"] == "À traiter"
+    assert invoice["action"] == "keep"
+
+    payment = classifier.classify("Veuillez mettre votre mode de paiement à jour", "billing@example.com", "Votre abonnement nécessite une action.")
+    assert payment["label"] == "À traiter"
+    assert payment["action"] == "keep"
+
     notification = classifier.classify("Notification", "me@example.com", "Votre compte a été mis à jour.")
     assert notification["label"] == "Notification"
     assert notification["action"] == "mark_read"
@@ -74,7 +82,7 @@ def test_low_confidence_goes_to_manual_review():
         chat = Chat()
 
     result = EmailClassifier("", client=LowClient()).classify("Demo", "lead@example.com", "Maybe")
-    assert result == {"label": "Commentaire", "action": "keep", "priority": "medium", "confidence": 0.0, "reason": "Unclear"}
+    assert result == {"label": "À traiter", "action": "keep", "priority": "medium", "confidence": 0.0, "reason": "Unclear"}
 
 
 def test_classifier_fallback():
@@ -89,5 +97,5 @@ def test_classifier_fallback():
         chat = Chat()
 
     result = EmailClassifier("", client=Bad()).safe_classify("", "", "")
-    assert result["label"] == "Commentaire"
+    assert result["label"] == "À traiter"
     assert result["action"] == "keep"
