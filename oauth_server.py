@@ -165,6 +165,7 @@ class OAuthOnboardingServer:
         return success_page("Hotmail / Outlook", state["client"], state["account"])
 
     def _account(self, query: str, connector: str) -> tuple[str, str, dict]:
+        self.settings = merge_registered_clients(self.settings)
         params = parse_qs(query)
         client_id = one(params, "client")
         account = params.get("account", ["main"])[0] or "main"
