@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from client_registry import build_registered_client, merge_registered_clients, save_registered_client
-from oauth_server import OAuthOnboardingServer, render_client_page, render_home
+from oauth_server import OAuthOnboardingServer, render_auth_required, render_home
 
 
 def settings():
@@ -41,10 +41,17 @@ def test_account_lookup():
     assert cfg["token_file"] == "data/tokens/collegue-gmail-main.token.enc"
 
 
-def test_onboarding_home_contains_client_link():
+def test_onboarding_home_does_not_expose_clients():
     html = render_home(settings())
-    assert "/client?client=collegue" in html
-    assert "Gmail" in render_client_page(settings(), {"client": ["collegue"]})
+    assert "/client?client=collegue" not in html
+    assert "Clients configurés" not in html
+    assert "Ouvrir mon espace" in html
+
+
+def test_client_page_requires_frontend_auth():
+    html = render_auth_required()
+    assert "Espace sécurisé" in html
+    assert "Gmail" not in html
 
 
 def test_registered_client_is_merged(tmp_path):

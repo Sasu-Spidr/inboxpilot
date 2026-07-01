@@ -44,6 +44,7 @@ def filter_settings(settings: dict, client: str | None = None, connector: str | 
 class MailWorker:
     def __init__(self, settings, connectors=None, classifier=None, drafts=None, rules=None, state=None):
         self.settings = settings
+        self._connectors_injected = connectors is not None
         self.labels = yaml.safe_load(Path("config/labels.yaml").read_text(encoding="utf-8"))
         self.rules = rules or RulesEngine("config/rules.yaml")
         self.classifier = classifier or EmailClassifier(settings["groq_api_key"], settings.get("groq_model", "qwen/qwen3-32b"))
@@ -90,7 +91,14 @@ class MailWorker:
             return self.settings["clients"] or {}
         return {"default": {"enabled": True, "connectors": self.settings.get("connectors", {})}}
 
+    def reload_dynamic_clients(self) -> None:
+        if self._connectors_injected:
+            return
+        self.settings = merge_registered_clients(self.settings)
+        self.connectors = self._build_connectors()
+
     def run_cycle(self) -> None:
+        self.reload_dynamic_clients()
         self.rules.reload()
         for client_id, entries in self.connectors.items():
             for entry in entries.values():
