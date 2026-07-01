@@ -167,7 +167,10 @@ class MailWorker:
             connector.trash(message_id)
             log_event("email_trashed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
         elif action == "draft":
-            draft = self.drafts.generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
+            if hasattr(self.drafts, "safe_generate"):
+                draft = self.drafts.safe_generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
+            else:
+                draft = self.drafts.generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
             connector.create_draft(email, draft)
             log_event("draft_created", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
             return True

@@ -1,4 +1,4 @@
-from draft_generator import DraftGenerator, clean_draft
+from draft_generator import DraftGenerator, clean_draft, fallback_draft
 
 
 class Client:
@@ -46,3 +46,31 @@ Merci pour votre message."""
 
 def test_clean_draft_removes_placeholder_signature():
     assert "[Votre nom]" not in clean_draft("Bonjour,\nMerci.\n[Votre nom]")
+
+
+class FailingClient:
+    class Chat:
+        class Completions:
+            def create(self, **kwargs):
+                raise RuntimeError("rate limit")
+
+        completions = Completions()
+
+    chat = Chat()
+
+
+def test_safe_draft_generation_uses_fallback_with_signature():
+    draft = DraftGenerator("", client=FailingClient()).safe_generate(
+        "Facture juin",
+        "a@b.com",
+        "Bonjour, veuillez trouver la facture.",
+        signature_name="Jean Martin",
+    )
+    assert "Bonjour" in draft
+    assert "Jean Martin" in draft
+
+
+def test_fallback_draft_uses_english_when_email_is_english():
+    draft = fallback_draft("Invoice", "Hello, please review this invoice.", "Jean Martin")
+    assert draft.startswith("Hello")
+    assert "Best regards" in draft

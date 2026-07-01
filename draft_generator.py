@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import re
 
 from groq import Groq
 from tenacity import retry, stop_after_attempt, wait_exponential
+
+LOG = logging.getLogger(__name__)
 
 
 class DraftGenerator:
@@ -53,6 +56,13 @@ Message:
         )
         return clean_draft(response.choices[0].message.content)
 
+    def safe_generate(self, subject: str, sender: str, body: str, signature_name: str = "") -> str:
+        try:
+            return self.generate(subject, sender, body, signature_name=signature_name)
+        except Exception:
+            LOG.exception("Draft generation failed; using fallback draft")
+            return fallback_draft(subject, body, signature_name)
+
 
 def clean_draft(text: str) -> str:
     cleaned = text.strip()
@@ -77,3 +87,26 @@ def clean_draft(text: str) -> str:
     cleaned = re.sub(r"\[Votre nom\]|\[Your name\]|\[Nom\]", "", cleaned, flags=re.IGNORECASE).strip()
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned
+
+
+def fallback_draft(subject: str, body: str, signature_name: str = "") -> str:
+    signature = f"\n\nCordialement,\n{signature_name}" if signature_name else "\n\nCordialement,"
+    if looks_english(f"{subject}\n{body[:1000]}"):
+        signature = f"\n\nBest regards,\n{signature_name}" if signature_name else "\n\nBest regards,"
+        return (
+            "Hello,\n\n"
+            "Thank you for your message. I have received it and will get back to you with the necessary information as soon as possible."
+            f"{signature}"
+        )
+    return (
+        "Bonjour,\n\n"
+        "Merci pour votre message. Je l'ai bien reçu et je reviens vers vous dès que possible avec les éléments nécessaires."
+        f"{signature}"
+    )
+
+
+def looks_english(text: str) -> bool:
+    lowered = text.lower()
+    english_markers = ("hello", "hi ", "dear", "meeting", "invoice", "payment", "please", "thank you", "regards")
+    french_markers = ("bonjour", "merci", "facture", "paiement", "veuillez", "cordialement", "rendez-vous")
+    return sum(marker in lowered for marker in english_markers) > sum(marker in lowered for marker in french_markers)
