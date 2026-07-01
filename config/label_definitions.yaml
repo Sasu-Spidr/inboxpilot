@@ -1,0 +1,86 @@
+À répondre:
+  description: "Message qui demande clairement une réponse humaine ou une action de réponse commerciale."
+  examples:
+    - "Demande de rappel"
+    - "Question directe sur une offre"
+    - "Demande de rendez-vous ou de devis"
+  action_hint: draft
+
+À traiter:
+  description: "Élément administratif ou opérationnel à traiter manuellement, sans forcément répondre : facture, paiement, document, contrat, signature, accès, problème de compte."
+  examples:
+    - "Facture disponible"
+    - "Mode de paiement à mettre à jour"
+    - "Document à signer"
+    - "Contrat à vérifier"
+  action_hint: keep
+
+Commentaire:
+  description: "Vrai commentaire, mention, réaction, note ou retour collaboratif. Ne pas utiliser pour les mails généraux ou incertains."
+  examples:
+    - "Quelqu'un a commenté une carte Trello"
+    - "Votre page a été mentionnée"
+    - "Un utilisateur vous a tagué"
+  action_hint: keep
+
+En attente de réponse:
+  description: "Conversation où l'on attend une réponse de l'autre personne, ou confirmation d'une action déjà demandée."
+  examples:
+    - "En attente de votre retour"
+    - "Nous attendons votre confirmation"
+  action_hint: keep
+
+FYI:
+  description: "Information utile à garder ou lire rapidement, sans action urgente, sans réponse attendue, sans caractère marketing évident."
+  examples:
+    - "Information produit utile"
+    - "Résumé ou note informative"
+  action_hint: mark_read
+
+Marketing:
+  description: "Contenu promotionnel, prospection de masse, offre commerciale, invitation à acheter, publicité ou acquisition."
+  examples:
+    - "Offre spéciale"
+    - "Invitez un proche et gagnez"
+    - "Essayez notre service"
+  action_hint: trash
+
+Mise à jour de réunion:
+  description: "Invitation, rappel, modification ou annulation de réunion, calendrier ou visio."
+  examples:
+    - "Reminder: meeting starts soon"
+    - "Invitation calendrier"
+    - "Réunion déplacée"
+  action_hint: keep
+
+Newsletter:
+  description: "Email périodique éditorial ou de contenu : bulletin, actualités, digest, résumé hebdomadaire/mensuel."
+  examples:
+    - "Newsletter"
+    - "Votre actualité du mois"
+    - "Weekly digest"
+  action_hint: trash
+
+Notification:
+  description: "Notification automatique de sécurité, compte, application, code de vérification, système ou service."
+  examples:
+    - "Code à usage unique"
+    - "Informations de sécurité ajoutées"
+    - "Votre compte a été mis à jour"
+  action_hint: mark_read
+
+Relance:
+  description: "Message de suivi ou relance qui demande explicitement de revenir vers la personne."
+  examples:
+    - "Je me permets de vous relancer"
+    - "Following up"
+    - "Avez-vous eu le temps de regarder ?"
+  action_hint: draft
+
+Traité:
+  description: "Message explicitement déjà terminé, résolu, confirmé ou archivé."
+  examples:
+    - "C'est fait"
+    - "Dossier clôturé"
+    - "Demande résolue"
+  action_hint: archive

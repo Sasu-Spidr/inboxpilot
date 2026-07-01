@@ -4,9 +4,11 @@ import json
 import logging
 import re
 import unicodedata
+from pathlib import Path
 
 from groq import Groq
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+import yaml
 
 LOG = logging.getLogger(__name__)
 
@@ -30,11 +32,12 @@ MIN_CONFIDENCE = 0.75
 
 
 class EmailClassifier:
-    def __init__(self, api_key: str, model: str = "qwen/qwen3-32b", client=None):
+    def __init__(self, api_key: str, model: str = "qwen/qwen3-32b", client=None, label_definitions_file: str = "config/label_definitions.yaml"):
         if not api_key and client is None:
             raise ValueError("GROQ_API_KEY is required")
         self.client = client or Groq(api_key=api_key)
         self.model = model
+        self.label_definitions = load_label_definitions(label_definitions_file)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -61,26 +64,20 @@ Allowed actions: {", ".join(ACTIONS)}.
 Allowed priorities: {", ".join(PRIORITIES)}.
 Confidence must be a number from 0 to 1.
 
-Label guidance:
-- À répondre: the sender expects a direct answer.
-- À traiter: invoices, payments, billing, documents, contracts, account/payment problems, or anything that needs manual business processing but not necessarily a written reply.
-- Relance: a follow-up is needed.
-- En attente de réponse: we are waiting for the other person.
-- FYI: useful information that does not need a reply.
-- Marketing: promotional or commercial content.
-- Newsletter: newsletter content.
-- Notification: automatic service/app notification.
-- Mise à jour de réunion: calendar or meeting update.
-- Traité: already handled or no further action needed.
-- Commentaire: only explicit comments, mentions, feedback, notes, or messages saying someone commented/mentioned/tagged you.
-- [Imap]/Drafts: only if the email clearly belongs to imported drafts.
+Label definitions:
+{format_label_definitions(self.label_definitions)}
 
 Important:
 - If the subject/body mentions invoice, facture, billing, payment, paiement, receipt, reçu, subscription, abonnement, contract, contrat, or document to review, choose À traiter.
+- If the email is promotional, choose Marketing even if it contains friendly wording.
+- If the email is a periodic digest/news bulletin, choose Newsletter.
+- If the email is an automatic account/security/service alert, choose Notification.
+- If the email is a meeting invite/reminder/update, choose Mise à jour de réunion.
 - Do not choose Commentaire just because you are uncertain.
+- Do not choose À traiter just because you are uncertain.
 - Use draft only when a reply is actually needed.
 - Use trash for obvious newsletters/marketing.
-- Else use À traiter for manual review.
+- If none of the labels clearly fit, choose FYI with action keep.
 
 Subject: {subject}
 Sender: {sender}
@@ -128,7 +125,7 @@ def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
     """Fast path for obvious mailbox labels."""
     text = normalize_text(f"{subject}\n{sender}\n{body[:2000]}")
 
-    if has_any(text, "facture", "factures", "invoice", "invoicing", "billing", "bill", "paiement", "payment", "recu", "reçu", "receipt", "abonnement", "subscription", "contrat", "contract", "devis signe", "document a traiter", "document à traiter", "mode de paiement", "numero de facture", "numéro de facture"):
+    if has_any(text, "facture", "factures", "invoice", "invoicing", "billing", "bill", "paiement", "payment", "recu", "reçu", "receipt", "abonnement", "subscription", "contrat", "contract", "devis signe", "document a traiter", "document à traiter", "documents a traiter", "documents à traiter", "document a signer", "document à signer", "documents a signer", "documents à signer", "invite a signer", "invité à signer", "signature de document", "mode de paiement", "numero de facture", "numéro de facture"):
         return decision("À traiter", "keep", "high", 0.99, "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.")
 
     if has_any(text, "demande de reponse", "demande d information", "demande d'informations", "pouvez vous me rappeler", "pouvez-vous me rappeler", "devis", "interesse par vos services", "intéressé par vos services", "can we talk"):
@@ -140,13 +137,13 @@ def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
     if has_any(text, "relance", "follow up", "following up", "rappel de suivi"):
         return decision("Relance", "draft", "high", 0.96, "Le message ressemble à une relance ou demande de suivi.")
 
-    if has_any(text, "newsletter", "unsubscribe", "desabonner", "désabonner", "decouvrez nos nouveautes", "découvrez nos nouveautés", "nouveautes de la semaine", "votre actualite du mois", "votre actualité du mois"):
+    if has_any(text, "newsletter", "unsubscribe", "desabonner", "désabonner", "weekly digest", "digest", "bulletin", "agent hub security", "paper-heavy window", "decouvrez nos nouveautes", "découvrez nos nouveautés", "nouveautes de la semaine", "votre actualite du mois", "votre actualité du mois"):
         return decision("Newsletter", "trash", "low", 0.98, "Le message est clairement une newsletter.")
 
-    if has_any(text, "notification", "votre compte a ete mis a jour", "votre compte a été mis à jour", "verifiez votre adresse", "vérifiez votre adresse", "code de verification", "nouvelle application autorisee", "nouvelle application autorisée"):
+    if has_any(text, "notification", "welcome to your azure free account", "informations de securite", "informations de sécurité", "code a usage unique", "code à usage unique", "votre compte a ete mis a jour", "votre compte a été mis à jour", "verifiez votre adresse", "vérifiez votre adresse", "code de verification", "nouvelle application autorisee", "nouvelle application autorisée"):
         return decision("Notification", "mark_read", "low", 0.97, "Le message est une notification automatique.")
 
-    if has_any(text, "marketing", "promotion", "promo", "offre speciale", "offre spéciale", "lancement produit", "product launch", "decouvrez", "découvrez", "essayez", "profitez", "nouveaux profils disponibles", "commence ici", "tournois", "stages", "academy"):
+    if has_any(text, "marketing", "promotion", "promo", "offre speciale", "offre spéciale", "lancement produit", "product launch", "invite a friend", "invitez un proche", "obtenez", "cadeau ideal", "cadeau idéal", "decouvrez", "découvrez", "essayez", "profitez", "nouveaux profils disponibles", "commence ici", "tournois", "stages", "academy"):
         return decision("Marketing", "trash", "low", 0.94, "Le message ressemble à du contenu marketing.")
 
     if has_any(text, "reunion", "réunion", "meeting", "calendar", "invitation"):
@@ -176,4 +173,28 @@ def decision(label: str, action: str, priority: str, confidence: float, reason: 
 
 
 def low_confidence_result(reason: str) -> dict:
-    return decision("À traiter", "keep", "medium", 0.0, reason)
+    return decision("FYI", "keep", "low", 0.0, reason)
+
+
+def load_label_definitions(path: str) -> dict:
+    file = Path(path)
+    if not file.exists():
+        return {}
+    return yaml.safe_load(file.read_text(encoding="utf-8")) or {}
+
+
+def format_label_definitions(definitions: dict) -> str:
+    if not definitions:
+        return "\n".join(f"- {label}" for label in LABELS)
+    rows = []
+    for label in LABELS:
+        if label == "[Imap]/Drafts":
+            rows.append("- [Imap]/Drafts: only if the email clearly belongs to imported drafts.")
+            continue
+        cfg = definitions.get(label, {})
+        description = cfg.get("description", "")
+        action_hint = cfg.get("action_hint", "")
+        examples = cfg.get("examples", []) or []
+        example_text = "; ".join(str(item) for item in examples[:4])
+        rows.append(f"- {label}: {description} Action hint: {action_hint}. Examples: {example_text}")
+    return "\n".join(rows)
