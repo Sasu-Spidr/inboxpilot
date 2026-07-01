@@ -17,6 +17,9 @@ class Connector:
     def apply_label(self, *args):
         self.calls.append(("label", args))
 
+    def replace_label(self, *args):
+        self.calls.append(("replace_label", args))
+
     def create_draft(self, *args):
         self.calls.append(("draft", args))
 
@@ -67,7 +70,20 @@ def test_worker_creates_draft(monkeypatch):
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert [x[0] for x in c.calls] == ["label", "draft", "read"]
+    assert [x[0] for x in c.calls] == ["replace_label", "draft", "read"]
+
+
+def test_worker_replaces_managed_labels(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    c = Connector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    call = c.calls[0]
+    assert call[0] == "replace_label"
+    assert call[1][1] == "À répondre"
+    assert "Commentaire" in call[1][2]
+    assert "Marketing" in call[1][2]
 
 
 def test_worker_passes_sender_name_to_draft(monkeypatch):
@@ -141,8 +157,8 @@ def test_multi_client_multi_mailbox(monkeypatch):
     }
     worker = MailWorker(settings, connectors=connectors, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert [x[0] for x in g.calls] == ["label", "draft", "read"]
-    assert [x[0] for x in h.calls] == ["label", "draft", "read"]
+    assert [x[0] for x in g.calls] == ["replace_label", "draft", "read"]
+    assert [x[0] for x in h.calls] == ["replace_label", "draft", "read"]
 
 
 def test_filter_settings_targets_one_client_connector_account():

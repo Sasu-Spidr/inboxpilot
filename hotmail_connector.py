@@ -50,6 +50,14 @@ class HotmailConnector:
     def apply_label(self, message_id: str, category: str) -> None:
         self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})
 
+    def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
+        data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
+        existing = data.get("categories", []) or []
+        categories = [item for item in existing if item not in set(managed_categories)]
+        if category not in categories:
+            categories.append(category)
+        self._request("PATCH", f"/me/messages/{message_id}", json={"categories": categories})
+
     def trash(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "deleteditems"})
     def archive(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "archive"})
     def move(self, message_id: str, target: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": target})

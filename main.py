@@ -152,8 +152,13 @@ class MailWorker:
         return self.connectors[client_id][key]
 
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
-        label_name = self.labels.get(connector_name, {}).get(label, label)
-        connector.apply_label(message_id, label_name)
+        connector_labels = self.labels.get(connector_name, {})
+        label_name = connector_labels.get(label, label)
+        managed_labels = list(connector_labels.values())
+        if hasattr(connector, "replace_label"):
+            connector.replace_label(message_id, label_name, managed_labels)
+        else:
+            connector.apply_label(message_id, label_name)
         log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
 
     def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:

@@ -47,6 +47,21 @@ class GmailConnector:
         self.authenticate(); label_id = self._label_id(label_name)
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body={"addLabelIds": [label_id]}))
 
+    def replace_label(self, message_id: str, label_name: str, managed_labels: list[str]) -> None:
+        self.authenticate()
+        target_id = self._label_id(label_name)
+        labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
+        label_ids_by_name = {label["name"]: label["id"] for label in labels}
+        remove_ids = [
+            label_ids_by_name[name]
+            for name in managed_labels
+            if name != label_name and name in label_ids_by_name
+        ]
+        body = {"addLabelIds": [target_id]}
+        if remove_ids:
+            body["removeLabelIds"] = remove_ids
+        self._execute(self.service.users().messages().modify(userId="me", id=message_id, body=body))
+
     def _label_id(self, name: str) -> str:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:
