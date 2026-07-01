@@ -7,14 +7,21 @@ state_file: ./data/state/processed_messages.enc
 log_level: INFO
 json_logs: true
 
+onboarding:
+  registry_file: ./data/clients/clients.yaml
+  gmail_credentials_file: ./secrets/google-oauth-client.json
+  microsoft_client_id_env: MICROSOFT_CLIENT_ID
+
 clients:
   exuvie:
     enabled: true
+    owner_name: ""
     connectors:
       gmail:
         enabled: true
         accounts:
           - account: main
+            sender_name: ""
             credentials_file: ./secrets/exuvie/gmail-client-secret.json
             token_file: ./data/tokens/exuvie-gmail-main.token.enc
       hotmail:
@@ -25,12 +32,14 @@ clients:
             tenant_id: consumers
             token_file: ./data/tokens/exuvie-hotmail-main.token.enc
   collegue:
-    enabled: false
+    enabled: true
+    owner_name: Collegue
     connectors:
       gmail:
         enabled: true
         accounts:
           - account: main
+            sender_name: Collegue
             credentials_file: ./secrets/collegue/gmail-client-secret.json
             token_file: ./data/tokens/collegue-gmail-main.token.enc
       hotmail:

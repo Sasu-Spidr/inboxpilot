@@ -1,4 +1,39 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-spidr_mail}
+      POSTGRES_USER: ${POSTGRES_USER:-spidr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spidr_dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spidr} -d ${POSTGRES_DB:-spidr_mail}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
+      DATA_DIR: /data
+      OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
+      GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
+    volumes:
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      oauth-onboarding:
+        condition: service_started
   mail-agent:
     build: .
     restart: unless-stopped
@@ -6,8 +41,7 @@ services:
     volumes:
       - ./config:/app/config:ro
       - ./secrets:/app/secrets:ro
-      - ./data/tokens:/app/data/tokens
-      - ./data/state:/app/data/state
+      - ./data:/app/data
       - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "python", "-c", "from pathlib import Path; raise SystemExit(0 if Path('/app/config/settings.yaml').exists() else 1)"]
@@ -26,13 +60,14 @@ services:
       EXUVIE_MICROSOFT_CLIENT_ID: ${EXUVIE_MICROSOFT_CLIENT_ID:-}
       COLLEGUE_MICROSOFT_CLIENT_ID: ${COLLEGUE_MICROSOFT_CLIENT_ID:-}
       OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PORT: 8080
     ports:
       - "${OAUTH_HOST_PORT:-8080}:8080"
     volumes:
       - ./config:/app/config:ro
       - ./secrets:/app/secrets
-      - ./data/tokens:/app/data/tokens
+      - ./data:/app/data
       - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3).read()"]
@@ -40,3 +75,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
+
+volumes:
+  postgres_data:

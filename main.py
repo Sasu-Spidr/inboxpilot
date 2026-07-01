@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from client_registry import merge_registered_clients
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
 from gmail_connector import GmailConnector
@@ -23,7 +24,7 @@ LOG = logging.getLogger("spidr_mail")
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
-    return yaml.safe_load(os.path.expandvars(raw))
+    return merge_registered_clients(yaml.safe_load(os.path.expandvars(raw)))
 
 
 def filter_settings(settings: dict, client: str | None = None, connector: str | None = None, account: str | None = None) -> dict:
@@ -68,11 +69,20 @@ class MailWorker:
                         connector = GmailConnector(account_cfg["credentials_file"], account_cfg["token_file"], store)
                     elif connector_name == "hotmail":
                         client_id_value = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+                        if not client_id_value:
+                            LOG.warning("Hotmail connector skipped because Microsoft client id is missing: client=%s account=%s", client_id, account)
+                            continue
                         connector = HotmailConnector(client_id_value, account_cfg.get("tenant_id", "consumers"), account_cfg["token_file"], store)
                     else:
                         LOG.warning("Unknown connector ignored: %s", connector_name)
                         continue
-                    built[client_id][key] = {"name": connector_name, "account": account, "connector": connector}
+                    sender_name = account_cfg.get("sender_name") or client_cfg.get("sender_name") or client_cfg.get("owner_name") or ""
+                    built[client_id][key] = {
+                        "name": connector_name,
+                        "account": account,
+                        "connector": connector,
+                        "sender_name": sender_name,
+                    }
         return built
 
     def _clients(self) -> dict:
@@ -118,7 +128,7 @@ class MailWorker:
 
             self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False)
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
-            draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id)
+            draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
             if action not in {"trash", "archive", "move", "mark_read"}:
                 connector.mark_read(message_id)
                 log_event("email_marked_read", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
@@ -138,13 +148,13 @@ class MailWorker:
         connector.apply_label(message_id, label_name)
         log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
 
-    def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str) -> bool:
+    def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:
         message_id = email["id"]
         if action == "trash":
             connector.trash(message_id)
             log_event("email_trashed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
         elif action == "draft":
-            draft = self.drafts.generate(email["subject"], email["sender"], email["body"])
+            draft = self.drafts.generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
             connector.create_draft(email, draft)
             log_event("draft_created", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
             return True

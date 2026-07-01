@@ -1,4 +1,4 @@
-from classifier import EmailClassifier
+from classifier import EmailClassifier, parse_json_object
 
 
 class Response:
@@ -24,12 +24,17 @@ class Client:
 
 
 def test_classification():
-    result = EmailClassifier("", client=Client()).classify("Demo", "lead@example.com", "Can we talk?")
+    result = EmailClassifier("", client=Client()).classify("Demo", "lead@example.com", "Random note")
     assert result["label"] == "À répondre"
     assert result["action"] == "draft"
     assert result["priority"] == "high"
     assert result["confidence"] == 0.92
     assert result["reason"] == "Sender expects a reply"
+
+
+def test_parse_json_object_from_markdown():
+    result = parse_json_object('```json\n{"label":"Commentaire","action":"keep"}\n```')
+    assert result["label"] == "Commentaire"
 
 
 def test_deterministic_gmail_examples():

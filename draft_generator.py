@@ -14,7 +14,12 @@ class DraftGenerator:
         self.model = model
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True)
-    def generate(self, subject: str, sender: str, body: str) -> str:
+    def generate(self, subject: str, sender: str, body: str, signature_name: str = "") -> str:
+        signature_rule = (
+            f'- End with exactly this signature name: "{signature_name}".'
+            if signature_name
+            else "- End with a polite closing, but do not invent a personal name."
+        )
         prompt = f"""Write a concise, professional reply to this email.
 
 Rules:
@@ -23,8 +28,12 @@ Rules:
 - Never include <think>, </think>, <penser>, </penser>, "reasoning", or internal thoughts.
 - Detect the email language and reply in the same language, French or English.
 - Preserve relevant context.
+- Be useful but concise: 4 to 7 short lines maximum unless the email explicitly requires more.
+- Answer the concrete request first.
+- If the sender asks for a call, propose a simple next step without inventing availability.
 - Do not claim actions you cannot verify.
 - Never send email; only compose draft text.
+{signature_rule}
 
 From: {sender}
 Subject: {subject}
@@ -37,7 +46,7 @@ Message:
             messages=[
                 {
                     "role": "system",
-                    "content": "You write only the final email body. No reasoning, no analysis, no tags.",
+                    "content": "You write only the final email body. Be concise, helpful, and safe. No reasoning, no analysis, no tags.",
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -65,4 +74,6 @@ def clean_draft(text: str) -> str:
     if positions:
         cleaned = cleaned[min(positions):].strip()
 
+    cleaned = re.sub(r"\[Votre nom\]|\[Your name\]|\[Nom\]", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned

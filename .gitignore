@@ -5,4 +5,10 @@ logs/*.log
 __pycache__/
 .pytest_cache/
 .pytest_tmp/
+.pytest_tmp*/
+.pytest_run_tmp/
+.pytest_run_tmp*/
 .git_empty_backup/
+frontend/node_modules/
+frontend/.next/
+frontend/out/

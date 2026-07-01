@@ -16,6 +16,11 @@ def test_draft_generation():
     assert DraftGenerator("", client=Client()).generate("Bonjour", "a@b.com", "Bonjour").startswith("Bonjour")
 
 
+def test_draft_generation_accepts_signature_name():
+    draft = DraftGenerator("", client=Client()).generate("Bonjour", "a@b.com", "Bonjour", signature_name="Jean Martin")
+    assert draft.startswith("Bonjour")
+
+
 def test_clean_draft_removes_reasoning_tags():
     raw = """<penser>
 Je dois répondre en français et rester prudent.
@@ -37,3 +42,7 @@ def test_clean_draft_keeps_first_real_greeting_after_preface():
 Bonjour,
 Merci pour votre message."""
     assert clean_draft(raw) == "Bonjour,\nMerci pour votre message."
+
+
+def test_clean_draft_removes_placeholder_signature():
+    assert "[Votre nom]" not in clean_draft("Bonjour,\nMerci.\n[Votre nom]")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import unicodedata
 
 from groq import Groq
@@ -45,9 +46,19 @@ class EmailClassifier:
         if deterministic:
             return deterministic
 
-        prompt = f"""Classify this incoming email. Return only strict JSON with keys label, action, priority, confidence and reason.
-Allowed labels: {", ".join(LABELS)}. Allowed actions: {", ".join(ACTIONS)}.
-Allowed priorities: {", ".join(PRIORITIES)}. Confidence must be a number from 0 to 1.
+        prompt = f"""Classify this incoming email.
+
+Return only valid JSON with these keys:
+- label
+- action
+- priority
+- confidence
+- reason
+
+Allowed labels: {", ".join(LABELS)}.
+Allowed actions: {", ".join(ACTIONS)}.
+Allowed priorities: {", ".join(PRIORITIES)}.
+Confidence must be a number from 0 to 1.
 
 Label guidance:
 - À répondre: the sender expects a direct answer.
@@ -63,20 +74,20 @@ Label guidance:
 - [Imap]/Drafts: only if the email clearly belongs to imported drafts.
 
 Use draft only when a reply is actually needed. Use trash for obvious newsletters/marketing. Else keep.
+
 Subject: {subject}
 Sender: {sender}
 Body: {body[:12000]}"""
         response = self.client.chat.completions.create(
             model=self.model,
             temperature=0,
-            max_completion_tokens=150,
+            max_completion_tokens=180,
             messages=[
-                {"role": "system", "content": "You are a precise email triage assistant. Output JSON only."},
+                {"role": "system", "content": "You are a precise email triage assistant. Output JSON only, without markdown."},
                 {"role": "user", "content": prompt},
             ],
-            response_format={"type": "json_object"},
         )
-        result = json.loads(response.choices[0].message.content)
+        result = parse_json_object(response.choices[0].message.content)
         if result.get("label") not in LABELS or result.get("action") not in ACTIONS or result.get("priority") not in PRIORITIES:
             raise ValueError(f"Invalid model classification: {result}")
         try:
@@ -96,16 +107,21 @@ Body: {body[:12000]}"""
             return low_confidence_result("Classification failed; preserved for manual review.")
 
 
-def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
-    """Fast path for obvious mailbox labels.
+def parse_json_object(value: str) -> dict:
+    cleaned = value.strip()
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
+    if not match:
+        raise ValueError(f"No JSON object found in model response: {value[:200]}")
+    return json.loads(match.group(0))
 
-    This prevents simple subjects such as "Newsletter - ..." or
-    "Notification - ..." from falling back to Commentaire when the LLM is too
-    conservative or returns low confidence.
-    """
+
+def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
+    """Fast path for obvious mailbox labels."""
     text = normalize_text(f"{subject}\n{sender}\n{body[:2000]}")
 
-    if has_any(text, "demande de reponse", "demande d information", "demande d'informations", "pouvez vous me rappeler", "pouvez-vous me rappeler", "devis", "interesse par vos services", "interessé par vos services"):
+    if has_any(text, "demande de reponse", "demande d information", "demande d'informations", "pouvez vous me rappeler", "pouvez-vous me rappeler", "devis", "interesse par vos services", "intéressé par vos services", "can we talk"):
         return decision("À répondre", "draft", "high", 0.98, "Le message demande clairement une réponse.")
 
     if has_any(text, "relance", "follow up", "following up", "rappel de suivi"):

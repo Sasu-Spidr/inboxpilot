@@ -1,4 +1,7 @@
-from oauth_server import OAuthOnboardingServer
+from pathlib import Path
+
+from client_registry import build_registered_client, merge_registered_clients, save_registered_client
+from oauth_server import OAuthOnboardingServer, render_client_page, render_home
 
 
 def settings():
@@ -36,3 +39,22 @@ def test_account_lookup():
     assert client == "collegue"
     assert account == "main"
     assert cfg["token_file"] == "data/tokens/collegue-gmail-main.token.enc"
+
+
+def test_onboarding_home_contains_client_link():
+    html = render_home(settings())
+    assert "/client?client=collegue" in html
+    assert "Gmail" in render_client_page(settings(), {"client": ["collegue"]})
+
+
+def test_registered_client_is_merged(tmp_path):
+    cfg = {
+        "token_encryption_key": "Hi2vSxtb4LWWU0Anf0MkDr3eQsfcwoS1bOVsfehfe-A=",
+        "onboarding": {"registry_file": str(tmp_path / "clients.yaml"), "gmail_credentials_file": "./secrets/google-oauth-client.json"},
+        "clients": {},
+    }
+    client = build_registered_client(cfg, "demo-client", "Jean Martin", "jean@example.com")
+    save_registered_client(cfg, "demo-client", client)
+    merged = merge_registered_clients(cfg)
+    assert merged["clients"]["demo-client"]["owner_name"] == "Jean Martin"
+    assert Path(tmp_path / "clients.yaml").exists()

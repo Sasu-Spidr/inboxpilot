@@ -5,7 +5,14 @@ __pycache__
 .pytest_cache
 .pytest_tmp
 .pytest_tmp*
+.pytest_run_tmp
+.pytest_run_tmp*
 secrets
 data
 logs
 *.pyc
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/npm-debug.log
+frontend/.env

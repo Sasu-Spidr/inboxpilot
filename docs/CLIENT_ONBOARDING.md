@@ -1,56 +1,56 @@
-# Connexion Gmail / Hotmail
+# Connexion client Gmail / Hotmail
 
-Cette page explique comment connecter une boîte mail à l’agent.
+Le client n'a pas besoin de GitHub, de terminal, de fichier `.env`, de token ou de Docker.
 
-Le client n’a pas besoin de GitHub, de terminal, de fichier `.env`, ni de token.
+Il utilise uniquement l'interface web.
 
-## Gmail
+## Parcours client
 
-1. Ouvrez le lien reçu, par exemple :
-
-```text
-https://connect.example.com/connect/gmail?client=collegue&account=main
-```
-
-2. Connectez-vous au compte Gmail à autoriser.
-3. Acceptez les permissions Gmail demandées.
-4. Quand la page affiche :
+1. Ouvrir l'URL du front :
 
 ```text
-Connexion Gmail réussie
+https://app.spidr.fr
 ```
 
-vous pouvez fermer l’onglet.
-
-## Hotmail / Outlook
-
-1. Ouvrez le lien reçu, par exemple :
+En test local/ngrok :
 
 ```text
-https://connect.example.com/connect/hotmail?client=collegue&account=main
+https://votre-url-ngrok.ngrok-free.dev
 ```
 
-2. Connectez-vous au compte Microsoft / Outlook / Hotmail.
-3. Acceptez les permissions demandées.
-4. Quand la page affiche :
+2. Créer son compte avec :
 
-```text
-Connexion Hotmail / Outlook réussie
-```
+- prénom et nom ;
+- email ;
+- mot de passe.
 
-vous pouvez fermer l’onglet.
+3. Se connecter.
 
-## Ce que l’agent fait
+4. Dans l'espace client, cliquer sur :
 
-- lit les emails non lus ;
+- `Connecter Gmail`
+- ou `Connecter Hotmail / Outlook`
+
+5. Accepter les permissions OAuth.
+
+6. Revenir sur l'espace client : le compte apparaît comme connecté.
+
+## Ce que fait l'agent
+
+Une fois le worker lancé côté serveur, l'agent :
+
+- lit les nouveaux emails non lus ;
 - classe les emails ;
-- applique des labels ou catégories ;
-- crée des brouillons si une réponse est nécessaire ;
-- déplace les newsletters/spams selon les règles ;
-- n’envoie jamais automatiquement.
+- applique les labels/catégories ;
+- prépare un brouillon quand une réponse est nécessaire ;
+- signe le brouillon avec le prénom et nom du client ;
+- marque ou déplace les emails selon les règles ;
+- n'envoie jamais automatiquement.
 
 ## Sécurité
 
-Les tokens OAuth sont chiffrés côté serveur.
-
-Le client ne reçoit jamais de token et ne doit jamais copier de secret.
+- L'authentification du front utilise PostgreSQL.
+- Les tokens OAuth sont stockés côté serveur.
+- Les tokens OAuth sont chiffrés avec Fernet.
+- Les secrets restent dans les variables d'environnement ou les secrets GitHub/VPS.
+- Le client ne reçoit jamais de secret technique.

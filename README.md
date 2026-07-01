@@ -2,80 +2,72 @@
 
 Agent mail léger pour Gmail et Hotmail/Outlook.
 
-Il lit les emails non lus, les classe avec l’IA, applique un label/catégorie, déplace si nécessaire, et crée des brouillons de réponse. Il n’envoie jamais d’email automatiquement.
+Il lit les emails non lus, les classe avec l'IA, applique un label/catégorie, déplace si nécessaire, et crée des brouillons de réponse. Il n'envoie jamais d'email automatiquement.
 
-Pas de dashboard. Pas de CRM. Pas de PostgreSQL. Pas de SaaS lourd.
+Le front client est en Next.js avec authentification et PostgreSQL.
 
 ## Commandes utiles
-
-Installer :
-
-```powershell
-pip install -r requirements.txt
-```
 
 Tester :
 
 ```powershell
-pytest -q --basetemp .pytest_tmp
+pytest -q --basetemp .pytest_run_tmp
 ```
 
-Lancer un cycle :
-
-```powershell
-python main.py --once
-```
-
-Lancer le worker :
-
-```powershell
-python main.py
-```
-
-Lancer Docker :
+Lancer l'ensemble :
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build postgres frontend oauth-onboarding mail-agent
+```
+
+Voir les logs :
+
+```bash
+docker compose logs -f frontend
+docker compose logs -f oauth-onboarding
 docker compose logs -f mail-agent
 ```
 
-Lancer l’onboarding OAuth :
+## Interface client
 
-```bash
-docker compose up -d --build oauth-onboarding
-```
-
-## Onboarding client
-
-Le client ne touche pas au repo, ne voit pas les tokens et ne copie aucun secret.
-
-Il clique juste sur un lien :
+En local :
 
 ```text
-https://connect.example.com/connect/gmail?client=collegue&account=main
+http://localhost:3000
 ```
 
-ou :
+Si le port 3000 est déjà pris :
+
+```powershell
+$env:FRONTEND_HOST_PORT='3010'; docker compose up -d frontend
+```
+
+Puis :
 
 ```text
-https://connect.example.com/connect/hotmail?client=collegue&account=main
+http://localhost:3010
 ```
 
-Après autorisation, le token OAuth est chiffré automatiquement dans `data/tokens/`.
+Le client peut :
 
-## Documentation client
+- créer son compte avec nom, email et mot de passe ;
+- se connecter avec email et mot de passe ;
+- connecter Gmail ;
+- connecter Hotmail/Outlook ;
+- voir les boîtes déjà connectées.
 
-Voir :
+## Brouillons
 
-```text
-docs/CLIENT_ONBOARDING.md
-```
+Les brouillons sont courts, professionnels et contextuels.
+
+La signature utilise le prénom et nom saisis par le client à l'inscription.
 
 ## Configuration
 
-- Clients : `config/settings.yaml`
+- Front/auth : PostgreSQL
+- Registre technique clients : `data/clients/clients.yaml`
 - Labels : `config/labels.yaml`
 - Règles : `config/rules.yaml`
-- Secrets runtime : `.env`, `secrets/`, `data/`
+- Tokens OAuth chiffrés : `data/tokens/`
 
-Ces fichiers sensibles ne doivent jamais être commit.
+Les secrets restent dans `.env`, GitHub Secrets ou les variables du VPS. Ils ne doivent jamais être commit.
