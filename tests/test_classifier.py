@@ -69,6 +69,18 @@ def test_deterministic_gmail_examples():
     promo = classifier.classify("Invitez un proche sur Wise et obtenez 20 EUR", "wise@example.com", "Partagez les nouveautés")
     assert promo["label"] == "Marketing"
 
+    uber = classifier.classify("De délicieuses offres vous attendent sur vos prochaines commandes", "Uber Eats", "Économisez sur vos plats favoris.")
+    assert uber["label"] == "Marketing"
+
+    product_hunt = classifier.classify("Bots with bank accounts", "Product Hunt Daily", "The fintech that's moved $3B is now letting AI agents spend money safely.")
+    assert product_hunt["label"] == "Newsletter"
+
+    learning_rate = classifier.classify("Sonnet 5 + Agent Evals - 2026-07-01", "High Learning Rate", "A model-release-heavy window with practical lessons.")
+    assert learning_rate["label"] == "Newsletter"
+
+    article = classifier.classify("25 ans auprès de Pierre Cardin", "Alec - Entrepreneur", "Ce qu'une légende de la mode m'a appris.")
+    assert article["label"] == "Newsletter"
+
     reply = classifier.classify("Demande de reponse", "me@example.com", "Bonjour, pouvez-vous me rappeler pour discuter de votre offre ?")
     assert reply["label"] == "À répondre"
     assert reply["action"] == "draft"
