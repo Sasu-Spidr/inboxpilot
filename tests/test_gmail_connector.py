@@ -1,4 +1,7 @@
-from gmail_connector import GmailConnector
+import base64
+from email import message_from_bytes
+
+from gmail_connector import GmailConnector, recipient_address
 from token_store import TokenStore
 
 class Execute:
@@ -63,3 +66,34 @@ def test_replace_label_creates_missing_label_and_removes_old_managed_labels():
     assert calls[0][1]["body"]["name"] == "À traiter"
     assert calls[1][0] == "modify_message"
     assert calls[1][1]["body"] == {"addLabelIds": ["new-label"], "removeLabelIds": ["old-comment"]}
+
+
+def test_create_draft_uses_plain_email_address_for_to_header():
+    calls = []
+
+    class DraftOps:
+        def create(self, **kwargs):
+            return CaptureExecute({}, calls, "create_draft", kwargs)
+
+    class CaptureUsers:
+        def drafts(self):
+            return DraftOps()
+
+    class CaptureService:
+        def users(self):
+            return CaptureUsers()
+
+    c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
+    c.create_draft(
+        {"sender": "Jean Martin <jean@example.com>", "subject": "Bonjour", "thread_id": "t1"},
+        "Bonjour",
+    )
+
+    raw = calls[0][1]["body"]["message"]["raw"]
+    message = message_from_bytes(base64.urlsafe_b64decode(raw.encode()))
+    assert message["To"] == "jean@example.com"
+
+
+def test_recipient_address_extracts_embedded_email():
+    assert recipient_address("Jean Martin <jean@example.com>") == "jean@example.com"
+    assert recipient_address("Jean Martin jean@example.com") == "jean@example.com"

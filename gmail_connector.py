@@ -1,6 +1,8 @@
 from __future__ import annotations
 import base64
 import logging
+import re
+from email.utils import parseaddr
 from email.mime.text import MIMEText
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -85,7 +87,11 @@ class GmailConnector:
 
     def create_draft(self, email: dict, text: str) -> None:
         self.authenticate()
-        mime = MIMEText(text, "plain", "utf-8"); mime["To"] = email["sender"]; mime["Subject"] = "Re: " + email["subject"]
+        recipient = recipient_address(email.get("sender", ""))
+        if not recipient:
+            LOG.warning("Draft skipped because sender address is invalid: %s", email.get("sender", ""))
+            return
+        mime = MIMEText(text, "plain", "utf-8"); mime["To"] = recipient; mime["Subject"] = "Re: " + email["subject"]
         raw = base64.urlsafe_b64encode(mime.as_bytes()).decode()
         self._execute(self.service.users().drafts().create(userId="me", body={"message": {"raw": raw, "threadId": email.get("thread_id")}}))
 
@@ -95,6 +101,12 @@ class GmailConnector:
         return request.execute()
 
 def json_credentials(creds): return {"token": creds.token, "refresh_token": creds.refresh_token, "token_uri": creds.token_uri, "client_id": creds.client_id, "client_secret": creds.client_secret, "scopes": creds.scopes}
+def recipient_address(sender: str) -> str:
+    _, address = parseaddr(sender or "")
+    if "@" in address and not re.search(r"\s", address):
+        return address
+    match = re.search(r"[\w.!#$%&'*+/=?^`{|}~-]+@[\w.-]+\.[A-Za-z]{2,}", sender or "")
+    return match.group(0) if match else ""
 def _gmail_body(payload):
     if payload.get("body", {}).get("data"): return base64.urlsafe_b64decode(payload["body"]["data"] + "===").decode("utf-8", "replace")
     for part in payload.get("parts", []):
