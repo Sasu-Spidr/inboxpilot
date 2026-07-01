@@ -24,6 +24,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
       DATA_DIR: /data
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
+      OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
       GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
     ports:
       - "${FRONTEND_HOST_PORT:-3000}:3000"

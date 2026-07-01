@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 
 import { currentUser } from "@/lib/auth";
+import { isValidProvider, redirectFromOAuth } from "@/lib/oauthProxy";
 
 export async function GET(request: Request, { params }: { params: Promise<{ provider: string }> }) {
   const user = await currentUser();
   if (!user) return NextResponse.redirect(new URL("/", request.url));
 
   const { provider } = await params;
-  if (!["gmail", "hotmail"].includes(provider)) {
+  if (!isValidProvider(provider)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  const url = new URL(`/connect/${provider}`, request.url);
+  const url = new URL(request.url);
   url.searchParams.set("client", user.clientId);
-  url.searchParams.set("account", "main");
-  return NextResponse.redirect(url);
+  url.searchParams.set("account", url.searchParams.get("account") || "main");
+
+  return redirectFromOAuth(url, `/connect/${provider}`);
 }
