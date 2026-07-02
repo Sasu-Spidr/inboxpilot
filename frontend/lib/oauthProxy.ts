@@ -10,6 +10,12 @@ export function oauthInternalBase() {
   return process.env.OAUTH_INTERNAL_URL || "http://oauth-onboarding:8080";
 }
 
+export function publicUrl(pathname: string, request: Request | URL) {
+  const source = request instanceof URL ? request : new URL(request.url);
+  const base = process.env.FRONTEND_BASE_URL || `${source.protocol}//${source.host}`;
+  return new URL(pathname, base);
+}
+
 export async function redirectFromOAuth(request: Request | URL, pathname: string) {
   const source = request instanceof URL ? request : new URL(request.url);
   const target = new URL(pathname, oauthInternalBase());

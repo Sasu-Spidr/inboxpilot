@@ -23,6 +23,7 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:-}
       DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
       DATA_DIR: /data
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
       OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
       GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
