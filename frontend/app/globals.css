@@ -642,7 +642,11 @@ input {
 /* Settings page */
 
 .settings-shell {
-  max-width: 1180px;
+  overflow: visible;
+}
+
+.settings-shell > * {
+  max-width: 1120px;
 }
 
 .settings-shell .settings-hero {
@@ -670,24 +674,29 @@ input {
 
 .settings-shell .settings-list {
   display: grid;
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 1rem;
 }
 
 .settings-shell .settings-row {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(180px, 0.8fr) minmax(260px, 1.25fr) 110px minmax(330px, 1.25fr);
-  gap: 1rem;
-  align-items: center;
-  padding: 1rem;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  gap: 0.95rem 1rem;
+  align-items: start;
+  padding: 1.1rem;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 22px;
   background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 36px -32px rgba(20, 20, 26, 0.34);
 }
 
 .settings-shell .label-preview {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-bottom: 0.2rem;
 }
 
 .settings-shell .label-color-dot {
@@ -703,6 +712,7 @@ input {
   color: var(--text);
   font-size: 0.9rem;
   font-weight: 700;
+  min-width: 0;
 }
 
 .settings-shell .label-preview span,
@@ -732,12 +742,23 @@ input {
   resize: vertical;
 }
 
+.settings-shell .description-field {
+  grid-column: 1 / -1;
+}
+
+.settings-shell .color-field {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+}
+
 .settings-shell .color-field input {
+  height: 44px;
   padding: 0.25rem;
 }
 
 .settings-shell .toggle-grid {
   display: grid;
+  grid-column: 1 / -1;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
 }
@@ -754,6 +775,7 @@ input {
   color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .settings-shell .toggle-grid input {
@@ -834,6 +856,11 @@ input {
     grid-template-columns: 1fr;
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .settings-shell .color-field {
+    grid-column: 1 / -1;
+    grid-row: auto;
   }
 
   .settings-shell .toggle-grid {
