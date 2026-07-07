@@ -36,6 +36,14 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       <form action="/api/settings/labels" method="post" className="settings-panel">
         <input type="hidden" name="labelCount" value={settings.labels.length} />
+        <div className="settings-toolbar">
+          <div>
+            <strong>Réglages des libellés</strong>
+            <span>Modifiez vos préférences puis enregistrez pour les appliquer au prochain cycle.</span>
+          </div>
+          <button type="submit">Enregistrer les paramètres</button>
+        </div>
+
         <div className="settings-list">
           {settings.labels.map((label, index) => (
             <article className="settings-row" key={label.key}>
@@ -86,7 +94,6 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
             Par sécurité, “Réponse auto” est mémorisé dans les paramètres mais l'envoi automatique reste désactivé
             tant que la validation produit n'est pas faite. Aujourd'hui, l'agent prépare un brouillon.
           </p>
-          <button type="submit">Enregistrer les paramètres</button>
         </div>
       </form>
     </main>
