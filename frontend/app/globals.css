@@ -704,7 +704,8 @@ input {
   line-height: 1.45;
 }
 
-.settings-shell .settings-toolbar button {
+.settings-shell .settings-toolbar button,
+.settings-shell .settings-actions button {
   flex-shrink: 0;
   min-height: 46px;
   padding: 0 1.15rem;
@@ -718,12 +719,14 @@ input {
   transition: transform 0.12s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.settings-shell .settings-toolbar button:hover {
+.settings-shell .settings-toolbar button:hover,
+.settings-shell .settings-actions button:hover {
   background: var(--accent-deep);
   box-shadow: 0 18px 34px -18px rgba(13, 148, 136, 0.72);
 }
 
-.settings-shell .settings-toolbar button:active {
+.settings-shell .settings-toolbar button:active,
+.settings-shell .settings-actions button:active {
   transform: translateY(1px);
 }
 
@@ -901,7 +904,8 @@ input {
     position: static;
   }
 
-  .settings-shell .settings-toolbar button {
+  .settings-shell .settings-toolbar button,
+  .settings-shell .settings-actions button {
     width: 100%;
   }
 

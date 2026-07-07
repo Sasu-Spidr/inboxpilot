@@ -94,6 +94,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
             Par sécurité, “Réponse auto” est mémorisé dans les paramètres mais l'envoi automatique reste désactivé
             tant que la validation produit n'est pas faite. Aujourd'hui, l'agent prépare un brouillon.
           </p>
+          <button type="submit">Enregistrer les paramètres</button>
         </div>
       </form>
     </main>
