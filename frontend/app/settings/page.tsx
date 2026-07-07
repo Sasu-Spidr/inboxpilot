@@ -53,6 +53,11 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
                 <input name={`labels.${index}.name`} defaultValue={label.name} maxLength={64} required />
               </label>
 
+              <label className="setting-field description-field">
+                Descriptif
+                <textarea name={`labels.${index}.description`} defaultValue={label.description} maxLength={240} rows={2} required />
+              </label>
+
               <label className="setting-field color-field">
                 Couleur
                 <input name={`labels.${index}.color`} type="color" defaultValue={label.color} />

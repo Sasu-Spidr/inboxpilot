@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
     labels.push({
       key,
       name: String(form.get(`labels.${index}.name`) || ""),
+      description: String(form.get(`labels.${index}.description`) || ""),
       color: String(form.get(`labels.${index}.color`) || ""),
       prepareDraft: form.get(`labels.${index}.prepareDraft`) === "on",
       autoReply: form.get(`labels.${index}.autoReply`) === "on",

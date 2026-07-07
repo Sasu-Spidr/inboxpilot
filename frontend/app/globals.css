@@ -675,7 +675,7 @@ input {
 
 .settings-shell .settings-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.35fr) minmax(200px, 1fr) 110px minmax(330px, 1.25fr);
+  grid-template-columns: minmax(200px, 1fr) minmax(180px, 0.8fr) minmax(260px, 1.25fr) 110px minmax(330px, 1.25fr);
   gap: 1rem;
   align-items: center;
   padding: 1rem;
@@ -714,7 +714,8 @@ input {
   line-height: 1.45;
 }
 
-.settings-shell .setting-field input {
+.settings-shell .setting-field input,
+.settings-shell .setting-field textarea {
   width: 100%;
   min-height: 44px;
   margin-top: 0.42rem;
@@ -723,6 +724,12 @@ input {
   border-radius: 12px;
   background: var(--surface-tint);
   color: var(--text);
+  font: inherit;
+}
+
+.settings-shell .setting-field textarea {
+  min-height: 68px;
+  resize: vertical;
 }
 
 .settings-shell .color-field input {
