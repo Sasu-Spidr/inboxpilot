@@ -140,9 +140,6 @@ class MailWorker:
             self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False)
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
-            if action not in {"trash", "archive", "move", "mark_read"}:
-                connector.mark_read(message_id)
-                log_event("email_marked_read", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
             self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created)
             return True
         except Exception as exc:
@@ -181,8 +178,7 @@ class MailWorker:
             connector.archive(message_id)
             log_event("email_archived", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
         elif action == "mark_read":
-            connector.mark_read(message_id)
-            log_event("email_marked_read", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
         elif action == "move":
             if not target:
                 raise ValueError(f"Rule for label {label} uses move but has no target")

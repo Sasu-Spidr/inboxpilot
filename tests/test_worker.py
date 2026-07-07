@@ -70,7 +70,7 @@ def test_worker_creates_draft(monkeypatch):
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert [x[0] for x in c.calls] == ["replace_label", "draft", "read"]
+    assert [x[0] for x in c.calls] == ["replace_label", "draft"]
 
 
 def test_worker_replaces_managed_labels(monkeypatch):
@@ -157,8 +157,8 @@ def test_multi_client_multi_mailbox(monkeypatch):
     }
     worker = MailWorker(settings, connectors=connectors, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert [x[0] for x in g.calls] == ["replace_label", "draft", "read"]
-    assert [x[0] for x in h.calls] == ["replace_label", "draft", "read"]
+    assert [x[0] for x in g.calls] == ["replace_label", "draft"]
+    assert [x[0] for x in h.calls] == ["replace_label", "draft"]
 
 
 def test_filter_settings_targets_one_client_connector_account():
