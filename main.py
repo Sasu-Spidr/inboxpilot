@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from client_settings import action_for_client, label_name_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -130,6 +131,7 @@ class MailWorker:
             result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"])
             label = result["label"]
             action = self.rules.action_for(label, result["action"])
+            action = action_for_client(client_id, label, action)
             priority = result.get("priority", "medium")
             target = self.rules.target_for(label)
             log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
@@ -153,8 +155,8 @@ class MailWorker:
 
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
         connector_labels = self.labels.get(connector_name, {})
-        label_name = connector_labels.get(label, label)
-        managed_labels = list(connector_labels.values())
+        label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:

@@ -17,9 +17,12 @@ export default async function Dashboard() {
           <span className="brand-dot" />
           <strong>SPIDR Mail Agent</strong>
         </div>
-        <form action="/api/auth/logout" method="post">
-          <button className="ghost-button" type="submit">Déconnexion</button>
-        </form>
+        <div className="topbar-actions">
+          <a className="ghost-button" href="/settings">Paramètres</a>
+          <form action="/api/auth/logout" method="post">
+            <button className="ghost-button" type="submit">Déconnexion</button>
+          </form>
+        </div>
       </nav>
 
       <section className="dashboard-hero single">
