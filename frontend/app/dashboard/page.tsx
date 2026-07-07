@@ -58,7 +58,7 @@ export default async function Dashboard() {
           <li>Classe automatiquement avec l'IA.</li>
           <li>Applique les labels Gmail ou catégories Outlook.</li>
           <li>Crée un brouillon lorsque c'est nécessaire.</li>
-          <li>Réponses et suppressions selon les paramètres définis par le client.</li>
+          <li>Réponses et suppressions selon les paramètres définis par vous.</li>
         </ul>
       </section>
     </main>
