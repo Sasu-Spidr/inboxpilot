@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const user = await currentUser();
-  if (!user) return NextResponse.redirect(new URL("/?error=1", request.url));
+  if (!user) return redirectTo(request, "/?error=1");
 
   const form = await request.formData();
   const count = Number(form.get("labelCount") || 0);
@@ -32,5 +32,11 @@ export async function POST(request: NextRequest) {
   }
 
   saveClientSettings(user.clientId, labels);
-  return NextResponse.redirect(new URL("/settings?saved=1", request.url));
+  return redirectTo(request, "/settings?saved=1");
+}
+
+function redirectTo(request: NextRequest, path: string): NextResponse {
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
+  const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
+  return NextResponse.redirect(`${proto}://${host}${path}`, 303);
 }
