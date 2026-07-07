@@ -74,7 +74,8 @@ class MailWorker:
                         if not client_id_value:
                             LOG.warning("Hotmail connector skipped because Microsoft client id is missing: client=%s account=%s", client_id, account)
                             continue
-                        connector = HotmailConnector(client_id_value, account_cfg.get("tenant_id", "consumers"), account_cfg["token_file"], store)
+                        client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+                        connector = HotmailConnector(client_id_value, account_cfg.get("tenant_id", "consumers"), account_cfg["token_file"], store, client_secret=client_secret)
                     else:
                         LOG.warning("Unknown connector ignored: %s", connector_name)
                         continue

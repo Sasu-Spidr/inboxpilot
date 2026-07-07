@@ -11,18 +11,24 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 
 
 class HotmailConnector:
-    def __init__(self, client_id: str, tenant_id: str, token_file: str, token_store: TokenStore, session=None):
+    def __init__(self, client_id: str, tenant_id: str, token_file: str, token_store: TokenStore, session=None, client_secret: str = ""):
         if not client_id: raise ValueError("MICROSOFT_CLIENT_ID is required when Hotmail is enabled")
         self.client_id, self.authority, self.token_file, self.store = client_id, f"https://login.microsoftonline.com/{tenant_id}", token_file, token_store
+        self.client_secret = client_secret
         self.session = session or requests.Session(); self.access_token = None
 
     def authenticate(self) -> None:
         if self.access_token: return
         cache = msal.SerializableTokenCache(); saved = self.store.load(self.token_file)
         if saved: cache.deserialize(saved["cache"])
-        app = msal.PublicClientApplication(self.client_id, authority=self.authority, token_cache=cache)
+        if self.client_secret:
+            app = msal.ConfidentialClientApplication(self.client_id, client_credential=self.client_secret, authority=self.authority, token_cache=cache)
+        else:
+            app = msal.PublicClientApplication(self.client_id, authority=self.authority, token_cache=cache)
         accounts = app.get_accounts(); result = app.acquire_token_silent(SCOPES, account=accounts[0]) if accounts else None
         if not result:
+            if self.client_secret:
+                raise RuntimeError("Microsoft token cache is empty; reconnect Hotmail from the web dashboard")
             flow = app.initiate_device_flow(scopes=SCOPES)
             if "message" not in flow: raise RuntimeError(f"Unable to start Microsoft device flow: {flow}")
             print(flow["message"], flush=True)

@@ -203,7 +203,10 @@ def microsoft_app(account_cfg: dict, cache=None):
     client_id = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
     if not client_id:
         raise ValueError("Microsoft client_id manquant")
+    client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
     authority = f"https://login.microsoftonline.com/{account_cfg.get('tenant_id', 'consumers')}"
+    if client_secret:
+        return msal.ConfidentialClientApplication(client_id, client_credential=client_secret, authority=authority, token_cache=cache)
     return msal.PublicClientApplication(client_id, authority=authority, token_cache=cache)
 
 

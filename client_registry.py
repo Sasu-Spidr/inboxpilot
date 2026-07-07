@@ -62,6 +62,7 @@ def build_registered_client(settings: dict, client_id: str, owner_name: str, ema
         os.getenv("GMAIL_OAUTH_CLIENT_FILE") or onboarding.get("gmail_credentials_file", "./secrets/google-oauth-client.json")
     )
     microsoft_client_id_env = onboarding.get("microsoft_client_id_env", "MICROSOFT_CLIENT_ID")
+    microsoft_client_secret_env = onboarding.get("microsoft_client_secret_env", "MICROSOFT_CLIENT_SECRET")
     return {
         "enabled": True,
         "owner_name": owner_name,
@@ -85,6 +86,7 @@ def build_registered_client(settings: dict, client_id: str, owner_name: str, ema
                         "account": "main",
                         "sender_name": owner_name,
                         "client_id_env": microsoft_client_id_env,
+                        "client_secret_env": microsoft_client_secret_env,
                         "tenant_id": "consumers",
                         "token_file": f"./data/tokens/{client_id}-hotmail-main.token.enc",
                     }

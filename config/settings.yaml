@@ -11,6 +11,7 @@ onboarding:
   registry_file: ./data/clients/clients.yaml
   gmail_credentials_file: ./secrets/google-oauth-client.json
   microsoft_client_id_env: MICROSOFT_CLIENT_ID
+  microsoft_client_secret_env: MICROSOFT_CLIENT_SECRET
 
 clients:
   exuvie:
