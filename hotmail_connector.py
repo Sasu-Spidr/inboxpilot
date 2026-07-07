@@ -6,7 +6,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from token_store import TokenStore
 
 LOG = logging.getLogger(__name__)
-SCOPES = ["Mail.ReadWrite", "Mail.Read", "offline_access"]
+SCOPES = ["Mail.ReadWrite", "Mail.Read"]
 GRAPH = "https://graph.microsoft.com/v1.0"
 
 
