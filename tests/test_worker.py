@@ -46,6 +46,11 @@ class Drafts:
         return "Hello"
 
 
+class KeepUnreadClassifier:
+    def safe_classify(self, *args):
+        return {"label": "FYI", "action": "mark_read", "priority": "low", "confidence": 0.9, "reason": "Information only"}
+
+
 class State:
     def __init__(self):
         self.records = set()
@@ -120,6 +125,36 @@ def test_worker_does_not_process_duplicate(monkeypatch):
     worker.run_cycle()
     worker.run_cycle()
     assert [x[0] for x in c.calls].count("draft") == 1
+
+
+def test_worker_never_marks_gmail_message_as_read(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    c = Connector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=KeepUnreadClassifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert "read" not in [x[0] for x in c.calls]
+
+
+def test_worker_syncs_gmail_label_color_from_client_settings(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"À répondre","name":"À répondre","color":"#4338ca","prepareDraft":true,"autoReply":false,"autoDelete":false}]}',
+        encoding="utf-8",
+    )
+
+    class ColorConnector(Connector):
+        def sync_label_color(self, *args):
+            self.calls.append(("color", args))
+
+    c = ColorConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert ("color", ("À répondre", "#4338ca")) in c.calls
 
 
 def test_error_on_one_email_does_not_block_next(monkeypatch):

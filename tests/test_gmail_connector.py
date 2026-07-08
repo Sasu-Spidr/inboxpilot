@@ -1,7 +1,7 @@
 import base64
 from email import message_from_bytes
 
-from gmail_connector import GmailConnector, recipient_address
+from gmail_connector import GmailConnector, gmail_label_color, recipient_address
 from token_store import TokenStore
 
 class Execute:
@@ -66,6 +66,39 @@ def test_replace_label_creates_missing_label_and_removes_old_managed_labels():
     assert calls[0][1]["body"]["name"] == "À traiter"
     assert calls[1][0] == "modify_message"
     assert calls[1][1]["body"] == {"addLabelIds": ["new-label"], "removeLabelIds": ["old-comment"]}
+
+
+def test_sync_label_color_updates_existing_gmail_label():
+    calls = []
+
+    class LabelOps:
+        def list(self, **kwargs):
+            return Execute({"labels": [{"name": "À traiter", "id": "label-1"}]})
+
+        def patch(self, **kwargs):
+            return CaptureExecute({}, calls, "patch_label", kwargs)
+
+    class CaptureUsers:
+        def labels(self):
+            return LabelOps()
+
+    class CaptureService:
+        def users(self):
+            return CaptureUsers()
+
+    c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
+    c.sync_label_color("À traiter", "#8b5a83")
+
+    assert calls == [
+        (
+            "patch_label",
+            {
+                "userId": "me",
+                "id": "label-1",
+                "body": {"color": gmail_label_color("#8b5a83")},
+            },
+        )
+    ]
 
 
 def test_create_draft_uses_plain_email_address_for_to_header():

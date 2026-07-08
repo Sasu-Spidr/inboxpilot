@@ -1,6 +1,6 @@
 import json
 
-from client_settings import action_for_client, label_name_for_client, managed_label_names_for_client
+from client_settings import action_for_client, label_color_for_client, label_name_for_client, managed_label_names_for_client
 
 
 def test_client_settings_override_label_name_and_managed_labels(tmp_path, monkeypatch):
@@ -26,6 +26,7 @@ def test_client_settings_override_label_name_and_managed_labels(tmp_path, monkey
     )
 
     assert label_name_for_client("client-a", "À traiter", "À traiter") == "Factures"
+    assert label_color_for_client("client-a", "À traiter") == "#0d9488"
     assert "Factures" in managed_label_names_for_client("client-a")
 
 

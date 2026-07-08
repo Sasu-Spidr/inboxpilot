@@ -64,6 +64,12 @@ class GmailConnector:
             body["removeLabelIds"] = remove_ids
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body=body))
 
+    def sync_label_color(self, label_name: str, preferred_color: str) -> None:
+        self.authenticate()
+        label_id = self._label_id(label_name)
+        color = gmail_label_color(preferred_color)
+        self._execute(self.service.users().labels().patch(userId="me", id=label_id, body={"color": color}))
+
     def _label_id(self, name: str) -> str:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:
@@ -101,6 +107,47 @@ class GmailConnector:
         return request.execute()
 
 def json_credentials(creds): return {"token": creds.token, "refresh_token": creds.refresh_token, "token_uri": creds.token_uri, "client_id": creds.client_id, "client_secret": creds.client_secret, "scopes": creds.scopes}
+
+
+GMAIL_BACKGROUND_COLORS = [
+    "#000000", "#434343", "#666666", "#999999", "#cccccc", "#efefef", "#f3f3f3", "#ffffff",
+    "#fb4c2f", "#ffad47", "#fad165", "#16a766", "#43d692", "#4a86e8", "#a479e2", "#f691b3",
+    "#f6c5be", "#ffe6c7", "#fef1d1", "#b9e4d0", "#c6f3de", "#c9daf8", "#e4d7f5", "#fcdee8",
+    "#efa093", "#ffd6a2", "#fce8b3", "#89d3b2", "#a0eac9", "#a4c2f4", "#d0bcf1", "#fbc8d9",
+    "#e66550", "#ffbc6b", "#fcda83", "#44b984", "#68dfa9", "#6d9eeb", "#b694e8", "#f7a7c0",
+    "#cc3a21", "#eaa041", "#f2c960", "#149e60", "#3dc789", "#3c78d8", "#8e63ce", "#e07798",
+    "#ac2b16", "#cf8933", "#d5ae49", "#0b804b", "#2a9c68", "#285bac", "#653e9b", "#b65775",
+    "#822111", "#a46a21", "#aa8831", "#076239", "#1a764d", "#1c4587", "#41236d", "#83334c",
+]
+
+
+def gmail_label_color(preferred_color: str) -> dict[str, str]:
+    background = nearest_gmail_background(preferred_color)
+    return {"backgroundColor": background, "textColor": readable_text_color(background)}
+
+
+def nearest_gmail_background(preferred_color: str) -> str:
+    preferred = hex_to_rgb(preferred_color)
+    return min(GMAIL_BACKGROUND_COLORS, key=lambda color: color_distance(preferred, hex_to_rgb(color)))
+
+
+def readable_text_color(background: str) -> str:
+    red, green, blue = hex_to_rgb(background)
+    luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255
+    return "#000000" if luminance > 0.58 else "#ffffff"
+
+
+def color_distance(left: tuple[int, int, int], right: tuple[int, int, int]) -> int:
+    return sum((a - b) ** 2 for a, b in zip(left, right))
+
+
+def hex_to_rgb(color: str) -> tuple[int, int, int]:
+    value = color.strip().lower()
+    if not re.fullmatch(r"#[0-9a-f]{6}", value):
+        return (153, 153, 153)
+    return tuple(int(value[index:index + 2], 16) for index in (1, 3, 5))
+
+
 def recipient_address(sender: str) -> str:
     _, address = parseaddr(sender or "")
     if "@" in address and not re.search(r"\s", address):

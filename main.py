@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from client_settings import action_for_client, label_name_for_client, managed_label_names_for_client
+from client_settings import action_for_client, label_color_for_client, label_name_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -159,6 +159,10 @@ class MailWorker:
             connector.replace_label(message_id, label_name, managed_labels)
         else:
             connector.apply_label(message_id, label_name)
+        if connector_name == "gmail" and hasattr(connector, "sync_label_color"):
+            label_color = label_color_for_client(client_id, label)
+            if label_color:
+                connector.sync_label_color(label_name, label_color)
         log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
 
     def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:

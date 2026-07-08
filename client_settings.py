@@ -26,6 +26,12 @@ def label_name_for_client(client_id: str, label: str, default_name: str) -> str:
     return name or default_name
 
 
+def label_color_for_client(client_id: str, label: str) -> str | None:
+    setting = _label_setting(client_id, label)
+    color = str(setting.get("color", "")).strip() if setting else ""
+    return color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else None
+
+
 def managed_label_names_for_client(client_id: str) -> list[str]:
     names: list[str] = []
     for setting in load_client_settings(client_id).get("labels", []):
