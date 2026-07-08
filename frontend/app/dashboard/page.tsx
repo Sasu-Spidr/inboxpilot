@@ -96,7 +96,7 @@ function MailCard({
           return (
             <div className="account-item" key={account.account}>
               <div>
-                <strong>{account.email_address || (account.account === "main" ? "Compte principal" : account.account)}</strong>
+                <strong>{accountDisplayName(account, accountConnected)}</strong>
                 <span>{accountConnected ? "Agent actif sur cette boîte" : "Connexion à finaliser"}</span>
               </div>
               {accountConnected ? (
@@ -118,4 +118,10 @@ function MailCard({
       </a>
     </article>
   );
+}
+
+function accountDisplayName(account: MailAccount, connected: boolean): string {
+  if (account.email_address) return account.email_address;
+  if (connected) return "Adresse mail à confirmer";
+  return account.account === "main" ? "Compte principal" : "Compte supplémentaire";
 }
