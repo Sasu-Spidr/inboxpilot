@@ -52,6 +52,26 @@ def save_registered_client(settings: dict, client_id: str, client_cfg: dict) -> 
     path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
 
 
+def update_registered_account(settings: dict, client_id: str, connector: str, account: str, fields: dict) -> None:
+    path = Path(registry_file(settings))
+    if not path.exists():
+        return
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    account_rows = (
+        data.get("clients", {})
+        .get(client_id, {})
+        .get("connectors", {})
+        .get(connector, {})
+        .get("accounts", [])
+    )
+    for account_cfg in account_rows:
+        account_name = account_cfg.get("account") or account_cfg.get("id") or connector
+        if account_name == account:
+            account_cfg.update({key: value for key, value in fields.items() if value})
+            path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+            return
+
+
 def make_client_id(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower().strip()).strip("-")
     return slug or "client"

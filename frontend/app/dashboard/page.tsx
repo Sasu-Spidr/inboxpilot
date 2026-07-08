@@ -97,7 +97,7 @@ function MailCard({
           return (
             <div className="account-item" key={account.account}>
               <div>
-                <strong>{account.account === "main" ? "Compte principal" : account.account}</strong>
+                <strong>{account.email_address || (account.account === "main" ? "Compte principal" : account.account)}</strong>
                 <span>{accountConnected ? "Agent actif sur cette boîte" : "Connexion à finaliser"}</span>
               </div>
               <a href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>

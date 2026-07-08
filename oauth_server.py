@@ -13,10 +13,12 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import msal
+import requests
 import yaml
+from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_registry import merge_registered_clients
+from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import SCOPES as HOTMAIL_SCOPES
 from token_store import TokenStore
@@ -133,7 +135,10 @@ class OAuthOnboardingServer:
         flow = Flow.from_client_secrets_file(account_cfg["credentials_file"], scopes=GMAIL_SCOPES, redirect_uri=redirect_uri)
         flow.fetch_token(code=one(params, "code"))
         self.store.save(account_cfg["token_file"], json_credentials(flow.credentials))
-        return success_page("Gmail", state["client"], state["account"])
+        email = gmail_profile_email(flow.credentials)
+        update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email})
+        self.settings = merge_registered_clients(self.settings)
+        return success_page("Gmail", state["client"], state["account"], email)
 
     def start_hotmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "hotmail")
@@ -162,7 +167,10 @@ class OAuthOnboardingServer:
         if "access_token" not in result:
             raise RuntimeError(result.get("error_description", str(result)))
         self.store.save(account_cfg["token_file"], {"cache": cache.serialize()})
-        return success_page("Hotmail / Outlook", state["client"], state["account"])
+        email = microsoft_profile_email(result["access_token"])
+        update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email})
+        self.settings = merge_registered_clients(self.settings)
+        return success_page("Hotmail / Outlook", state["client"], state["account"], email)
 
     def _account(self, query: str, connector: str) -> tuple[str, str, dict]:
         self.settings = merge_registered_clients(self.settings)
@@ -207,7 +215,33 @@ def microsoft_app(account_cfg: dict, cache=None):
     authority = f"https://login.microsoftonline.com/{account_cfg.get('tenant_id', 'consumers')}"
     if client_secret:
         return msal.ConfidentialClientApplication(client_id, client_credential=client_secret, authority=authority, token_cache=cache)
-    return msal.PublicClientApplication(client_id, authority=authority, token_cache=cache)
+        return msal.PublicClientApplication(client_id, authority=authority, token_cache=cache)
+
+
+def gmail_profile_email(credentials) -> str:
+    try:
+        service = build("gmail", "v1", credentials=credentials, cache_discovery=False)
+        profile = service.users().getProfile(userId="me").execute()
+        return profile.get("emailAddress", "")
+    except Exception:
+        LOG.exception("Unable to read Gmail profile email")
+        return ""
+
+
+def microsoft_profile_email(access_token: str) -> str:
+    try:
+        response = requests.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"$select": "mail,userPrincipalName"},
+            timeout=20,
+        )
+        response.raise_for_status()
+        profile = response.json()
+        return profile.get("mail") or profile.get("userPrincipalName") or ""
+    except Exception:
+        LOG.exception("Unable to read Microsoft profile email")
+        return ""
 
 
 def load_settings(path: str) -> dict:
@@ -288,14 +322,15 @@ def render_auth_required() -> str:
     )
 
 
-def success_page(provider: str, client_id: str, account: str) -> str:
+def success_page(provider: str, client_id: str, account: str, email: str = "") -> str:
     return_url = f"{frontend_url().rstrip('/')}/dashboard"
+    connected_identity = email or account
     return page(
         f"Connexion {escape(provider)} réussie",
         f"""
         <div class="panel success">
           <h2>Le compte est connecté.</h2>
-          <p><strong>{escape(provider)} / {escape(account)}</strong></p>
+          <p><strong>{escape(provider)} / {escape(connected_identity)}</strong></p>
           <p>L'agent peut maintenant classer les nouveaux mails et préparer les brouillons.</p>
           <p><a class="button primary" href="{escape(return_url)}">Retour à mon espace</a></p>
         </div>

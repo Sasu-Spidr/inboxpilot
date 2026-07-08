@@ -7,6 +7,7 @@ export type Provider = "gmail" | "hotmail";
 
 export type MailAccount = {
   account: string;
+  email_address?: string;
   sender_name?: string;
   credentials_file?: string;
   client_id_env?: string;
