@@ -15,7 +15,6 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
     <main className="dashboard-shell settings-shell">
       <nav className="topbar">
         <div>
-          <span className="brand-dot" />
           <strong>Paramètres InboxPilot</strong>
         </div>
         <Link className="ghost-button" href="/dashboard">Retour dashboard</Link>

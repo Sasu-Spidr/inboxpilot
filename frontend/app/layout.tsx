@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SPIDR Mail Agent",
+  title: "InboxPilot",
   description: "Connectez Gmail et Outlook à votre agent mail.",
 };
 

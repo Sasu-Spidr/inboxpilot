@@ -75,7 +75,7 @@ class OAuthOnboardingServer:
                             "Authentification désactivée ici",
                             f"""
                             <div class="panel">
-                              <p class="eyebrow">SPIDR Mail Agent</p>
+                              <p class="eyebrow">InboxPilot</p>
                               <h1>Utilisez votre espace client.</h1>
                               <p>L'authentification se fait depuis l'interface sécurisée. Ce serveur sert uniquement à finaliser la connexion Gmail ou Outlook.</p>
                               <p><a class="button primary" href="{escape(frontend_url())}">Retour à l'interface</a></p>
@@ -266,10 +266,10 @@ def b64decode(value: str) -> bytes:
 
 def render_home(settings: dict) -> str:
     return page(
-        "Authentification SPIDR Mail Agent",
+        "Authentification InboxPilot",
         f"""
         <section class="hero">
-          <p class="eyebrow">SPIDR Mail Agent</p>
+          <p class="eyebrow">InboxPilot</p>
           <h1>Connectez-vous à votre espace client.</h1>
           <p>Depuis votre espace, vous pourrez connecter Gmail ou Outlook. Ce serveur OAuth ne liste aucun client et ne donne accès à aucun espace privé.</p>
           <div class="actions">

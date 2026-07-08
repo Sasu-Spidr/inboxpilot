@@ -10,7 +10,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
   return (
     <main className="auth-shell">
       <section className="hero-card">
-        <div className="brand-pill">SPIDR Mail Agent</div>
+        <div className="brand-pill">InboxPilot</div>
         <h1>Connectez vos boîtes mail. Laissez l'agent trier le reste.</h1>
         <p>
           Gmail et Outlook connectés proprement, emails classés, labels appliqués et brouillons prêts à relire.

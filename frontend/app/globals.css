@@ -111,15 +111,6 @@ input {
   letter-spacing: 0.01em;
 }
 
-.auth-shell .brand-pill::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
 .auth-shell .hero-card h1 {
   max-width: 15ch;
   margin: 0;
@@ -382,14 +373,6 @@ input {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-}
-
-.dashboard-shell .brand-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 .dashboard-shell .ghost-button {

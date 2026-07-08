@@ -15,8 +15,7 @@ export default async function Dashboard() {
     <main className="dashboard-shell">
       <nav className="topbar">
         <div>
-          <span className="brand-dot" />
-          <strong>SPIDR Mail Agent</strong>
+          <strong>InboxPilot</strong>
         </div>
         <div className="topbar-actions">
           <a className="ghost-button" href="/settings">Paramètres</a>
