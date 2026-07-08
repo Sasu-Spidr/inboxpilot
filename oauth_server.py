@@ -18,8 +18,9 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
+from client_settings import label_color_settings_for_client
 from client_registry import merge_registered_clients, update_registered_account
-from gmail_connector import SCOPES as GMAIL_SCOPES, json_credentials
+from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import SCOPES as HOTMAIL_SCOPES
 from token_store import TokenStore
 
@@ -68,7 +69,15 @@ class OAuthOnboardingServer:
                 try:
                     parsed = urlparse(self.path)
                     length = int(self.headers.get("Content-Length", "0"))
-                    self.rfile.read(length)
+                    raw_body = self.rfile.read(length)
+                    if parsed.path == "/internal/sync-label-settings":
+                        if self.headers.get("X-Internal-Sync-Key") != server.settings["token_encryption_key"]:
+                            self._json(403, {"error": "forbidden"})
+                            return
+                        payload = json.loads(raw_body.decode("utf-8") or "{}")
+                        result = server.sync_label_settings(one({"client": [payload.get("client", "")]}, "client"))
+                        self._json(200, result)
+                        return
                     self._html(
                         405,
                         page(
@@ -111,7 +120,40 @@ class OAuthOnboardingServer:
                 self.end_headers()
                 self.wfile.write(body)
 
+            def _json(self, status: int, payload: dict):
+                body = json.dumps(payload).encode("utf-8")
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
         return Handler
+
+    def sync_label_settings(self, client_id: str) -> dict:
+        self.settings = merge_registered_clients(self.settings)
+        client = self.settings.get("clients", {}).get(client_id)
+        if not client:
+            raise ValueError(f"Client inconnu : {client_id}")
+
+        synced = 0
+        skipped = 0
+        errors = []
+        labels = label_color_settings_for_client(client_id)
+        accounts = client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []
+        for account_cfg in accounts:
+            token_file = account_cfg.get("token_file", "")
+            if not token_file or not Path(token_file).exists():
+                skipped += 1
+                continue
+            try:
+                connector = GmailConnector(account_cfg["credentials_file"], token_file, self.store)
+                for label in labels:
+                    connector.sync_label_color(label["name"], label["color"])
+                    synced += 1
+            except Exception as exc:
+                errors.append({"account": account_cfg.get("account", "main"), "error": str(exc)})
+        return {"synced": synced, "skipped": skipped, "errors": errors}
 
     def start_gmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "gmail")

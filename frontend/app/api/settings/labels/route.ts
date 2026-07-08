@@ -32,7 +32,28 @@ export async function POST(request: NextRequest) {
   }
 
   saveClientSettings(user.clientId, labels);
+  await syncGmailLabelSettings(user.clientId);
   return redirectTo(request, "/settings?saved=1");
+}
+
+async function syncGmailLabelSettings(clientId: string): Promise<void> {
+  const internalUrl = process.env.OAUTH_INTERNAL_URL;
+  const syncKey = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!internalUrl || !syncKey) return;
+
+  try {
+    await fetch(new URL("/internal/sync-label-settings", internalUrl), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-Sync-Key": syncKey,
+      },
+      body: JSON.stringify({ client: clientId }),
+      cache: "no-store",
+    });
+  } catch (error) {
+    console.warn("Gmail label settings sync failed", error);
+  }
 }
 
 function redirectTo(request: NextRequest, path: string): NextResponse {
