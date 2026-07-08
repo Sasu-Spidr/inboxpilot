@@ -42,7 +42,7 @@ async function syncGmailLabelSettings(clientId: string): Promise<void> {
   if (!internalUrl || !syncKey) return;
 
   try {
-    await fetch(new URL("/internal/sync-label-settings", internalUrl), {
+    const response = await fetch(new URL("/internal/sync-label-settings", internalUrl), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -51,6 +51,9 @@ async function syncGmailLabelSettings(clientId: string): Promise<void> {
       body: JSON.stringify({ client: clientId }),
       cache: "no-store",
     });
+    if (!response.ok) {
+      console.warn("Gmail label settings sync failed", response.status, await response.text());
+    }
   } catch (error) {
     console.warn("Gmail label settings sync failed", error);
   }

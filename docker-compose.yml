@@ -27,6 +27,7 @@ services:
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
       OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
       GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     ports:
       - "${FRONTEND_HOST_PORT:-3000}:3000"
     volumes:
