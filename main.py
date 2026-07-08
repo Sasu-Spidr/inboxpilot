@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from client_settings import action_for_client, label_color_for_client, label_name_for_client, managed_label_names_for_client
+from client_settings import action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -65,6 +65,10 @@ class MailWorker:
                 for account_cfg in accounts:
                     if not account_cfg.get("enabled", True):
                         continue
+                    token_file = account_cfg.get("token_file")
+                    if token_file and not Path(token_file).exists():
+                        LOG.info("Connector skipped because token is missing: client=%s connector=%s account=%s", client_id, connector_name, account_cfg.get("account") or account_cfg.get("id") or connector_name)
+                        continue
                     account = account_cfg.get("account") or account_cfg.get("id") or connector_name
                     key = f"{connector_name}:{account}"
                     if connector_name == "gmail":
@@ -108,12 +112,24 @@ class MailWorker:
 
     def _poll_account(self, client_id: str, connector_name: str, account: str, connector) -> None:
         try:
+            self._sync_account_settings(client_id, connector_name, account, connector)
             emails = connector.unread_emails(self.settings["max_emails_per_cycle"])
         except Exception as exc:
             log_event("polling_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, status="failed", error=str(exc), exc_info=True)
             return
         for email in emails:
             self.process_email(client_id, connector_name, account, email["id"], email=email)
+
+    def _sync_account_settings(self, client_id: str, connector_name: str, account: str, connector) -> None:
+        if connector_name != "gmail" or not hasattr(connector, "sync_label_color"):
+            return
+        connector_labels = self.labels.get(connector_name, {})
+        for setting in label_color_settings_for_client(client_id):
+            label_name = setting["name"] or connector_labels.get(setting["key"], setting["key"])
+            try:
+                connector.sync_label_color(label_name, setting["color"])
+            except Exception as exc:
+                log_event("label_color_sync_failed", logging.WARNING, client_id=client_id, connector=connector_name, account=account, label=setting["key"], status="warning", error=str(exc))
 
     def process_email(self, client_id: str, connector_name: str, account: str, message_id: str, email: dict | None = None) -> bool:
         """Process one email.
