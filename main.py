@@ -162,7 +162,10 @@ class MailWorker:
         if connector_name == "gmail" and hasattr(connector, "sync_label_color"):
             label_color = label_color_for_client(client_id, label)
             if label_color:
-                connector.sync_label_color(label_name, label_color)
+                try:
+                    connector.sync_label_color(label_name, label_color)
+                except Exception as exc:
+                    log_event("label_color_sync_failed", logging.WARNING, client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, status="warning", error=str(exc))
         log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
 
     def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:

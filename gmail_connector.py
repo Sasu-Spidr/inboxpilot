@@ -1,6 +1,7 @@
 from __future__ import annotations
 import base64
 import logging
+import os
 import re
 from email.utils import parseaddr
 from email.mime.text import MIMEText
@@ -28,6 +29,8 @@ class GmailConnector:
             creds.refresh(Request())
             self.store.save(self.token_file, json_credentials(creds))
         if not creds or not creds.valid:
+            if os.getenv("GMAIL_INTERACTIVE_AUTH") != "1":
+                raise RuntimeError("Gmail token cache is empty or invalid; reconnect Gmail from the web dashboard")
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
             self.store.save(self.token_file, json_credentials(creds))

@@ -101,6 +101,17 @@ def test_sync_label_color_updates_existing_gmail_label():
     ]
 
 
+def test_gmail_auth_without_token_does_not_open_browser(tmp_path, monkeypatch):
+    monkeypatch.delenv("GMAIL_INTERACTIVE_AUTH", raising=False)
+    c = GmailConnector(str(tmp_path / "missing-client.json"), str(tmp_path / "missing-token.enc"), TokenStore(TokenStore.generate_key()))
+    try:
+        c.authenticate()
+    except RuntimeError as exc:
+        assert "reconnect Gmail from the web dashboard" in str(exc)
+    else:
+        raise AssertionError("authenticate should fail without an OAuth token")
+
+
 def test_create_draft_uses_plain_email_address_for_to_header():
     calls = []
 
