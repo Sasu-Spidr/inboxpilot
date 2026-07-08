@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/auth";
-import { tokenExists } from "@/lib/paths";
+import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
+import { tokenFileExists } from "@/lib/paths";
 
 export default async function Dashboard() {
   const user = await currentUser();
   if (!user) redirect("/");
 
-  const gmailConnected = tokenExists(user.clientId, "gmail");
-  const hotmailConnected = tokenExists(user.clientId, "hotmail");
+  const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
+  const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
 
   return (
     <main className="dashboard-shell">
@@ -38,16 +39,16 @@ export default async function Dashboard() {
 
       <section className="mail-grid">
         <MailCard
+          providerKey="gmail"
           provider="Gmail"
-          description="Connectez un compte Google pour lire les emails non lus, appliquer les labels et créer les brouillons."
-          connected={gmailConnected}
-          href="/api/accounts/connect/gmail"
+          description="Connectez un ou plusieurs comptes Google pour lire les emails non lus, appliquer les labels et créer les brouillons."
+          accounts={gmailAccounts}
         />
         <MailCard
+          providerKey="hotmail"
           provider="Hotmail / Outlook"
-          description="Connectez un compte Microsoft pour classer Outlook/Hotmail avec les catégories et brouillons."
-          connected={hotmailConnected}
-          href="/api/accounts/connect/hotmail"
+          description="Connectez un ou plusieurs comptes Microsoft pour classer Outlook/Hotmail avec les catégories et brouillons."
+          accounts={hotmailAccounts}
         />
       </section>
 
@@ -66,28 +67,49 @@ export default async function Dashboard() {
 }
 
 function MailCard({
+  providerKey,
   provider,
   description,
-  connected,
-  href,
+  accounts,
 }: {
+  providerKey: Provider;
   provider: string;
   description: string;
-  connected: boolean;
-  href: string;
+  accounts: MailAccount[];
 }) {
+  const connectedCount = accounts.filter((account) => tokenFileExists(account.token_file)).length;
+  const connected = connectedCount > 0;
+
   return (
     <article className="mail-card">
       <div className="mail-card-head">
         <div className="mail-icon">{provider[0]}</div>
         <span className={connected ? "status connected" : "status pending"}>
-          {connected ? "Connecté" : "Non connecté"}
+          {connected ? `${connectedCount} connecté${connectedCount > 1 ? "s" : ""}` : "Non connecté"}
         </span>
       </div>
       <h2>{provider}</h2>
       <p>{description}</p>
-      <a className="primary-link" href={href}>
-        {connected ? "Reconnecter" : "Connecter"} {provider}
+
+      <div className="account-list">
+        {accounts.map((account) => {
+          const accountConnected = tokenFileExists(account.token_file);
+          return (
+            <div className="account-item" key={account.account}>
+              <div>
+                <strong>{account.account === "main" ? "Compte principal" : account.account}</strong>
+                <span>{accountConnected ? "Agent actif sur cette boîte" : "Connexion à finaliser"}</span>
+              </div>
+              <a href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
+                {accountConnected ? "Reconnecter" : "Connecter"}
+              </a>
+            </div>
+          );
+        })}
+      </div>
+
+      <a className="primary-link" href={`/api/accounts/connect/${providerKey}?new=1`}>
+        Ajouter un autre compte {provider}
       </a>
     </article>
   );

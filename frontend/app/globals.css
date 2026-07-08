@@ -540,6 +540,51 @@ input {
   line-height: 1.6;
 }
 
+.dashboard-shell .account-list {
+  display: grid;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-shell .account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-tint);
+}
+
+.dashboard-shell .account-item strong,
+.dashboard-shell .account-item span {
+  display: block;
+}
+
+.dashboard-shell .account-item strong {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.dashboard-shell .account-item span {
+  margin-top: 0.16rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.dashboard-shell .account-item a {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.dashboard-shell .account-item a:hover {
+  color: var(--accent-deep);
+}
+
 .dashboard-shell .primary-link {
   display: inline-flex;
   align-items: center;
@@ -880,6 +925,11 @@ input {
 @media (max-width: 720px) {
   .dashboard-shell .mail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell .account-item {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .dashboard-shell .topbar,

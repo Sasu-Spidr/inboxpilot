@@ -3,8 +3,32 @@ import yaml from "js-yaml";
 
 import { dataPath } from "./paths";
 
+export type Provider = "gmail" | "hotmail";
+
+export type MailAccount = {
+  account: string;
+  sender_name?: string;
+  credentials_file?: string;
+  client_id_env?: string;
+  client_secret_env?: string;
+  tenant_id?: string;
+  token_file: string;
+};
+
 type ClientRegistry = {
-  clients: Record<string, unknown>;
+  clients: Record<string, ClientConfig>;
+};
+
+type ClientConfig = {
+  enabled: boolean;
+  owner_name?: string;
+  email?: string;
+  connectors?: Partial<Record<Provider, ConnectorConfig>>;
+};
+
+type ConnectorConfig = {
+  enabled: boolean;
+  accounts: MailAccount[];
 };
 
 export function ensureClientRegistry(clientId: string, ownerName: string, email: string): void {
@@ -34,6 +58,7 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
             account: "main",
             sender_name: ownerName,
             client_id_env: "MICROSOFT_CLIENT_ID",
+            client_secret_env: "MICROSOFT_CLIENT_SECRET",
             tenant_id: "consumers",
             token_file: `./data/tokens/${clientId}-hotmail-main.token.enc`,
           },
@@ -44,8 +69,98 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
   fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
 }
 
+export function getClientMailAccounts(clientId: string, provider: Provider): MailAccount[] {
+  const registry = readRegistry(registryPath());
+  return registry.clients[clientId]?.connectors?.[provider]?.accounts || [];
+}
+
+export function ensureMailAccount(clientId: string, ownerName: string, email: string, provider: Provider, account = "main"): MailAccount {
+  const file = registryPath();
+  fs.mkdirSync(dataPath("clients"), { recursive: true });
+  const registry = readRegistry(file);
+  ensureClientConfig(registry, clientId, ownerName, email);
+  ensureConnectorConfig(registry.clients[clientId], provider);
+
+  const accounts = registry.clients[clientId].connectors?.[provider]?.accounts || [];
+  const existing = accounts.find((item) => item.account === account);
+  if (existing) return existing;
+
+  const created = buildAccountConfig(clientId, ownerName, provider, account);
+  accounts.push(created);
+  fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
+  return created;
+}
+
+export function addMailAccount(clientId: string, ownerName: string, email: string, provider: Provider): MailAccount {
+  const file = registryPath();
+  fs.mkdirSync(dataPath("clients"), { recursive: true });
+  const registry = readRegistry(file);
+  ensureClientConfig(registry, clientId, ownerName, email);
+  ensureConnectorConfig(registry.clients[clientId], provider);
+
+  const accounts = registry.clients[clientId].connectors?.[provider]?.accounts || [];
+  const account = nextAccountName(provider, accounts);
+  const created = buildAccountConfig(clientId, ownerName, provider, account);
+  accounts.push(created);
+  fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
+  return created;
+}
+
 function readRegistry(file: string): ClientRegistry {
   if (!fs.existsSync(file)) return { clients: {} };
   const parsed = yaml.load(fs.readFileSync(file, "utf-8")) as ClientRegistry | null;
   return parsed?.clients ? parsed : { clients: {} };
+}
+
+function registryPath(): string {
+  return dataPath("clients", "clients.yaml");
+}
+
+function ensureClientConfig(registry: ClientRegistry, clientId: string, ownerName: string, email: string): void {
+  registry.clients[clientId] ||= {
+    enabled: true,
+    owner_name: ownerName,
+    email,
+    connectors: {},
+  };
+  registry.clients[clientId].connectors ||= {};
+}
+
+function ensureConnectorConfig(client: ClientConfig, provider: Provider): void {
+  client.connectors ||= {};
+  client.connectors[provider] ||= { enabled: true, accounts: [] };
+  client.connectors[provider].enabled = true;
+  client.connectors[provider].accounts ||= [];
+}
+
+function buildAccountConfig(clientId: string, ownerName: string, provider: Provider, account: string): MailAccount {
+  const tokenAccount = safeAccountName(account);
+  if (provider === "gmail") {
+    return {
+      account,
+      sender_name: ownerName,
+      credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
+      token_file: `./data/tokens/${clientId}-gmail-${tokenAccount}.token.enc`,
+    };
+  }
+  return {
+    account,
+    sender_name: ownerName,
+    client_id_env: "MICROSOFT_CLIENT_ID",
+    client_secret_env: "MICROSOFT_CLIENT_SECRET",
+    tenant_id: "consumers",
+    token_file: `./data/tokens/${clientId}-hotmail-${tokenAccount}.token.enc`,
+  };
+}
+
+function nextAccountName(provider: Provider, accounts: MailAccount[]): string {
+  if (accounts.length === 0) return "main";
+  const prefix = provider === "gmail" ? "gmail" : "hotmail";
+  let index = accounts.length + 1;
+  while (accounts.some((item) => item.account === `${prefix}-${index}`)) index += 1;
+  return `${prefix}-${index}`;
+}
+
+function safeAccountName(account: string): string {
+  return account.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "main";
 }

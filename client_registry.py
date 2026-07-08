@@ -19,8 +19,9 @@ def registry_file(settings: dict) -> str:
 def merge_registered_clients(settings: dict) -> dict:
     """Merge registered clients into settings.
 
-    Static clients from config/settings.yaml keep priority. Dynamic clients make
-    onboarding usable without editing code or committing customer config.
+    Dynamic clients are refreshed from disk every time this function is called.
+    This lets the frontend add new mail accounts while the worker is already
+    running; the next polling cycle sees the updated account list.
     """
     path = Path(registry_file(settings))
     if not path.exists():
@@ -29,7 +30,7 @@ def merge_registered_clients(settings: dict) -> dict:
     dynamic_clients = data.get("clients", {}) or {}
     settings.setdefault("clients", {})
     for client_id, client_cfg in dynamic_clients.items():
-        settings["clients"].setdefault(client_id, client_cfg)
+        settings["clients"][client_id] = client_cfg
     return settings
 
 

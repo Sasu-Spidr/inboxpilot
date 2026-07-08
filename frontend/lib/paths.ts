@@ -11,8 +11,13 @@ export function dataPath(...parts: string[]): string {
 
 export function tokenExists(clientId: string, provider: "gmail" | "hotmail"): boolean {
   const file = provider === "gmail" ? `${clientId}-gmail-main.token.enc` : `${clientId}-hotmail-main.token.enc`;
+  return tokenFileExists(dataPath("tokens", file));
+}
+
+export function tokenFileExists(tokenFile: string): boolean {
+  const file = tokenFile.startsWith("./data/") ? dataPath(tokenFile.replace("./data/", "")) : tokenFile;
   try {
-    return fs.existsSync(dataPath("tokens", file));
+    return fs.existsSync(file);
   } catch {
     return false;
   }
