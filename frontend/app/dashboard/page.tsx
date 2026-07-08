@@ -30,8 +30,8 @@ export default async function Dashboard() {
           <p className="eyebrow">Espace client</p>
           <h1>Bonjour {user.ownerName}</h1>
           <p>
-            Connectez vos boîtes mail. L'agent traite ensuite les nouveaux emails en arrière-plan :
-            tri, labels et brouillons prêts à valider.
+            Connectez vos boîtes mail. L'agent traite ensuite les nouveaux emails non lus en arrière-plan :
+            tri, libellés et brouillons selon vos paramètres.
           </p>
         </div>
       </section>
@@ -40,13 +40,13 @@ export default async function Dashboard() {
         <MailCard
           providerKey="gmail"
           provider="Gmail"
-          description="Connectez un ou plusieurs comptes Google pour lire les emails non lus, appliquer les labels et créer les brouillons."
+          description="Connectez un ou plusieurs comptes Google. L'agent analyse les emails non lus, applique les libellés et prépare les brouillons selon vos réglages."
           accounts={gmailAccounts}
         />
         <MailCard
           providerKey="hotmail"
           provider="Hotmail / Outlook"
-          description="Connectez un ou plusieurs comptes Microsoft pour classer Outlook/Hotmail avec les catégories et brouillons."
+          description="Connectez un ou plusieurs comptes Microsoft. L'agent classe Outlook/Hotmail avec les catégories et prépare les brouillons selon vos réglages."
           accounts={hotmailAccounts}
         />
       </section>
@@ -54,11 +54,11 @@ export default async function Dashboard() {
       <section className="info-panel">
         <h2>Ce que fait l'agent</h2>
         <ul>
-          <li>Lit uniquement les nouveaux emails non lus.</li>
+          <li>Analyse uniquement les nouveaux emails non lus, sans les marquer comme lus.</li>
           <li>Classe automatiquement avec l'IA.</li>
-          <li>Applique les labels Gmail ou catégories Outlook.</li>
-          <li>Crée un brouillon lorsque c'est nécessaire.</li>
-          <li>Réponses et suppressions selon les paramètres définis par vous.</li>
+          <li>Applique les libellés Gmail ou les catégories Outlook.</li>
+          <li>Prépare un brouillon lorsque vos paramètres le demandent.</li>
+          <li>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</li>
         </ul>
       </section>
     </main>
@@ -99,9 +99,15 @@ function MailCard({
                 <strong>{account.email_address || (account.account === "main" ? "Compte principal" : account.account)}</strong>
                 <span>{accountConnected ? "Agent actif sur cette boîte" : "Connexion à finaliser"}</span>
               </div>
-              <a href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
-                {accountConnected ? "Reconnecter" : "Connecter"}
-              </a>
+              {accountConnected ? (
+                <form action={`/api/accounts/disconnect/${providerKey}?account=${encodeURIComponent(account.account)}`} method="post">
+                  <button className="account-action danger" type="submit">Déconnexion</button>
+                </form>
+              ) : (
+                <a className="account-action" href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
+                  Connecter
+                </a>
+              )}
             </div>
           );
         })}

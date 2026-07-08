@@ -557,15 +557,39 @@ input {
   font-size: 0.76rem;
 }
 
-.dashboard-shell .account-item a {
+.dashboard-shell .account-item form {
   flex-shrink: 0;
+  margin: 0;
+}
+
+.dashboard-shell .account-action {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
   color: var(--accent);
   font-size: 0.82rem;
   font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
 }
 
-.dashboard-shell .account-item a:hover {
+.dashboard-shell .account-action:hover {
   color: var(--accent-deep);
+}
+
+.dashboard-shell .account-action.danger {
+  color: #b42318;
+}
+
+.dashboard-shell .account-action.danger:hover {
+  color: #7a271a;
+}
+
+.dashboard-shell .account-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .dashboard-shell .primary-link {

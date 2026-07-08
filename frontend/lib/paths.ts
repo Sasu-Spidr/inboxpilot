@@ -15,10 +15,14 @@ export function tokenExists(clientId: string, provider: "gmail" | "hotmail"): bo
 }
 
 export function tokenFileExists(tokenFile: string): boolean {
-  const file = tokenFile.startsWith("./data/") ? dataPath(tokenFile.replace("./data/", "")) : tokenFile;
+  const file = resolveTokenFilePath(tokenFile);
   try {
     return fs.existsSync(file);
   } catch {
     return false;
   }
+}
+
+export function resolveTokenFilePath(tokenFile: string): string {
+  return tokenFile.startsWith("./data/") ? dataPath(tokenFile.replace("./data/", "")) : tokenFile;
 }
