@@ -9,14 +9,24 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
 
   return (
     <main className="auth-shell">
-      <section className="hero-card">
-        <div className="brand-pill">InboxPilot</div>
-        <h1>Connectez vos boîtes mail. Laissez l'agent trier le reste.</h1>
-        <p>
-          Gmail et Outlook connectés proprement, emails classés, labels appliqués et brouillons prêts à relire.
-          Aucun email n'est envoyé automatiquement.
-        </p>
-        <div className="feature-grid">
+      <section className="hero-card" aria-label="Présentation InboxPilot">
+        <div className="brand-pill">
+          <span className="brand-icon" aria-hidden="true">◆</span>
+          <span>InboxPilot</span>
+        </div>
+
+        <div className="hero-copy">
+          <p className="eyebrow">Agent email autonome</p>
+          <h1>
+            Connectez vos boîtes. <span>L'agent trie le reste.</span>
+          </h1>
+          <p>
+            Gmail et Outlook connectés proprement : emails classés, libellés appliqués,
+            brouillons prêts à relire. Les actions suivent vos paramètres.
+          </p>
+        </div>
+
+        <div className="feature-grid" aria-label="Fonctionnalités principales">
           <span>Gmail OAuth</span>
           <span>Hotmail / Outlook</span>
           <span>Brouillons IA</span>
@@ -35,11 +45,14 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <input name="email" type="email" placeholder="jean@entreprise.fr" required />
             <label>Mot de passe</label>
             <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
-            <button type="submit">Créer et continuer</button>
+            <button type="submit">Créer et continuer →</button>
+            <p className="form-switch">
+              Déjà inscrit ? <a href="#connexion">Se connecter</a>
+            </p>
           </form>
 
-          <form action="/api/auth/login" method="post" className="form-card secondary">
-            <h2>Déjà inscrit</h2>
+          <form id="connexion" action="/api/auth/login" method="post" className="form-card secondary">
+            <h2>Se connecter</h2>
             <label>Email</label>
             <input name="email" type="email" placeholder="jean@entreprise.fr" required />
             <label>Mot de passe</label>
