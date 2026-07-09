@@ -493,10 +493,10 @@ input {
 }
 
 .dashboard-shell .mail-card:nth-of-type(2) .mail-icon {
-  background: var(--outlook-blue-bg);
+  background: #ffffff;
   color: var(--outlook-blue);
-  border-color: transparent;
-  box-shadow: none;
+  border-color: var(--border);
+  box-shadow: 0 10px 24px -18px rgba(20, 20, 26, 0.42);
 }
 
 .dashboard-shell .status {
