@@ -6,7 +6,23 @@ import type { ActivityEvent, DashboardActivity } from "@/lib/dashboardActivity";
 
 type ActivityPayload = {
   connectedMailboxes: number;
+  providers?: ProviderSummaries;
   activity: DashboardActivity;
+};
+
+type ProviderSummary = {
+  connectedCount: number;
+  accounts: string[];
+};
+
+type ProviderSummaries = {
+  gmail: ProviderSummary;
+  hotmail: ProviderSummary;
+};
+
+const EMPTY_PROVIDERS: ProviderSummaries = {
+  gmail: { connectedCount: 0, accounts: [] },
+  hotmail: { connectedCount: 0, accounts: [] },
 };
 
 export default function AgentActivityMonitor({
@@ -54,6 +70,7 @@ export default function AgentActivityMonitor({
   }, []);
 
   const { connectedMailboxes, activity } = payload;
+  const providers = payload.providers || EMPTY_PROVIDERS;
 
   return (
     <section className="agent-live-panel">
@@ -69,6 +86,19 @@ export default function AgentActivityMonitor({
           <StatCard value={String(activity.drafts7d)} label="Brouillons préparés" />
           <StatCard value={String(activity.trashed7d)} label="Suppressions auto" />
         </div>
+      </section>
+
+      <section className="provider-health-grid" aria-label="État des boîtes connectées">
+        <ProviderHealthCard
+          name="Gmail"
+          summary={providers.gmail}
+          emptyText="Aucun compte Gmail connecté."
+        />
+        <ProviderHealthCard
+          name="Outlook / Hotmail"
+          summary={providers.hotmail}
+          emptyText="Aucun compte Outlook connecté."
+        />
       </section>
 
       <RecentActivity events={activity.recent} />
@@ -119,6 +149,40 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
         </div>
       )}
     </section>
+  );
+}
+
+function ProviderHealthCard({
+  name,
+  summary,
+  emptyText,
+}: {
+  name: string;
+  summary: ProviderSummary;
+  emptyText: string;
+}) {
+  const connected = summary.connectedCount > 0;
+
+  return (
+    <article className={connected ? "provider-health connected" : "provider-health pending"}>
+      <div>
+        <span className="provider-health-dot" />
+        <strong>{name}</strong>
+      </div>
+      <p>
+        {connected
+          ? `${summary.connectedCount} boîte${summary.connectedCount > 1 ? "s" : ""} active${summary.connectedCount > 1 ? "s" : ""}`
+          : emptyText}
+      </p>
+      {connected && (
+        <ul>
+          {summary.accounts.slice(0, 3).map((account) => (
+            <li key={account}>{account}</li>
+          ))}
+          {summary.accounts.length > 3 && <li>+{summary.accounts.length - 3} autre(s)</li>}
+        </ul>
+      )}
+    </article>
   );
 }
 
