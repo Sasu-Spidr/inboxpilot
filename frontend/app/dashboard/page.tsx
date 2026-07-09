@@ -46,9 +46,9 @@ export default async function Dashboard() {
           <p>{agentStatusText(connectedMailboxes, activity.totalProcessed7d)}</p>
         </div>
         <div className="stats-grid">
-          <StatCard value={String(connectedMailboxes)} label="BoÃ®tes connectÃ©es" />
-          <StatCard value={String(activity.totalProcessed7d)} label="Emails classÃ©s / 7 jours" />
-          <StatCard value={String(activity.drafts7d)} label="Brouillons prÃ©parÃ©s" />
+          <StatCard value={String(connectedMailboxes)} label="Boîtes connectées" />
+          <StatCard value={String(activity.totalProcessed7d)} label="Emails classés / 7 jours" />
+          <StatCard value={String(activity.drafts7d)} label="Brouillons préparés" />
           <StatCard value={String(activity.trashed7d)} label="Suppressions auto" />
         </div>
       </section>
@@ -98,8 +98,8 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
     <section className="activity-panel">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">ActivitÃ© rÃ©cente</p>
-          <h2>Ce que l'agent a traitÃ©</h2>
+          <p className="eyebrow">Activité récente</p>
+          <h2>Ce que l'agent a traité</h2>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
               </div>
               <div className="activity-content">
                 <strong>{event.subject || "Sans objet"}</strong>
-                <span>{event.sender || "ExpÃ©diteur inconnu"}</span>
+                <span>{event.sender || "Expéditeur inconnu"}</span>
               </div>
               <div className="activity-meta">
                 <span className="activity-label">{event.label}</span>
@@ -123,8 +123,8 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
         </div>
       ) : (
         <div className="activity-empty">
-          <strong>Aucune activitÃ© pour le moment.</strong>
-          <p>DÃ¨s que de nouveaux emails non lus seront traitÃ©s, ils apparaÃ®tront ici avec le libellÃ© et l'action appliquÃ©e.</p>
+          <strong>Aucune activité pour le moment.</strong>
+          <p>Dès que de nouveaux emails non lus seront traités, ils apparaîtront ici avec le libellé et l'action appliquée.</p>
         </div>
       )}
     </section>
@@ -132,23 +132,23 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
 }
 
 function agentStatusTitle(connectedMailboxes: number, totalProcessed7d: number): string {
-  if (!connectedMailboxes) return "Connectez une boÃ®te mail pour activer l'agent.";
-  if (!totalProcessed7d) return "L'agent est actif et prÃªt Ã  classer les prochains emails.";
-  return `L'agent a classÃ© ${totalProcessed7d} email${totalProcessed7d > 1 ? "s" : ""} cette semaine.`;
+  if (!connectedMailboxes) return "Connectez une boîte mail pour activer l'agent.";
+  if (!totalProcessed7d) return "L'agent est actif et prêt à classer les prochains emails.";
+  return `L'agent a classé ${totalProcessed7d} email${totalProcessed7d > 1 ? "s" : ""} cette semaine.`;
 }
 
 function agentStatusText(connectedMailboxes: number, totalProcessed7d: number): string {
   if (!connectedMailboxes) return "Ajoutez Gmail ou Outlook pour lancer automatiquement le tri des nouveaux emails non lus.";
-  const mailboxText = `${connectedMailboxes} boÃ®te${connectedMailboxes > 1 ? "s" : ""} mail connectÃ©e${connectedMailboxes > 1 ? "s" : ""}`;
-  if (!totalProcessed7d) return `${mailboxText}. InboxPilot attend les prochains emails non lus pour appliquer vos libellÃ©s et vos rÃ¨gles.`;
+  const mailboxText = `${connectedMailboxes} boîte${connectedMailboxes > 1 ? "s" : ""} mail connectée${connectedMailboxes > 1 ? "s" : ""}`;
+  if (!totalProcessed7d) return `${mailboxText}. InboxPilot attend les prochains emails non lus pour appliquer vos libellés et vos règles.`;
   return `${mailboxText}. InboxPilot continue d'analyser uniquement les nouveaux emails non lus, sans les marquer comme lus.`;
 }
 
 function actionLabel(event: ActivityEvent): string {
-  if (event.draft_created || event.action === "draft") return "Brouillon prÃ©parÃ©";
-  if (event.action === "trash") return "SupprimÃ© selon vos rÃ¨gles";
-  if (event.action === "archive") return "ArchivÃ©";
-  return "LibellÃ© appliquÃ©";
+  if (event.draft_created || event.action === "draft") return "Brouillon préparé";
+  if (event.action === "trash") return "Supprimé selon vos règles";
+  if (event.action === "archive") return "Archivé";
+  return "Libellé appliqué";
 }
 
 function MailCard({
