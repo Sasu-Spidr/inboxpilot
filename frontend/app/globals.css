@@ -1669,6 +1669,565 @@ input {
   }
 }
 
+/* Premium settings redesign */
+
+.settings-shell {
+  --bg: #fcfcfb;
+  --surface: #ffffff;
+  --surface-tint: #fcfcfb;
+  --border: #e8ecef;
+  --border-strong: #dfe5e9;
+  --text: #111827;
+  --text-strong: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --accent: #14b8a6;
+  --accent-deep: #0f9d8a;
+  --accent-darker: #0f8f83;
+  --accent-soft: #eafbfb;
+  --success: #159a62;
+  --success-soft: #eaf9f2;
+  --outlook-blue: #0a6cff;
+  --shadow-soft: 0 18px 50px rgba(15, 23, 42, 0.06);
+
+  gap: 1.5rem;
+  background:
+    radial-gradient(720px 320px at 82% 0%, rgba(20, 184, 166, 0.08), transparent 60%),
+    var(--bg);
+}
+
+.settings-shell > * {
+  max-width: 1280px;
+}
+
+.settings-shell .topbar {
+  margin-bottom: 1.2rem;
+}
+
+.settings-shell .view-switcher {
+  border-color: #edf0f2;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+}
+
+.settings-shell .view-switcher a.active {
+  background: linear-gradient(180deg, #18c1ac 0%, #0f9d8a 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 30px rgba(15, 157, 138, 0.26);
+}
+
+.settings-shell .settings-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  align-items: center;
+  min-height: 290px;
+  margin-bottom: 0;
+  padding: clamp(2rem, 4vw, 3rem);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background:
+    linear-gradient(90deg, #ffffff 0%, #f7fefe 55%, #ecfcfb 100%);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.settings-shell .settings-hero .eyebrow,
+.settings-shell .settings-toolbar .eyebrow,
+.settings-shell .agent-live-panel .eyebrow {
+  margin: 0 0 0.8rem;
+  color: var(--accent-deep);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.settings-shell .settings-hero h1 {
+  max-width: 12ch;
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-family: "Geist", sans-serif;
+  font-size: clamp(2.9rem, 6vw, 4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.settings-shell .settings-hero p:not(.eyebrow) {
+  max-width: 53ch;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.8;
+}
+
+.settings-shell .settings-hero-visual {
+  min-height: 210px;
+}
+
+.settings-shell .settings-hero-visual .hero-tile {
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+}
+
+.settings-shell .success-banner {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(21, 154, 98, 0.18);
+  border-radius: 18px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-shell .agent-live-panel {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+}
+
+.settings-shell .agent-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 1fr);
+  gap: 24px;
+}
+
+.settings-shell .agent-status-card,
+.settings-shell .stat-card,
+.settings-shell .provider-health,
+.settings-shell .activity-panel,
+.settings-shell .settings-panel {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-shell .agent-status-card {
+  min-height: 220px;
+  padding: 32px;
+}
+
+.settings-shell .agent-status-card h2 {
+  max-width: 16ch;
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-family: "Geist", sans-serif;
+  font-size: clamp(2rem, 3vw, 2.65rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.settings-shell .agent-status-card p {
+  max-width: 60ch;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.settings-shell .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.settings-shell .stat-card {
+  min-height: 102px;
+  padding: 22px;
+  border-radius: 18px;
+}
+
+.settings-shell .stat-card strong {
+  color: var(--text);
+  font-family: "Geist", sans-serif;
+  font-size: 2.15rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.settings-shell .stat-card span {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-shell .provider-health-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.settings-shell .provider-health {
+  gap: 0.85rem;
+  padding: 24px;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.settings-shell .provider-health:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  box-shadow: 0 24px 62px rgba(15, 23, 42, 0.075);
+}
+
+.settings-shell .provider-health.connected {
+  border-color: rgba(20, 184, 166, 0.18);
+  background: var(--surface);
+}
+
+.settings-shell .provider-health > div {
+  gap: 0.7rem;
+}
+
+.settings-shell .provider-health strong {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-shell .provider-health p,
+.settings-shell .provider-health li {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.settings-shell .provider-health li {
+  background: var(--surface-tint);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.settings-shell .activity-panel {
+  padding: 28px;
+}
+
+.settings-shell .section-heading h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-shell .activity-item {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  padding: 1rem;
+  border-color: var(--border);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.settings-shell .activity-provider {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  background: #f8ffff;
+}
+
+.settings-shell .activity-label {
+  background: #eef8ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-shell .activity-empty {
+  border-color: var(--border);
+  border-radius: 18px;
+  background: var(--surface-tint);
+}
+
+.settings-shell .settings-panel {
+  padding: 32px;
+}
+
+.settings-shell .settings-toolbar {
+  position: sticky;
+  top: 1rem;
+  z-index: 4;
+  margin-bottom: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.settings-shell .settings-toolbar strong {
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.settings-shell .settings-toolbar span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-shell .settings-toolbar button {
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #18c1ac 0%, #0f9d8a 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 16px 34px rgba(15, 157, 138, 0.22);
+}
+
+.settings-shell .settings-toolbar button:hover {
+  background: linear-gradient(180deg, #14b8a6 0%, #0f8f83 100%);
+  box-shadow: 0 20px 42px rgba(15, 157, 138, 0.28);
+}
+
+.settings-shell .settings-list {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-shell .settings-row {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.settings-shell .settings-row summary {
+  list-style: none;
+}
+
+.settings-shell .settings-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-shell .settings-row-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 82px;
+  padding: 20px 24px;
+  cursor: pointer;
+}
+
+.settings-shell .settings-row-summary::after {
+  content: "⌄";
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  background: #f7f8f8;
+  transition: transform 0.16s ease;
+}
+
+.settings-shell .settings-row[open] .settings-row-summary::after {
+  transform: rotate(180deg);
+}
+
+.settings-shell .label-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.settings-shell .label-color-dot {
+  width: 16px;
+  height: 16px;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+
+.settings-shell .label-preview strong {
+  display: block;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.settings-shell .label-preview small {
+  display: block;
+  max-width: 76ch;
+  margin-top: 0.22rem;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-shell .active-rules-count {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-shell .settings-row-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 18px 24px;
+  padding: 0 24px 24px;
+}
+
+.settings-shell .setting-field {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.settings-shell .setting-field input,
+.settings-shell .setting-field textarea {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 0.55rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: #fcfbf8;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.settings-shell .setting-field input:focus,
+.settings-shell .setting-field textarea:focus {
+  border-color: rgba(20, 184, 166, 0.62);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
+}
+
+.settings-shell .setting-field textarea {
+  min-height: 88px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.settings-shell .description-field {
+  grid-column: 1 / -1;
+}
+
+.settings-shell .color-field input {
+  height: 52px;
+  padding: 0.35rem;
+}
+
+.settings-shell .toggle-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-shell .toggle-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 48px;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fcfbf8;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-shell .toggle-grid input {
+  accent-color: var(--accent);
+}
+
+.settings-shell .settings-actions {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.settings-shell .settings-actions p {
+  max-width: 780px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 980px) {
+  .settings-shell .settings-hero,
+  .settings-shell .agent-overview,
+  .settings-shell .provider-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-shell .settings-hero-visual {
+    min-height: 180px;
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-shell .settings-hero,
+  .settings-shell .settings-panel,
+  .settings-shell .agent-status-card,
+  .settings-shell .activity-panel {
+    padding: 22px;
+  }
+
+  .settings-shell .settings-hero h1 {
+    font-size: clamp(2.3rem, 11vw, 3.1rem);
+  }
+
+  .settings-shell .settings-hero p:not(.eyebrow) {
+    font-size: 1rem;
+  }
+
+  .settings-shell .settings-toolbar {
+    position: static;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-shell .settings-toolbar button {
+    width: 100%;
+  }
+
+  .settings-shell .settings-row-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-shell .active-rules-count {
+    margin-left: 0;
+  }
+
+  .settings-shell .settings-row-body,
+  .settings-shell .toggle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-shell .label-preview small {
+    white-space: normal;
+  }
+
+  .settings-shell .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .auth-shell *,
   .dashboard-shell * {
