@@ -2234,3 +2234,188 @@ input {
     transition: none !important;
   }
 }
+
+/* Settings emergency layout fix: stable, centered, responsive */
+
+.settings-shell.dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 1rem clamp(1rem, 4vw, 3rem) 3rem;
+}
+
+.settings-shell.dashboard-shell > * {
+  width: min(100%, 1180px);
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.settings-shell .topbar {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 0;
+  margin-bottom: 1rem;
+}
+
+.settings-shell .settings-hero {
+  width: min(100%, 1180px);
+  min-height: 260px;
+}
+
+.settings-shell .agent-live-panel {
+  width: min(100%, 1180px);
+}
+
+.settings-shell .agent-overview {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.85fr);
+  align-items: stretch;
+}
+
+.settings-shell .provider-health-grid,
+.settings-shell .activity-panel,
+.settings-shell .settings-panel {
+  width: 100%;
+}
+
+.settings-shell .settings-panel {
+  align-self: center;
+}
+
+.settings-shell .settings-list {
+  grid-template-columns: 1fr;
+}
+
+.settings-shell .settings-row {
+  min-height: 0;
+}
+
+.settings-shell .settings-row:not([open]) .settings-row-summary {
+  min-height: 72px;
+}
+
+.settings-shell .settings-row:not([open]) .label-preview small {
+  max-width: min(70vw, 760px);
+}
+
+.settings-shell .settings-row-summary {
+  min-width: 0;
+}
+
+.settings-shell .label-preview {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-shell .label-preview > span:last-child {
+  min-width: 0;
+}
+
+.settings-shell .settings-row-body {
+  grid-template-columns: minmax(0, 1fr) 160px;
+}
+
+@media (min-width: 1180px) {
+  .settings-shell .settings-hero h1 {
+    font-size: 4rem;
+  }
+}
+
+@media (max-width: 1040px) {
+  .settings-shell .settings-hero,
+  .settings-shell .agent-overview,
+  .settings-shell .provider-health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-shell .settings-hero-visual {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .settings-shell.dashboard-shell {
+    padding: 0.75rem 0.75rem 2rem;
+  }
+
+  .settings-shell .view-switcher {
+    width: 100%;
+  }
+
+  .settings-shell .view-switcher a {
+    flex: 1;
+    height: 44px;
+    padding-inline: 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .settings-shell .settings-hero {
+    min-height: auto;
+    padding: 1.45rem;
+  }
+
+  .settings-shell .settings-hero h1 {
+    max-width: 10ch;
+    font-size: clamp(2.3rem, 13vw, 3rem);
+  }
+
+  .settings-shell .agent-status-card,
+  .settings-shell .stat-card,
+  .settings-shell .provider-health,
+  .settings-shell .activity-panel,
+  .settings-shell .settings-panel {
+    border-radius: 20px;
+  }
+
+  .settings-shell .agent-overview,
+  .settings-shell .stats-grid,
+  .settings-shell .provider-health-grid {
+    gap: 0.9rem;
+  }
+
+  .settings-shell .activity-item {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .settings-shell .activity-meta {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+    padding-left: 46px;
+    text-align: left;
+  }
+
+  .settings-shell .settings-toolbar {
+    position: static;
+    padding: 1rem;
+  }
+
+  .settings-shell .settings-row-summary {
+    padding: 1rem;
+  }
+
+  .settings-shell .settings-row-body {
+    grid-template-columns: 1fr;
+    padding: 0 1rem 1rem;
+  }
+
+  .settings-shell .toggle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 460px) {
+  .settings-shell .settings-hero p:not(.eyebrow),
+  .settings-shell .agent-status-card p {
+    font-size: 0.95rem;
+  }
+
+  .settings-shell .agent-status-card h2 {
+    font-size: 1.9rem;
+  }
+
+  .settings-shell .settings-toolbar button {
+    min-height: 52px;
+  }
+}
