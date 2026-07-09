@@ -9,6 +9,7 @@ from typing import Any
 
 import yaml
 
+from activity_store import record_email_activity
 from client_settings import action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients
 from classifier import EmailClassifier
@@ -157,6 +158,7 @@ class MailWorker:
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
             self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created)
+            record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action=action, draft_created=draft_created)
             return True
         except Exception as exc:
             self.state.remove(client_id, connector_name, account, message_id)
