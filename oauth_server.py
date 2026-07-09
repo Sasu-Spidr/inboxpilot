@@ -364,11 +364,34 @@ def render_auth_required() -> str:
     )
 
 
+def provider_logo(provider_class: str) -> str:
+    if provider_class == "outlook":
+        return """
+        <svg viewBox="0 0 64 64" role="img" aria-label="Logo Outlook" focusable="false">
+          <rect x="24" y="12" width="30" height="38" rx="6" fill="#28a8ea"/>
+          <path d="M24 18h27a5 5 0 0 1 5 5v2L39 37 24 27z" fill="#0078d4"/>
+          <path d="M24 27l15 10 17-12v21a5 5 0 0 1-5 5H24z" fill="#50d9ff"/>
+          <rect x="8" y="21" width="28" height="28" rx="6" fill="#0a5db3"/>
+          <text x="22" y="40" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Arial, sans-serif">O</text>
+        </svg>
+        """
+    return """
+    <svg viewBox="0 0 64 64" role="img" aria-label="Logo Gmail" focusable="false">
+      <rect x="8" y="14" width="48" height="36" rx="8" fill="#fff"/>
+      <path d="M13 18l19 15 19-15v8L32 41 13 26z" fill="#ea4335"/>
+      <path d="M8 22v22a6 6 0 0 0 6 6h7V32z" fill="#4285f4"/>
+      <path d="M56 22v22a6 6 0 0 1-6 6h-7V32z" fill="#34a853"/>
+      <path d="M43 32l13-10v-2a6 6 0 0 0-9.6-4.8L32 26z" fill="#fbbc04"/>
+      <path d="M21 32L8 22v-2a6 6 0 0 1 9.6-4.8L32 26z" fill="#c5221f"/>
+    </svg>
+    """
+
+
 def success_page(provider: str, client_id: str, account: str, email: str = "") -> str:
     return_url = f"{frontend_url().rstrip('/')}/dashboard"
     connected_identity = email or account
     provider_class = "outlook" if "outlook" in provider.lower() or "hotmail" in provider.lower() else "gmail"
-    provider_initial = "O" if provider_class == "outlook" else "G"
+    logo = provider_logo(provider_class)
     return page(
         f"Connexion {escape(provider)} réussie",
         f"""
@@ -380,7 +403,7 @@ def success_page(provider: str, client_id: str, account: str, email: str = "") -
               <span class="success-badge">Connexion réussie</span>
             </div>
             <div class="success-icon {provider_class}" aria-hidden="true">
-              <span>{provider_initial}</span>
+              {logo}
             </div>
             <h1>Votre boîte mail est connectée.</h1>
             <p class="success-lead">
@@ -561,6 +584,8 @@ def page(title: str, body: str) -> str:
     }}
 
     .button {{
+      position: relative;
+      overflow: hidden;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -573,12 +598,13 @@ def page(title: str, body: str) -> str:
       font-size: 0.94rem;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      transition: transform 0.16s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     }}
 
     .button:hover {{
       background: var(--surface-tint);
       border-color: rgba(15, 15, 20, 0.24);
+      transform: translateY(-2px);
     }}
 
     .button:active {{ transform: translateY(1px); }}
@@ -590,9 +616,23 @@ def page(title: str, body: str) -> str:
       box-shadow: 0 12px 28px -14px rgba(13, 148, 136, 0.62);
     }}
 
+    .button.primary::after {{
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.18) 38%, transparent 68%);
+      transform: translateX(-130%);
+      transition: transform 0.45s ease;
+    }}
+
     .button.primary:hover {{
       background: var(--brand-deep);
       border-color: var(--brand-deep);
+    }}
+
+    .button.primary:hover::after {{
+      transform: translateX(130%);
     }}
 
     .grid {{
@@ -680,8 +720,8 @@ def page(title: str, body: str) -> str:
       width: 0.58rem;
       height: 0.58rem;
       border-radius: 999px;
-      background: #3589e9;
-      box-shadow: 0 0 0 5px rgba(53, 137, 233, 0.12);
+      background: #0d9488;
+      box-shadow: 0 0 0 5px rgba(13, 148, 136, 0.12);
     }}
 
     .success-badge {{
@@ -703,19 +743,24 @@ def page(title: str, body: str) -> str:
       width: 68px;
       height: 68px;
       margin-bottom: 1.35rem;
+      border: 1px solid rgba(15, 15, 20, 0.08);
       border-radius: 22px;
-      color: #fff;
-      font-size: 1.45rem;
-      font-weight: 900;
+      background: rgba(255, 255, 255, 0.88);
       box-shadow: 0 18px 38px -24px rgba(20, 20, 26, 0.5);
     }}
 
+    .success-icon svg {{
+      width: 52px;
+      height: 52px;
+      display: block;
+    }}
+
     .success-icon.gmail {{
-      background: linear-gradient(135deg, #ea4335, #fbbc04 42%, #34a853 72%, #4285f4);
+      box-shadow: 0 18px 38px -24px rgba(234, 67, 53, 0.55);
     }}
 
     .success-icon.outlook {{
-      background: linear-gradient(135deg, #50d9ff, #2563eb 58%, #0a5db3);
+      box-shadow: 0 18px 38px -24px rgba(0, 120, 212, 0.55);
     }}
 
     .success-card h1 {{
@@ -767,14 +812,15 @@ def page(title: str, body: str) -> str:
     }}
 
     .success-actions .button.primary {{
-      background: #3589e9;
-      border-color: #3589e9;
-      box-shadow: 0 16px 34px -18px rgba(53, 137, 233, 0.72);
+      background: #0d9488;
+      border-color: #0d9488;
+      box-shadow: 0 16px 34px -18px rgba(13, 148, 136, 0.72);
     }}
 
     .success-actions .button.primary:hover {{
-      background: #1d6ed2;
-      border-color: #1d6ed2;
+      background: #0f766e;
+      border-color: #0f766e;
+      box-shadow: 0 18px 38px -18px rgba(13, 148, 136, 0.8);
     }}
 
     .success-actions span {{
