@@ -14,16 +14,13 @@ export default async function Dashboard() {
   return (
     <main className="dashboard-shell">
       <nav className="topbar">
-        <div>
-          <strong>InboxPilot</strong>
-        </div>
         <div className="view-switcher" aria-label="Navigation principale">
           <a className="active" href="/dashboard" aria-current="page">Vue d'ensemble</a>
           <a href="/settings">Configuration IA</a>
         </div>
         <div className="topbar-actions">
           <form action="/api/auth/logout" method="post">
-            <button className="ghost-button" type="submit">Déconnexion</button>
+            <button className="ghost-button" type="submit">Déconnexion <span aria-hidden="true">↪</span></button>
           </form>
         </div>
       </nav>
@@ -31,11 +28,25 @@ export default async function Dashboard() {
       <section className="dashboard-hero single">
         <div>
           <p className="eyebrow">Espace client</p>
-          <h1>Bonjour {user.ownerName}</h1>
+          <h1>Bonjour <span>{user.ownerName}</span></h1>
           <p>
-            Connectez vos boîtes mail. L'agent traite ensuite les nouveaux emails non lus en arrière-plan :
-            tri, libellés et brouillons selon vos paramètres.
+            Connectez vos boîtes mail. L'agent trie et route les nouveaux emails selon vos paramètres
+            en les classant et en effectuant des actions à votre place.
           </p>
+        </div>
+        <div className="hero-visual" aria-hidden="true">
+          <div className="hero-orbit"></div>
+          <div className="hero-tile hero-tile-mail">
+            <svg viewBox="0 0 64 64" focusable="false">
+              <rect x="10" y="16" width="44" height="32" rx="8" fill="#14B8A6" opacity="0.15" />
+              <path d="M15 23.5h34v21H15z" fill="#14B8A6" />
+              <path d="M15 23.5 32 36l17-12.5" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div className="hero-tile hero-tile-outlook">
+            <ProviderIcon providerKey="hotmail" fallback="O" />
+          </div>
+          <div className="hero-check">✓</div>
         </div>
       </section>
 
@@ -43,13 +54,13 @@ export default async function Dashboard() {
         <MailCard
           providerKey="gmail"
           provider="Gmail"
-          description="Connectez un ou plusieurs comptes Google. L'agent analyse les emails non lus, applique les libellés et prépare les brouillons selon vos réglages."
+          description="Connecté à un ou plusieurs comptes Google. L'agent analyse les emails reçus, les étiquette, les trie et propose les brouillons selon vos règles."
           accounts={gmailAccounts}
         />
         <MailCard
           providerKey="hotmail"
           provider="Hotmail / Outlook"
-          description="Connectez un ou plusieurs comptes Microsoft. L'agent classe Outlook/Hotmail avec les catégories et prépare les brouillons selon vos réglages."
+          description="Connecté à un ou plusieurs comptes Microsoft. L'agent classe et organise les emails avec des catégories et prépare des brouillons selon vos règles."
           accounts={hotmailAccounts}
         />
       </section>
@@ -60,7 +71,8 @@ export default async function Dashboard() {
           <li>Analyse uniquement les nouveaux emails non lus, sans les marquer comme lus.</li>
           <li>Classe automatiquement avec l'IA.</li>
           <li>Applique les libellés Gmail ou les catégories Outlook.</li>
-          <li>Prépare un brouillon lorsque vos paramètres le demandent.</li>
+          <li>Prépare un brouillon réponse ou suggère les prochains pas.</li>
+          <li>Gagne du temps et reste concentré sur l'essentiel.</li>
           <li>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</li>
         </ul>
       </section>
@@ -85,14 +97,16 @@ function MailCard({
   return (
     <article className="mail-card">
       <div className="mail-card-head">
-        <div className="mail-icon">
-          <ProviderIcon providerKey={providerKey} fallback={provider[0]} />
+        <div className="mail-title">
+          <div className="mail-icon">
+            <ProviderIcon providerKey={providerKey} fallback={provider[0]} />
+          </div>
+          <h2>{provider}</h2>
         </div>
         <span className={connected ? "status connected" : "status pending"}>
-          {connected ? `${connectedCount} connecté${connectedCount > 1 ? "s" : ""}` : "Non connecté"}
+          {connected ? "Connecté" : "Non connecté"}
         </span>
       </div>
-      <h2>{provider}</h2>
       <p>{description}</p>
 
       <div className="account-list">
@@ -106,11 +120,11 @@ function MailCard({
               </div>
               {accountConnected ? (
                 <form action={`/api/accounts/disconnect/${providerKey}?account=${encodeURIComponent(account.account)}`} method="post">
-                  <button className="account-action danger" type="submit">Déconnexion</button>
+                  <button className="account-action danger" type="submit">Déconnexion <span aria-hidden="true">↪</span></button>
                 </form>
               ) : (
                 <a className="account-action" href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
-                  Connecter
+                  Connecter <span aria-hidden="true">⊕</span>
                 </a>
               )}
             </div>
@@ -119,7 +133,8 @@ function MailCard({
       </div>
 
       <a className="primary-link" href={`/api/accounts/connect/${providerKey}?new=1`}>
-        Ajouter un autre compte {provider}
+        <span aria-hidden="true">⊕</span>
+        Ajouter un autre compte {provider === "Gmail" ? "Gmail" : "Hotmail / Outlook"}
       </a>
     </article>
   );

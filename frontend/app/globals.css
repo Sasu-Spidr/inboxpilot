@@ -422,109 +422,99 @@ input {
 /* Dashboard */
 
 .dashboard-shell {
-  --bg: #fbfaf8;
+  --bg: #fcfcfb;
   --surface: #ffffff;
-  --surface-tint: #f3f1ec;
-  --border: rgba(15, 15, 20, 0.08);
-  --border-strong: rgba(15, 15, 20, 0.15);
-  --text: #14141a;
-  --text-muted: rgba(20, 20, 26, 0.6);
-  --accent: #0d9488;
-  --accent-deep: #0f766e;
-  --accent-soft: rgba(13, 148, 136, 0.1);
-  --success: #16a34a;
-  --success-soft: rgba(22, 163, 74, 0.1);
+  --surface-tint: #fbfbfa;
+  --border: #eaeaea;
+  --border-strong: #dddddd;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --accent: #14b8a6;
+  --accent-deep: #0f9d8a;
+  --accent-darker: #0f8f83;
+  --accent-soft: #eafbfb;
+  --success: #169c63;
+  --success-soft: #eaf9f2;
   --warning: #b45309;
   --warning-soft: rgba(180, 83, 9, 0.1);
-  --gmail-red: #d23c2f;
-  --gmail-red-bg: rgba(210, 60, 47, 0.08);
-  --outlook-blue: #2563eb;
-  --outlook-blue-bg: rgba(37, 99, 235, 0.08);
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --outlook-blue: #0a6cff;
+  --danger: #dc4c4c;
+  --shadow-soft: 0 18px 50px rgba(15, 23, 42, 0.06);
+  --font-display: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   position: relative;
   min-height: 100dvh;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
-  padding: 1.75rem clamp(1.25rem, 4vw, 3rem) 4rem;
-  overflow: hidden;
+  padding: 1.2rem clamp(1.25rem, 4vw, 3.2rem) 3rem;
+  overflow-x: hidden;
 }
 
 .dashboard-shell > * {
   position: relative;
   z-index: 1;
-  max-width: 1040px;
+  max-width: 1320px;
   margin-inline: auto;
 }
 
 .dashboard-shell .topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.75rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.dashboard-shell .topbar > div {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.dashboard-shell .topbar strong {
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--text);
+  padding-bottom: 1.9rem;
+  margin-bottom: 0;
+  border-bottom: 0;
 }
 
 .dashboard-shell .topbar-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.7rem;
+  grid-column: 3;
 }
 
 .dashboard-shell .view-switcher {
+  grid-column: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.28rem;
+  gap: 0.35rem;
   padding: 0.28rem;
-  border: 1px solid rgba(15, 15, 20, 0.1);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 14px 34px -28px rgba(20, 20, 26, 0.42);
-  backdrop-filter: blur(12px);
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
 }
 
 .dashboard-shell .view-switcher a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 0.58rem 1.25rem;
+  height: 48px;
+  padding: 0 1.45rem;
   border-radius: 999px;
-  color: rgba(20, 20, 26, 0.58);
-  font-size: 0.86rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.14s ease;
 }
 
 .dashboard-shell .view-switcher a:hover {
   color: var(--text);
-  background: rgba(20, 20, 26, 0.04);
+  background: #f9fafb;
   transform: translateY(-1px);
 }
 
 .dashboard-shell .view-switcher a.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #0d9488, #0f766e);
-  box-shadow: 0 10px 22px -14px rgba(13, 148, 136, 0.74);
+  background: linear-gradient(180deg, #18c1ac 0%, #0f8f83 100%);
+  box-shadow: 0 12px 22px rgba(20, 184, 166, 0.22);
 }
 
 .dashboard-shell .view-switcher a:active {
@@ -537,21 +527,28 @@ input {
 }
 
 .dashboard-shell .ghost-button {
-  padding: 0.55rem 1.1rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 48px;
+  padding: 0 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
   background: var(--surface);
-  color: var(--text-muted);
-  font-size: 0.82rem;
+  color: var(--text);
+  font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dashboard-shell .ghost-button:hover {
-  background: var(--surface-tint);
-  border-color: rgba(15, 15, 20, 0.24);
+  background: #ffffff;
+  border-color: var(--border-strong);
   color: var(--text);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
 }
 
 .dashboard-shell .ghost-button:focus-visible {
@@ -561,43 +558,131 @@ input {
 
 .dashboard-shell .dashboard-hero {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
   overflow: hidden;
-  padding: clamp(1.75rem, 3vw, 2.75rem);
-  margin-bottom: 1.5rem;
+  min-height: 280px;
+  padding: clamp(2.15rem, 4vw, 3.3rem);
+  margin-bottom: 1.7rem;
   border-radius: 24px;
   border: 1px solid var(--border);
-  background:
-    radial-gradient(120% 140% at 100% 0%, rgba(13, 148, 136, 0.1), transparent 55%),
-    radial-gradient(90% 100% at 0% 100%, rgba(244, 162, 97, 0.08), transparent 55%),
-    var(--surface);
-  box-shadow: 0 24px 48px -30px rgba(20, 20, 26, 0.16);
+  background: linear-gradient(90deg, #ffffff 0%, #f8ffff 55%, #eafbfb 100%);
+  box-shadow: var(--shadow-soft);
   color: var(--text);
 }
 
+.dashboard-shell .dashboard-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 52%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.38;
+  background:
+    repeating-radial-gradient(circle at 62% 8%, transparent 0 17px, rgba(20, 184, 166, 0.16) 18px 19px, transparent 20px 36px);
+  mask-image: linear-gradient(90deg, transparent, #000 40%, transparent 100%);
+}
+
 .dashboard-shell .dashboard-hero .eyebrow {
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.9rem;
   color: var(--accent-deep);
   font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .dashboard-shell .dashboard-hero h1 {
-  margin: 0 0 0.7rem;
+  margin: 0 0 1rem;
   font-family: var(--font-display);
-  font-size: clamp(1.7rem, 1.6vw + 1rem, 2.2rem);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-size: clamp(2.2rem, 3.6vw, 4.6rem);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.02;
   color: var(--text);
 }
 
+.dashboard-shell .dashboard-hero h1 span {
+  color: var(--accent);
+}
+
 .dashboard-shell .dashboard-hero p {
-  max-width: 56ch;
+  max-width: 58ch;
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.96rem;
-  line-height: 1.7;
+  font-size: 1.05rem;
+  line-height: 1.78;
+}
+
+.dashboard-shell .hero-visual {
+  position: relative;
+  z-index: 1;
+  min-height: 190px;
+}
+
+.dashboard-shell .hero-orbit {
+  position: absolute;
+  inset: 12px 4px auto auto;
+  width: 190px;
+  height: 150px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 45% 25%, rgba(20, 184, 166, 0.14), transparent 34%),
+    radial-gradient(circle at 62% 64%, rgba(10, 108, 255, 0.1), transparent 38%);
+  filter: blur(1px);
+}
+
+.dashboard-shell .hero-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 118px;
+  height: 112px;
+  border: 1px solid rgba(234, 234, 234, 0.8);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-shell .hero-tile svg {
+  width: 54px;
+  height: 54px;
+}
+
+.dashboard-shell .hero-tile-mail {
+  right: 126px;
+  top: 38px;
+  transform: rotate(-2deg);
+}
+
+.dashboard-shell .hero-tile-outlook {
+  right: 28px;
+  top: 48px;
+  transform: rotate(3deg);
+}
+
+.dashboard-shell .hero-tile-outlook .provider-logo {
+  width: 58px;
+}
+
+.dashboard-shell .hero-check {
+  position: absolute;
+  right: 126px;
+  top: 132px;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #18c1ac 0%, #0f8f83 100%);
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 700;
+  box-shadow: 0 18px 34px rgba(20, 184, 166, 0.28);
 }
 
 .dashboard-shell .agent-overview {
@@ -683,23 +768,24 @@ input {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.7rem;
 }
 
 .dashboard-shell .mail-card {
   display: flex;
   flex-direction: column;
-  padding: 1.75rem;
-  border-radius: 20px;
+  min-height: 430px;
+  padding: clamp(1.65rem, 2.5vw, 2.1rem);
+  border-radius: 24px;
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(20, 20, 26, 0.04);
+  box-shadow: var(--shadow-soft);
   transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dashboard-shell .mail-card:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 20px 40px -24px rgba(20, 20, 26, 0.2);
+  box-shadow: 0 22px 58px rgba(15, 23, 42, 0.075);
   transform: translateY(-2px);
 }
 
@@ -707,43 +793,55 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.1rem;
+  gap: 1rem;
+  margin-bottom: 1.55rem;
+}
+
+.dashboard-shell .mail-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .dashboard-shell .mail-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   background: #ffffff;
-  color: var(--gmail-red);
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 24px -18px rgba(20, 20, 26, 0.42);
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 600;
+  border: 0;
+  box-shadow: none;
 }
 
 .dashboard-shell .provider-logo {
   display: block;
-  width: 30px;
+  width: 34px;
   height: auto;
 }
 
 .dashboard-shell .mail-card:nth-of-type(2) .mail-icon {
   background: #ffffff;
   color: var(--outlook-blue);
-  border-color: var(--border);
-  box-shadow: 0 10px 24px -18px rgba(20, 20, 26, 0.42);
 }
 
 .dashboard-shell .status {
-  padding: 0.38rem 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.82rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-shell .status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
 }
 
 .dashboard-shell .status.connected {
@@ -751,31 +849,39 @@ input {
   color: var(--success);
 }
 
+.dashboard-shell .status.connected::before {
+  background: var(--success);
+}
+
 .dashboard-shell .status.pending {
   background: var(--warning-soft);
   color: var(--warning);
 }
 
+.dashboard-shell .status.pending::before {
+  background: var(--warning);
+}
+
 .dashboard-shell .mail-card h2 {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
   color: var(--text);
 }
 
 .dashboard-shell .mail-card p {
   flex: 1;
-  margin: 0 0 1.5rem;
+  margin: 0 0 1.45rem;
   color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.6;
+  font-size: 0.92rem;
+  line-height: 1.7;
 }
 
 .dashboard-shell .account-list {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.85rem;
   margin-bottom: 1rem;
 }
 
@@ -784,10 +890,11 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.8rem;
+  min-height: 74px;
+  padding: 0.95rem 1.05rem;
   border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--surface-tint);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #ffffff, #fbfbfa);
 }
 
 .dashboard-shell .account-item strong,
@@ -797,12 +904,12 @@ input {
 
 .dashboard-shell .account-item strong {
   color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 700;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 .dashboard-shell .account-item span {
-  margin-top: 0.16rem;
+  margin-top: 0.24rem;
   color: var(--text-muted);
   font-size: 0.76rem;
 }
@@ -818,7 +925,7 @@ input {
   background: transparent;
   color: var(--accent);
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: 600;
   cursor: pointer;
   font-family: inherit;
   padding: 0;
@@ -829,11 +936,11 @@ input {
 }
 
 .dashboard-shell .account-action.danger {
-  color: #b42318;
+  color: var(--danger);
 }
 
 .dashboard-shell .account-action.danger:hover {
-  color: #7a271a;
+  color: #b92d2d;
 }
 
 .dashboard-shell .account-action:focus-visible {
@@ -846,32 +953,26 @@ input {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.78rem 1rem;
-  border-radius: 12px;
-  border: 1px solid transparent;
-  background: var(--accent);
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 600;
+  gap: 0.6rem;
+  min-height: 48px;
+  margin-top: auto;
+  padding: 0 1rem;
+  border-radius: 16px;
+  border: 1px dashed #d8d8d8;
+  background: #ffffff;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
   text-decoration: none;
-  box-shadow: 0 10px 22px -10px rgba(13, 148, 136, 0.5);
-  transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  box-shadow: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .dashboard-shell .primary-link:hover {
-  background: var(--accent-deep);
-}
-
-.dashboard-shell .mail-card:has(.status.connected) .primary-link {
-  background: var(--surface);
-  border-color: var(--border-strong);
-  color: var(--text);
-  box-shadow: none;
-}
-
-.dashboard-shell .mail-card:has(.status.connected) .primary-link:hover {
-  background: var(--surface-tint);
-  border-color: rgba(15, 15, 20, 0.28);
+  background: #fbffff;
+  border-color: var(--accent);
+  color: var(--accent-deep);
+  transform: translateY(-1px);
 }
 
 .dashboard-shell .primary-link:focus-visible {
@@ -1002,26 +1103,27 @@ input {
 }
 
 .dashboard-shell .info-panel {
-  padding: 1.75rem clamp(1.5rem, 3vw, 2.25rem);
-  border-radius: 20px;
+  padding: clamp(1.6rem, 2.5vw, 2.1rem);
+  border-radius: 24px;
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgba(20, 20, 26, 0.04);
+  box-shadow: var(--shadow-soft);
 }
 
 .dashboard-shell .info-panel h2 {
-  margin: 0 0 1.1rem;
+  margin: 0 0 1.35rem;
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.03em;
   color: var(--text);
 }
 
 .dashboard-shell .info-panel ul {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(1.5rem, 6vw, 7rem);
+  row-gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1030,9 +1132,9 @@ input {
 .dashboard-shell .info-panel li {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  gap: 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--text-muted);
 }
 
@@ -1044,22 +1146,22 @@ input {
   justify-content: center;
   width: 20px;
   height: 20px;
-  margin-top: 0.05rem;
+  margin-top: 0.04rem;
   border-radius: 50%;
-  background: var(--success-soft);
-  color: var(--success);
-  font-size: 0.62rem;
+  background: #e9f9f4;
+  color: var(--accent-deep);
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
 .dashboard-shell .info-panel li:last-child {
   color: var(--text);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .dashboard-shell .info-panel li:last-child::before {
-  content: "✕";
-  background: var(--accent-soft);
+  content: "✓";
+  background: #e9f9f4;
   color: var(--accent-deep);
 }
 
@@ -1410,6 +1512,22 @@ input {
   .auth-shell .feature-grid {
     margin-top: 0;
   }
+
+  .dashboard-shell .dashboard-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell .hero-visual {
+    min-height: 170px;
+  }
+
+  .dashboard-shell .hero-tile-mail {
+    right: min(48%, 220px);
+  }
+
+  .dashboard-shell .hero-tile-outlook {
+    right: min(12%, 80px);
+  }
 }
 
 @media (max-width: 720px) {
@@ -1445,11 +1563,13 @@ input {
   }
 
   .dashboard-shell .topbar {
+    display: flex;
     gap: 0.9rem;
   }
 
   .dashboard-shell .view-switcher {
     width: 100%;
+    order: 1;
   }
 
   .dashboard-shell .view-switcher a {
@@ -1462,10 +1582,23 @@ input {
   .dashboard-shell .topbar-actions form,
   .dashboard-shell .ghost-button {
     width: 100%;
+    order: 2;
   }
 
   .dashboard-shell .topbar strong {
     font-size: 0.9rem;
+  }
+
+  .dashboard-shell .dashboard-hero h1 {
+    font-size: clamp(2rem, 10vw, 3.2rem);
+  }
+
+  .dashboard-shell .hero-visual {
+    display: none;
+  }
+
+  .dashboard-shell .info-panel ul {
+    grid-template-columns: 1fr;
   }
 
   .settings-shell .settings-row,
