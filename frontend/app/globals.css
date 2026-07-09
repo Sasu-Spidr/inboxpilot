@@ -410,8 +410,8 @@ input {
 
 .dashboard-shell .view-switcher a.active {
   color: #ffffff;
-  background: linear-gradient(135deg, #14141a, #2a2a31);
-  box-shadow: 0 10px 22px -14px rgba(20, 20, 26, 0.7);
+  background: linear-gradient(135deg, #3589e9, #1d6ed2);
+  box-shadow: 0 10px 22px -14px rgba(53, 137, 233, 0.74);
 }
 
 .dashboard-shell .view-switcher a:active {

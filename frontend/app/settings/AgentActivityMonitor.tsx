@@ -123,7 +123,6 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
           <p className="eyebrow">Activité récente</p>
           <h2>Ce que l'agent a traité</h2>
         </div>
-        <span className="live-sync-badge">Synchro auto · 2s</span>
       </div>
 
       {events.length ? (
