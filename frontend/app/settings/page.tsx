@@ -21,14 +21,10 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
   return (
     <main className="dashboard-shell settings-shell">
       <nav className="topbar">
-        <div>
-          <strong>InboxPilot</strong>
-        </div>
         <div className="view-switcher" aria-label="Navigation principale">
           <Link href="/dashboard">Vue d'ensemble</Link>
           <Link className="active" href="/settings" aria-current="page">Configuration IA</Link>
         </div>
-        <Link className="ghost-button" href="/dashboard">Retour dashboard</Link>
       </nav>
 
       <section className="dashboard-hero settings-hero">

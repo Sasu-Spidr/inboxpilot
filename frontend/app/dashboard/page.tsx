@@ -37,11 +37,7 @@ export default async function Dashboard() {
         <div className="hero-visual" aria-hidden="true">
           <div className="hero-orbit"></div>
           <div className="hero-tile hero-tile-mail">
-            <svg viewBox="0 0 64 64" focusable="false">
-              <rect x="10" y="16" width="44" height="32" rx="8" fill="#14B8A6" opacity="0.15" />
-              <path d="M15 23.5h34v21H15z" fill="#14B8A6" />
-              <path d="M15 23.5 32 36l17-12.5" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <ProviderIcon providerKey="gmail" fallback="G" />
           </div>
           <div className="hero-tile hero-tile-outlook">
             <ProviderIcon providerKey="hotmail" fallback="O" />
