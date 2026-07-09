@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
 :root {
   --bg: #fbfaf8;
@@ -51,8 +51,9 @@ input {
   --accent-soft: rgba(13, 148, 136, 0.1);
   --warning: #b45309;
   --warning-soft: rgba(180, 83, 9, 0.1);
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   position: relative;
   display: grid;
@@ -122,7 +123,7 @@ input {
   color: #ffffff;
   font-size: 1.02rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
 }
 
 .auth-shell .brand-icon {
@@ -148,7 +149,7 @@ input {
   gap: 0.55rem;
   margin: 0 0 1.6rem;
   color: rgba(176, 232, 228, 0.88);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.22em;
@@ -165,11 +166,11 @@ input {
 .auth-shell .hero-card h1 {
   max-width: 11ch;
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: clamp(3rem, 5.5vw, 5.55rem);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.075em;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.085em;
   color: #ffffff;
 }
 
@@ -206,7 +207,7 @@ input {
   border: 1px solid rgba(255, 255, 255, 0.13);
   background: rgba(255, 255, 255, 0.035);
   color: rgba(255, 255, 255, 0.9);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -285,7 +286,7 @@ input {
   font-family: var(--font-sans);
   font-size: 1.42rem;
   font-weight: 800;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
   color: var(--text);
 }
 
@@ -293,7 +294,7 @@ input {
   display: block;
   margin: 1rem 0 0.5rem;
   color: rgba(20, 20, 26, 0.58);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.16em;
