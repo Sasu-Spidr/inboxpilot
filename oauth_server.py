@@ -367,15 +367,36 @@ def render_auth_required() -> str:
 def success_page(provider: str, client_id: str, account: str, email: str = "") -> str:
     return_url = f"{frontend_url().rstrip('/')}/dashboard"
     connected_identity = email or account
+    provider_class = "outlook" if "outlook" in provider.lower() or "hotmail" in provider.lower() else "gmail"
+    provider_initial = "O" if provider_class == "outlook" else "G"
     return page(
         f"Connexion {escape(provider)} réussie",
         f"""
-        <div class="panel success">
-          <h2>Le compte est connecté.</h2>
-          <p><strong>{escape(provider)} / {escape(connected_identity)}</strong></p>
-          <p>L'agent peut maintenant classer les nouveaux mails et préparer les brouillons.</p>
-          <p><a class="button primary" href="{escape(return_url)}">Retour à mon espace</a></p>
-        </div>
+        <section class="success-layout">
+          <div class="success-card">
+            <div class="success-glow"></div>
+            <div class="success-topline">
+              <span class="brand-mark">InboxPilot</span>
+              <span class="success-badge">Connexion réussie</span>
+            </div>
+            <div class="success-icon {provider_class}" aria-hidden="true">
+              <span>{provider_initial}</span>
+            </div>
+            <h1>Votre boîte mail est connectée.</h1>
+            <p class="success-lead">
+              InboxPilot peut maintenant analyser les prochains emails non lus, appliquer vos libellés
+              et préparer les brouillons selon vos paramètres.
+            </p>
+            <div class="connected-account">
+              <span>Compte activé</span>
+              <strong>{escape(provider)} · {escape(connected_identity)}</strong>
+            </div>
+            <div class="success-actions">
+              <a class="button primary" href="{escape(return_url)}">Retour à mon espace</a>
+              <span>Vous pouvez fermer cet onglet si votre espace est déjà ouvert.</span>
+            </div>
+          </div>
+        </section>
         """,
     )
 
@@ -602,6 +623,167 @@ def page(title: str, body: str) -> str:
       box-shadow: 0 28px 70px -44px rgba(22, 163, 74, 0.42);
     }}
 
+    .success-layout {{
+      min-height: min(760px, calc(100vh - 84px));
+      display: grid;
+      place-items: center;
+      padding: clamp(1rem, 3vw, 2rem) 0;
+    }}
+
+    .success-card {{
+      position: relative;
+      isolation: isolate;
+      width: min(780px, 100%);
+      overflow: hidden;
+      padding: clamp(1.6rem, 4vw, 3rem);
+      border: 1px solid rgba(53, 137, 233, 0.16);
+      border-radius: 32px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82)),
+        radial-gradient(110% 120% at 100% 0%, rgba(53, 137, 233, 0.12), transparent 55%),
+        radial-gradient(110% 120% at 0% 100%, rgba(13, 148, 136, 0.12), transparent 58%);
+      box-shadow: 0 34px 90px -54px rgba(20, 20, 26, 0.34);
+    }}
+
+    .success-glow {{
+      position: absolute;
+      right: -120px;
+      top: -120px;
+      z-index: -1;
+      width: 310px;
+      height: 310px;
+      border-radius: 999px;
+      background: rgba(53, 137, 233, 0.16);
+      filter: blur(10px);
+    }}
+
+    .success-topline {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: clamp(1.4rem, 3vw, 2.2rem);
+    }}
+
+    .brand-mark {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }}
+
+    .brand-mark::before {{
+      content: "";
+      width: 0.58rem;
+      height: 0.58rem;
+      border-radius: 999px;
+      background: #3589e9;
+      box-shadow: 0 0 0 5px rgba(53, 137, 233, 0.12);
+    }}
+
+    .success-badge {{
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.48rem 0.78rem;
+      border-radius: 999px;
+      background: rgba(22, 163, 74, 0.1);
+      color: #15803d;
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }}
+
+    .success-icon {{
+      display: grid;
+      place-items: center;
+      width: 68px;
+      height: 68px;
+      margin-bottom: 1.35rem;
+      border-radius: 22px;
+      color: #fff;
+      font-size: 1.45rem;
+      font-weight: 900;
+      box-shadow: 0 18px 38px -24px rgba(20, 20, 26, 0.5);
+    }}
+
+    .success-icon.gmail {{
+      background: linear-gradient(135deg, #ea4335, #fbbc04 42%, #34a853 72%, #4285f4);
+    }}
+
+    .success-icon.outlook {{
+      background: linear-gradient(135deg, #50d9ff, #2563eb 58%, #0a5db3);
+    }}
+
+    .success-card h1 {{
+      max-width: 14ch;
+      margin: 0 0 1rem;
+      font-family: var(--font-display);
+      font-size: clamp(2.1rem, 4vw, 4.2rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }}
+
+    .success-lead {{
+      max-width: 620px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.75;
+    }}
+
+    .connected-account {{
+      display: grid;
+      gap: 0.25rem;
+      margin: 1.6rem 0 1.8rem;
+      padding: 1rem 1.1rem;
+      border: 1px solid rgba(15, 15, 20, 0.08);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+    }}
+
+    .connected-account span {{
+      color: var(--faint);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }}
+
+    .connected-account strong {{
+      overflow-wrap: anywhere;
+      color: var(--text);
+      font-size: 1rem;
+    }}
+
+    .success-actions {{
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }}
+
+    .success-actions .button.primary {{
+      background: #3589e9;
+      border-color: #3589e9;
+      box-shadow: 0 16px 34px -18px rgba(53, 137, 233, 0.72);
+    }}
+
+    .success-actions .button.primary:hover {{
+      background: #1d6ed2;
+      border-color: #1d6ed2;
+    }}
+
+    .success-actions span {{
+      max-width: 320px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }}
+
     .card.disabled {{ opacity: 0.62; }}
 
     .badge {{
@@ -643,6 +825,10 @@ def page(title: str, body: str) -> str:
     @media (max-width: 640px) {{
       main {{ width: min(100% - 20px, 1120px); margin: 20px auto; }}
       .hero, .panel, .card {{ border-radius: 22px; padding: 1.35rem; }}
+      .success-card {{ border-radius: 24px; padding: 1.35rem; }}
+      .success-topline {{ align-items: flex-start; flex-direction: column; }}
+      .success-actions {{ align-items: stretch; flex-direction: column; }}
+      .success-actions span {{ max-width: none; }}
       .account-row {{ align-items: flex-start; flex-direction: column; }}
       .button {{ width: 100%; }}
     }}
