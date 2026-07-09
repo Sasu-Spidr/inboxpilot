@@ -375,6 +375,54 @@ input {
   gap: 0.7rem;
 }
 
+.dashboard-shell .view-switcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
+  padding: 0.28rem;
+  border: 1px solid rgba(15, 15, 20, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 14px 34px -28px rgba(20, 20, 26, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-shell .view-switcher a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.58rem 1.25rem;
+  border-radius: 999px;
+  color: rgba(20, 20, 26, 0.58);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.1s ease;
+}
+
+.dashboard-shell .view-switcher a:hover {
+  color: var(--text);
+  background: rgba(20, 20, 26, 0.04);
+}
+
+.dashboard-shell .view-switcher a.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #14141a, #2a2a31);
+  box-shadow: 0 10px 22px -14px rgba(20, 20, 26, 0.7);
+}
+
+.dashboard-shell .view-switcher a:active {
+  transform: translateY(1px);
+}
+
+.dashboard-shell .view-switcher a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .dashboard-shell .ghost-button {
   padding: 0.55rem 1.1rem;
   border: 1px solid var(--border-strong);
@@ -1170,6 +1218,26 @@ input {
   .dashboard-shell .topbar-actions {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .dashboard-shell .topbar {
+    gap: 0.9rem;
+  }
+
+  .dashboard-shell .view-switcher {
+    width: 100%;
+  }
+
+  .dashboard-shell .view-switcher a {
+    flex: 1;
+    min-width: 0;
+    padding-inline: 0.75rem;
+  }
+
+  .dashboard-shell .topbar-actions,
+  .dashboard-shell .topbar-actions form,
+  .dashboard-shell .ghost-button {
+    width: 100%;
   }
 
   .dashboard-shell .topbar strong {

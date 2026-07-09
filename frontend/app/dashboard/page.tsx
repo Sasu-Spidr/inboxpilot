@@ -20,8 +20,11 @@ export default async function Dashboard() {
         <div>
           <strong>InboxPilot</strong>
         </div>
+        <div className="view-switcher" aria-label="Navigation principale">
+          <a className="active" href="/dashboard" aria-current="page">Vue d'ensemble</a>
+          <a href="/settings">Configuration IA</a>
+        </div>
         <div className="topbar-actions">
-          <a className="ghost-button" href="/settings">Paramètres</a>
           <form action="/api/auth/logout" method="post">
             <button className="ghost-button" type="submit">Déconnexion</button>
           </form>
