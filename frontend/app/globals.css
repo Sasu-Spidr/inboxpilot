@@ -975,6 +975,35 @@ input {
   font-weight: 700;
 }
 
+.settings-shell .agent-live-panel {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.settings-shell .live-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(13, 148, 136, 0.16);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.settings-shell .live-sync-badge::before {
+  content: "";
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12);
+}
+
 .settings-shell .settings-panel {
   padding: clamp(1rem, 2vw, 1.4rem);
   border: 1px solid var(--border);

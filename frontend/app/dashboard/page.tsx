@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
-import { getDashboardActivity, type ActivityEvent } from "@/lib/dashboardActivity";
 import { tokenFileExists } from "@/lib/paths";
 
 export default async function Dashboard() {
@@ -11,8 +10,6 @@ export default async function Dashboard() {
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
-  const connectedMailboxes = [...gmailAccounts, ...hotmailAccounts].filter((account) => tokenFileExists(account.token_file)).length;
-  const activity = getDashboardActivity(user.clientId);
 
   return (
     <main className="dashboard-shell">
@@ -42,20 +39,6 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      <section className="agent-overview">
-        <div className="agent-status-card">
-          <p className="eyebrow">Agent InboxPilot</p>
-          <h2>{agentStatusTitle(connectedMailboxes, activity.totalProcessed7d)}</h2>
-          <p>{agentStatusText(connectedMailboxes, activity.totalProcessed7d)}</p>
-        </div>
-        <div className="stats-grid">
-          <StatCard value={String(connectedMailboxes)} label="Boîtes connectées" />
-          <StatCard value={String(activity.totalProcessed7d)} label="Emails classés / 7 jours" />
-          <StatCard value={String(activity.drafts7d)} label="Brouillons préparés" />
-          <StatCard value={String(activity.trashed7d)} label="Suppressions auto" />
-        </div>
-      </section>
-
       <section className="mail-grid">
         <MailCard
           providerKey="gmail"
@@ -71,8 +54,6 @@ export default async function Dashboard() {
         />
       </section>
 
-      <RecentActivity events={activity.recent} />
-
       <section className="info-panel">
         <h2>Ce que fait l'agent</h2>
         <ul>
@@ -85,73 +66,6 @@ export default async function Dashboard() {
       </section>
     </main>
   );
-}
-
-function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <article className="stat-card">
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </article>
-  );
-}
-
-function RecentActivity({ events }: { events: ActivityEvent[] }) {
-  return (
-    <section className="activity-panel">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Activité récente</p>
-          <h2>Ce que l'agent a traité</h2>
-        </div>
-      </div>
-
-      {events.length ? (
-        <div className="activity-list">
-          {events.map((event) => (
-            <article className="activity-item" key={`${event.connector}-${event.account}-${event.message_id}`}>
-              <div className="activity-provider">
-                <ProviderIcon providerKey={event.connector === "hotmail" ? "hotmail" : "gmail"} fallback={event.connector[0]?.toUpperCase() || "M"} />
-              </div>
-              <div className="activity-content">
-                <strong>{event.subject || "Sans objet"}</strong>
-                <span>{event.sender || "Expéditeur inconnu"}</span>
-              </div>
-              <div className="activity-meta">
-                <span className="activity-label">{event.label}</span>
-                <small>{actionLabel(event)}</small>
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <div className="activity-empty">
-          <strong>Aucune activité pour le moment.</strong>
-          <p>Dès que de nouveaux emails non lus seront traités, ils apparaîtront ici avec le libellé et l'action appliquée.</p>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function agentStatusTitle(connectedMailboxes: number, totalProcessed7d: number): string {
-  if (!connectedMailboxes) return "Connectez une boîte mail pour activer l'agent.";
-  if (!totalProcessed7d) return "L'agent est actif et prêt à classer les prochains emails.";
-  return `L'agent a classé ${totalProcessed7d} email${totalProcessed7d > 1 ? "s" : ""} cette semaine.`;
-}
-
-function agentStatusText(connectedMailboxes: number, totalProcessed7d: number): string {
-  if (!connectedMailboxes) return "Ajoutez Gmail ou Outlook pour lancer automatiquement le tri des nouveaux emails non lus.";
-  const mailboxText = `${connectedMailboxes} boîte${connectedMailboxes > 1 ? "s" : ""} mail connectée${connectedMailboxes > 1 ? "s" : ""}`;
-  if (!totalProcessed7d) return `${mailboxText}. InboxPilot attend les prochains emails non lus pour appliquer vos libellés et vos règles.`;
-  return `${mailboxText}. InboxPilot continue d'analyser uniquement les nouveaux emails non lus, sans les marquer comme lus.`;
-}
-
-function actionLabel(event: ActivityEvent): string {
-  if (event.draft_created || event.action === "draft") return "Brouillon préparé";
-  if (event.action === "trash") return "Supprimé selon vos règles";
-  if (event.action === "archive") return "Archivé";
-  return "Libellé appliqué";
 }
 
 function MailCard({

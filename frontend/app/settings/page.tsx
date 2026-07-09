@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import AgentActivityMonitor from "./AgentActivityMonitor";
 import { currentUser } from "@/lib/auth";
+import { getClientMailAccounts } from "@/lib/clientRegistry";
 import { getClientSettings } from "@/lib/clientSettings";
+import { getDashboardActivity } from "@/lib/dashboardActivity";
+import { tokenFileExists } from "@/lib/paths";
 
 export default async function SettingsPage({ searchParams }: { searchParams?: Promise<{ saved?: string }> }) {
   const user = await currentUser();
   if (!user) redirect("/");
 
   const settings = getClientSettings(user.clientId);
+  const accounts = [...getClientMailAccounts(user.clientId, "gmail"), ...getClientMailAccounts(user.clientId, "hotmail")];
+  const connectedMailboxes = accounts.filter((account) => tokenFileExists(account.token_file)).length;
+  const activity = getDashboardActivity(user.clientId);
   const saved = (await searchParams)?.saved === "1";
 
   return (
@@ -36,6 +43,11 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
       </section>
 
       {saved && <div className="success-banner">Paramètres enregistrés. L'agent utilisera ces réglages au prochain cycle.</div>}
+
+      <AgentActivityMonitor
+        initialActivity={activity}
+        initialConnectedMailboxes={connectedMailboxes}
+      />
 
       <form action="/api/settings/labels" method="post" className="settings-panel">
         <input type="hidden" name="labelCount" value={settings.labels.length} />
