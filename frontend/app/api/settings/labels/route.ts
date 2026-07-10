@@ -38,10 +38,18 @@ export async function POST(request: NextRequest) {
 }
 
 function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSetting[]): string[] {
+  const nextKeys = new Set(nextLabels.map((label) => label.key.trim()).filter(Boolean));
   const nextNames = new Set(nextLabels.map((label) => label.name.trim()).filter(Boolean));
-  return previousLabels
-    .map((label) => label.name.trim())
-    .filter((name, index, names) => name && !nextNames.has(name) && names.indexOf(name) === index);
+  const removed = new Set<string>();
+  for (const label of previousLabels) {
+    const key = label.key.trim();
+    const name = label.name.trim();
+    if ((key && !nextKeys.has(key)) || (name && !nextNames.has(name))) {
+      if (name) removed.add(name);
+      if (key && key !== name) removed.add(key);
+    }
+  }
+  return [...removed];
 }
 
 async function syncGmailLabelSettings(clientId: string, removedLabels: string[]): Promise<void> {

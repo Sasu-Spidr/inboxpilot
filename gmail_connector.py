@@ -78,11 +78,12 @@ class GmailConnector:
 
     def delete_label(self, label_name: str) -> bool:
         self.authenticate()
+        target = normalize_label_name(label_name)
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:
             if label.get("type") == "system":
                 continue
-            if label.get("name") == label_name:
+            if normalize_label_name(label.get("name", "")) == target:
                 self._execute(self.service.users().labels().delete(userId="me", id=label["id"]))
                 return True
         return False
@@ -171,6 +172,12 @@ def recipient_address(sender: str) -> str:
         return address
     match = re.search(r"[\w.!#$%&'*+/=?^`{|}~-]+@[\w.-]+\.[A-Za-z]{2,}", sender or "")
     return match.group(0) if match else ""
+
+
+def normalize_label_name(value: str) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
+
+
 def _gmail_body(payload):
     if payload.get("body", {}).get("data"): return base64.urlsafe_b64decode(payload["body"]["data"] + "===").decode("utf-8", "replace")
     for part in payload.get("parts", []):

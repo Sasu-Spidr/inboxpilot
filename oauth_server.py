@@ -162,7 +162,17 @@ class OAuthOnboardingServer:
                     synced += 1
             except Exception as exc:
                 errors.append({"account": account_cfg.get("account", "main"), "error": str(exc)})
-        return {"synced": synced, "deleted": deleted, "skipped": skipped, "errors": errors}
+        result = {"synced": synced, "deleted": deleted, "removed_requested": len(removed), "skipped": skipped, "errors": errors}
+        LOG.info(
+            "Gmail label settings synced client=%s synced=%s deleted=%s removed_requested=%s skipped=%s errors=%s",
+            client_id,
+            synced,
+            deleted,
+            len(removed),
+            skipped,
+            len(errors),
+        )
+        return result
 
     def start_gmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "gmail")
