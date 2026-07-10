@@ -45,8 +45,11 @@ class GmailConnector:
         self.authenticate()
         msg = self._execute(self.service.users().messages().get(userId="me", id=message_id, format="full"))
         headers = {h["name"].lower(): h["value"] for h in msg["payload"].get("headers", [])}
-        return {"id": message_id, "subject": headers.get("subject", ""), "sender": headers.get("from", ""),
-                "body": _gmail_body(msg["payload"]), "thread_id": msg.get("threadId")}
+        email = {"id": message_id, "subject": headers.get("subject", ""), "sender": headers.get("from", ""),
+                 "body": _gmail_body(msg["payload"]), "thread_id": msg.get("threadId")}
+        if msg.get("internalDate"):
+            email["received_at"] = int(msg["internalDate"]) / 1000
+        return email
 
     def apply_label(self, message_id: str, label_name: str) -> None:
         self.authenticate(); label_id = self._label_id(label_name)

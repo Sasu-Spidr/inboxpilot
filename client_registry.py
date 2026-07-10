@@ -97,6 +97,7 @@ def build_registered_client(settings: dict, client_id: str, owner_name: str, ema
                         "sender_name": owner_name,
                         "credentials_file": gmail_credentials_file,
                         "token_file": f"./data/tokens/{client_id}-gmail-main.token.enc",
+                        "connected_at": "",
                     }
                 ],
             },
@@ -110,6 +111,7 @@ def build_registered_client(settings: dict, client_id: str, owner_name: str, ema
                         "client_secret_env": microsoft_client_secret_env,
                         "tenant_id": "consumers",
                         "token_file": f"./data/tokens/{client_id}-hotmail-main.token.enc",
+                        "connected_at": "",
                     }
                 ],
             },

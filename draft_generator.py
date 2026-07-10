@@ -41,7 +41,7 @@ Rules:
 From: {sender}
 Subject: {subject}
 Message:
-{body[:12000]}"""
+{body[:5000]}"""
         response = self.client.chat.completions.create(
             model=self.model,
             temperature=0.25,

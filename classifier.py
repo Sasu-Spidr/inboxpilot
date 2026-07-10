@@ -81,7 +81,7 @@ Important:
 
 Subject: {subject}
 Sender: {sender}
-Body: {body[:12000]}"""
+Body: {body[:4000]}"""
         response = self.client.chat.completions.create(
             model=self.model,
             temperature=0,

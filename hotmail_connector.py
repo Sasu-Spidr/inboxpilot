@@ -43,15 +43,15 @@ class HotmailConnector:
         response.raise_for_status(); return response.json() if response.content else {}
 
     def unread_emails(self, limit: int) -> list[dict]:
-        data = self._request("GET", "/me/mailFolders/inbox/messages", params={"$filter": "isRead eq false", "$top": limit, "$select": "id,subject,from,body,conversationId"})
+        data = self._request("GET", "/me/mailFolders/inbox/messages", params={"$filter": "isRead eq false", "$top": limit, "$select": "id,subject,from,body,conversationId,receivedDateTime"})
         return [self._email_from_graph(x) for x in data.get("value", [])]
 
     def get_email(self, message_id: str) -> dict:
-        data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "id,subject,from,body,conversationId"})
+        data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "id,subject,from,body,conversationId,receivedDateTime"})
         return self._email_from_graph(data)
 
     def _email_from_graph(self, item: dict) -> dict:
-        return {"id": item["id"], "subject": item.get("subject", ""), "sender": item.get("from", {}).get("emailAddress", {}).get("address", ""), "body": item.get("body", {}).get("content", ""), "thread_id": item.get("conversationId")}
+        return {"id": item["id"], "subject": item.get("subject", ""), "sender": item.get("from", {}).get("emailAddress", {}).get("address", ""), "body": item.get("body", {}).get("content", ""), "thread_id": item.get("conversationId"), "received_at": item.get("receivedDateTime")}
 
     def apply_label(self, message_id: str, category: str) -> None:
         self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})

@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import time
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -178,7 +179,7 @@ class OAuthOnboardingServer:
         flow.fetch_token(code=one(params, "code"))
         self.store.save(account_cfg["token_file"], json_credentials(flow.credentials))
         email = gmail_profile_email(flow.credentials)
-        update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email})
+        update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
         return success_page("Gmail", state["client"], state["account"], email)
 
@@ -210,7 +211,7 @@ class OAuthOnboardingServer:
             raise RuntimeError(result.get("error_description", str(result)))
         self.store.save(account_cfg["token_file"], {"cache": cache.serialize()})
         email = microsoft_profile_email(result["access_token"])
-        update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email})
+        update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
         return success_page("Hotmail / Outlook", state["client"], state["account"], email)
 
@@ -304,6 +305,10 @@ def b64(raw: bytes) -> str:
 
 def b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def render_home(settings: dict) -> str:

@@ -8,6 +8,7 @@ export type Provider = "gmail" | "hotmail";
 export type MailAccount = {
   account: string;
   email_address?: string;
+  connected_at?: string;
   sender_name?: string;
   credentials_file?: string;
   client_id_env?: string;
@@ -49,6 +50,7 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
             sender_name: ownerName,
             credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
             token_file: `./data/tokens/${clientId}-gmail-main.token.enc`,
+            connected_at: "",
           },
         ],
       },
@@ -62,6 +64,7 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
             client_secret_env: "MICROSOFT_CLIENT_SECRET",
             tenant_id: "consumers",
             token_file: `./data/tokens/${clientId}-hotmail-main.token.enc`,
+            connected_at: "",
           },
         ],
       },
@@ -142,6 +145,7 @@ function buildAccountConfig(clientId: string, ownerName: string, provider: Provi
       sender_name: ownerName,
       credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
       token_file: `./data/tokens/${clientId}-gmail-${tokenAccount}.token.enc`,
+      connected_at: "",
     };
   }
   return {
@@ -151,6 +155,7 @@ function buildAccountConfig(clientId: string, ownerName: string, provider: Provi
     client_secret_env: "MICROSOFT_CLIENT_SECRET",
     tenant_id: "consumers",
     token_file: `./data/tokens/${clientId}-hotmail-${tokenAccount}.token.enc`,
+    connected_at: "",
   };
 }
 

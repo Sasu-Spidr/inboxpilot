@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,7 @@ import yaml
 
 from activity_store import record_email_activity
 from client_settings import action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, managed_label_names_for_client
-from client_registry import merge_registered_clients
+from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
 from gmail_connector import GmailConnector
@@ -71,6 +72,11 @@ class MailWorker:
                         LOG.info("Connector skipped because token is missing: client=%s connector=%s account=%s", client_id, connector_name, account_cfg.get("account") or account_cfg.get("id") or connector_name)
                         continue
                     account = account_cfg.get("account") or account_cfg.get("id") or connector_name
+                    connected_at = account_cfg.get("connected_at") or current_utc_iso()
+                    if not account_cfg.get("connected_at"):
+                        account_cfg["connected_at"] = connected_at
+                        update_registered_account(self.settings, client_id, connector_name, account, {"connected_at": connected_at})
+                        LOG.info("Connector activation timestamp initialized: client=%s connector=%s account=%s", client_id, connector_name, account)
                     key = f"{connector_name}:{account}"
                     if connector_name == "gmail":
                         connector = GmailConnector(account_cfg["credentials_file"], account_cfg["token_file"], store)
@@ -90,6 +96,7 @@ class MailWorker:
                         "account": account,
                         "connector": connector,
                         "sender_name": sender_name,
+                        "connected_at": connected_at,
                     }
         return built
 
@@ -146,6 +153,19 @@ class MailWorker:
         try:
             email = email or connector.get_email(message_id)
             log_event("email_detected", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="started")
+            if is_before_activation(email, entry.get("connected_at")):
+                self.state.complete(
+                    client_id=client_id,
+                    connector=connector_name,
+                    account=account,
+                    message_id=message_id,
+                    thread_id=email.get("thread_id"),
+                    label="pre_activation",
+                    action="skip",
+                    draft_created=False,
+                )
+                log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
+                return False
             result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"])
             label = result["label"]
             action = self.rules.action_for(label, result["action"])
@@ -240,6 +260,39 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
 def log_event(event: str, level: int = logging.INFO, **fields) -> None:
     exc_info = fields.pop("exc_info", None)
     LOG.log(level, event, extra={"event": event, **fields}, exc_info=exc_info)
+
+
+def is_before_activation(email: dict, connected_at: str | None) -> bool:
+    if not connected_at:
+        return False
+    received_at = email.get("received_at")
+    if not received_at:
+        return False
+    try:
+        connected = parse_datetime_or_timestamp(connected_at)
+        received = parse_datetime_or_timestamp(received_at)
+    except (TypeError, ValueError):
+        return False
+    return received < connected
+
+
+def parse_datetime_or_timestamp(value) -> datetime:
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(float(value), timezone.utc)
+    text = str(value).strip()
+    if text.isdigit():
+        timestamp = int(text)
+        if timestamp > 10_000_000_000:
+            timestamp = timestamp / 1000
+        return datetime.fromtimestamp(timestamp, timezone.utc)
+    parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def current_utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def main() -> None:
