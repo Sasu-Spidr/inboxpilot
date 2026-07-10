@@ -1978,6 +1978,26 @@ input {
   box-shadow: 0 16px 34px rgba(15, 157, 138, 0.22);
 }
 
+.settings-shell .settings-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.settings-shell .settings-toolbar .secondary-settings-button {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text);
+  box-shadow: none;
+}
+
+.settings-shell .settings-toolbar .secondary-settings-button:hover {
+  background: #f7fafa;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+}
+
 .settings-shell .settings-toolbar button:hover {
   background: linear-gradient(180deg, #14b8a6 0%, #0f8f83 100%);
   box-shadow: 0 20px 42px rgba(15, 157, 138, 0.28);
@@ -2153,6 +2173,29 @@ input {
   accent-color: var(--accent);
 }
 
+.settings-shell .settings-row-controls {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-shell .delete-label-button {
+  min-height: 42px;
+  padding: 0 1rem;
+  border: 1px solid rgba(220, 76, 76, 0.18);
+  border-radius: 999px;
+  background: rgba(220, 76, 76, 0.08);
+  color: #dc4c4c;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.settings-shell .delete-label-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .settings-shell .settings-actions {
   margin-top: 24px;
   padding-top: 24px;
@@ -2199,6 +2242,10 @@ input {
     position: static;
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .settings-shell .settings-toolbar-actions {
+    width: 100%;
   }
 
   .settings-shell .settings-toolbar button {

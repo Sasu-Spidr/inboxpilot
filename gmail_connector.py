@@ -76,6 +76,17 @@ class GmailConnector:
         color = gmail_label_color(preferred_color)
         self._execute(self.service.users().labels().patch(userId="me", id=label_id, body={"color": color}))
 
+    def delete_label(self, label_name: str) -> bool:
+        self.authenticate()
+        labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
+        for label in labels:
+            if label.get("type") == "system":
+                continue
+            if label.get("name") == label_name:
+                self._execute(self.service.users().labels().delete(userId="me", id=label["id"]))
+                return True
+        return False
+
     def _label_id(self, name: str) -> str:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:

@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, managed_label_names_for_client
+from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -166,8 +166,12 @@ class MailWorker:
                 )
                 log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
                 return False
-            result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"])
-            label = result["label"]
+            client_label_settings = label_settings_for_classifier(client_id)
+            result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"], client_label_settings or None)
+            original_label = result["label"]
+            label = normalize_active_label(client_id, original_label)
+            if label != original_label:
+                result["action"] = "keep"
             action = self.rules.action_for(label, result["action"])
             action = action_for_client(client_id, label, action)
             priority = result.get("priority", "medium")
@@ -255,6 +259,15 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
     account_cfg = dict(connector_cfg)
     account_cfg.setdefault("account", connector_name)
     return [account_cfg]
+
+
+def normalize_active_label(client_id: str, label: str) -> str:
+    active_keys = active_label_keys_for_client(client_id)
+    if not active_keys or label in active_keys:
+        return label
+    if "FYI" in active_keys:
+        return "FYI"
+    return active_keys[0]
 
 
 def log_event(event: str, level: int = logging.INFO, **fields) -> None:

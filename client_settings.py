@@ -43,6 +43,26 @@ def label_color_settings_for_client(client_id: str) -> list[dict[str, str]]:
     return settings
 
 
+def label_settings_for_classifier(client_id: str) -> list[dict[str, str]]:
+    labels: list[dict[str, str]] = []
+    for setting in load_client_settings(client_id).get("labels", []):
+        key = str(setting.get("key", "")).strip()
+        name = str(setting.get("name", "")).strip()
+        description = str(setting.get("description", "")).strip()
+        if key and name:
+            labels.append({"key": key, "name": name, "description": description})
+    return labels
+
+
+def active_label_keys_for_client(client_id: str) -> list[str]:
+    keys: list[str] = []
+    for setting in load_client_settings(client_id).get("labels", []):
+        key = str(setting.get("key", "")).strip()
+        if key and key not in keys:
+            keys.append(key)
+    return keys
+
+
 def managed_label_names_for_client(client_id: str) -> list[str]:
     names: list[str] = []
     for setting in load_client_settings(client_id).get("labels", []):

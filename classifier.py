@@ -45,7 +45,8 @@ class EmailClassifier:
         reraise=True,
         retry=retry_if_exception_type(Exception),
     )
-    def classify(self, subject: str, sender: str, body: str) -> dict:
+    def classify(self, subject: str, sender: str, body: str, label_settings: list[dict] | None = None) -> dict:
+        allowed_labels = allowed_label_keys(label_settings)
         deterministic = deterministic_classify(subject, sender, body)
         if deterministic:
             return deterministic
@@ -59,15 +60,16 @@ Return only valid JSON with these keys:
 - confidence
 - reason
 
-Allowed labels: {", ".join(LABELS)}.
+Allowed labels: {", ".join(allowed_labels)}.
 Allowed actions: {", ".join(ACTIONS)}.
 Allowed priorities: {", ".join(PRIORITIES)}.
 Confidence must be a number from 0 to 1.
 
 Label definitions:
-{format_label_definitions(self.label_definitions)}
+{format_label_definitions(self.label_definitions, label_settings)}
 
 Important:
+- Return the internal label key exactly as written in Allowed labels, not the display name.
 - If the subject/body mentions invoice, facture, billing, payment, paiement, receipt, reçu, subscription, abonnement, contract, contrat, or document to review, choose À traiter.
 - If the email is promotional, choose Marketing even if it contains friendly wording.
 - If the email is a periodic digest/news bulletin, choose Newsletter.
@@ -92,7 +94,7 @@ Body: {body[:4000]}"""
             ],
         )
         result = parse_json_object(response.choices[0].message.content)
-        if result.get("label") not in LABELS or result.get("action") not in ACTIONS or result.get("priority") not in PRIORITIES:
+        if result.get("label") not in allowed_labels or result.get("action") not in ACTIONS or result.get("priority") not in PRIORITIES:
             raise ValueError(f"Invalid model classification: {result}")
         try:
             result["confidence"] = float(result.get("confidence", 0))
@@ -103,9 +105,9 @@ Body: {body[:4000]}"""
             return low_confidence_result(result.get("reason", "Low model confidence."))
         return result
 
-    def safe_classify(self, subject: str, sender: str, body: str) -> dict:
+    def safe_classify(self, subject: str, sender: str, body: str, label_settings: list[dict] | None = None) -> dict:
         try:
-            return self.classify(subject, sender, body)
+            return self.classify(subject, sender, body, label_settings=label_settings)
         except Exception:
             LOG.exception("Classification failed; preserving email")
             return low_confidence_result("Classification failed; preserved for manual review.")
@@ -183,7 +185,25 @@ def load_label_definitions(path: str) -> dict:
     return yaml.safe_load(file.read_text(encoding="utf-8")) or {}
 
 
-def format_label_definitions(definitions: dict) -> str:
+def allowed_label_keys(label_settings: list[dict] | None = None) -> tuple[str, ...]:
+    if not label_settings:
+        return LABELS
+    keys = [str(setting.get("key", "")).strip() for setting in label_settings]
+    keys = [key for key in keys if key]
+    return tuple(dict.fromkeys(keys)) or LABELS
+
+
+def format_label_definitions(definitions: dict, label_settings: list[dict] | None = None) -> str:
+    if label_settings:
+        rows = []
+        for setting in label_settings:
+            key = str(setting.get("key", "")).strip()
+            name = str(setting.get("name", "")).strip()
+            description = str(setting.get("description", "")).strip()
+            if key:
+                rows.append(f"- {key}: display name: {name or key}. Description: {description or 'No custom description.'}")
+        if rows:
+            return "\n".join(rows)
     if not definitions:
         return "\n".join(f"- {label}" for label in LABELS)
     rows = []

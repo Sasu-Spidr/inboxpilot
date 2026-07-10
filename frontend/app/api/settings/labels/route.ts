@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   const form = await request.formData();
   const count = Number(form.get("labelCount") || 0);
   const labels: LabelSetting[] = [];
+  const previousSettings = getClientSettings(user.clientId);
 
   for (let index = 0; index < count; index += 1) {
     const key = String(form.get(`labels.${index}.key`) || "");
@@ -31,12 +32,19 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  saveClientSettings(user.clientId, labels);
-  await syncGmailLabelSettings(user.clientId);
+  const savedSettings = saveClientSettings(user.clientId, labels);
+  await syncGmailLabelSettings(user.clientId, removedLabelNames(previousSettings.labels, savedSettings.labels));
   return redirectTo(request, "/settings?saved=1");
 }
 
-async function syncGmailLabelSettings(clientId: string): Promise<void> {
+function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSetting[]): string[] {
+  const nextNames = new Set(nextLabels.map((label) => label.name.trim()).filter(Boolean));
+  return previousLabels
+    .map((label) => label.name.trim())
+    .filter((name, index, names) => name && !nextNames.has(name) && names.indexOf(name) === index);
+}
+
+async function syncGmailLabelSettings(clientId: string, removedLabels: string[]): Promise<void> {
   const internalUrl = process.env.OAUTH_INTERNAL_URL;
   const syncKey = process.env.TOKEN_ENCRYPTION_KEY;
   if (!internalUrl || !syncKey) return;
@@ -48,7 +56,7 @@ async function syncGmailLabelSettings(clientId: string): Promise<void> {
         "Content-Type": "application/json",
         "X-Internal-Sync-Key": syncKey,
       },
-      body: JSON.stringify({ client: clientId }),
+      body: JSON.stringify({ client: clientId, removed_labels: removedLabels }),
       cache: "no-store",
     });
     if (!response.ok) {

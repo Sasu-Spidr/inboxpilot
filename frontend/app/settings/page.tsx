@@ -2,9 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import AgentActivityMonitor from "./AgentActivityMonitor";
+import LabelSettingsForm from "./LabelSettingsForm";
 import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts } from "@/lib/clientRegistry";
-import { getClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
 import { tokenFileExists } from "@/lib/paths";
 
@@ -25,7 +26,9 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
       <nav className="topbar">
         <div className="view-switcher" aria-label="Navigation principale">
           <Link href="/dashboard">Vue d'ensemble</Link>
-          <Link className="active" href="/settings" aria-current="page">Configuration IA</Link>
+          <Link className="active" href="/settings" aria-current="page">
+            Configuration IA
+          </Link>
         </div>
         {isAdmin(user) && (
           <div className="topbar-actions">
@@ -58,84 +61,13 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         </div>
       </section>
 
-      {saved && <div className="success-banner">Paramètres enregistrés. L'agent utilisera ces réglages au prochain cycle.</div>}
+      {saved && <div className="success-banner">Paramètres enregistrés. Les libellés Gmail sont synchronisés.</div>}
 
       <AgentActivityMonitor initialActivity={activity} initialConnectedMailboxes={connectedMailboxes} />
 
-      <form action="/api/settings/labels" method="post" className="settings-panel">
-        <input type="hidden" name="labelCount" value={settings.labels.length} />
-        <div className="settings-toolbar">
-          <div>
-            <p className="eyebrow">Réglages des libellés</p>
-            <strong>Personnalisez les règles de tri</strong>
-            <span>Modifiez vos préférences puis enregistrez pour les appliquer au prochain cycle.</span>
-          </div>
-          <button type="submit">Enregistrer les paramètres</button>
-        </div>
-
-        <div className="settings-list">
-          {settings.labels.map((label, index) => (
-            <details className="settings-row" key={label.key} open={index === 0}>
-              <summary className="settings-row-summary">
-                <span className="label-preview">
-                  <span className="label-color-dot" style={{ backgroundColor: label.color }} />
-                  <span>
-                    <strong>{label.key}</strong>
-                    <small>{label.description}</small>
-                  </span>
-                </span>
-                <span className="active-rules-count">
-                  {activeRulesCount(label)} action{activeRulesCount(label) > 1 ? "s" : ""} active{activeRulesCount(label) > 1 ? "s" : ""}
-                </span>
-              </summary>
-
-              <div className="settings-row-body">
-                <input type="hidden" name={`labels.${index}.key`} value={label.key} />
-
-                <label className="setting-field">
-                  Nom affiché
-                  <input name={`labels.${index}.name`} defaultValue={label.name} maxLength={64} required />
-                </label>
-
-                <label className="setting-field color-field">
-                  Couleur
-                  <input name={`labels.${index}.color`} type="color" defaultValue={label.color} />
-                </label>
-
-                <label className="setting-field description-field">
-                  Description
-                  <textarea name={`labels.${index}.description`} defaultValue={label.description} maxLength={240} rows={2} required />
-                </label>
-
-                <div className="toggle-grid">
-                  <label>
-                    <input name={`labels.${index}.prepareDraft`} type="checkbox" defaultChecked={label.prepareDraft} />
-                    Préparer un brouillon
-                  </label>
-                  <label>
-                    <input name={`labels.${index}.autoReply`} type="checkbox" defaultChecked={label.autoReply} />
-                    Réponse auto
-                  </label>
-                  <label>
-                    <input name={`labels.${index}.autoDelete`} type="checkbox" defaultChecked={label.autoDelete} />
-                    Suppression auto
-                  </label>
-                </div>
-              </div>
-            </details>
-          ))}
-        </div>
-
-        <div className="settings-actions">
-          <p>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</p>
-        </div>
-      </form>
+      <LabelSettingsForm initialLabels={settings.labels} />
     </main>
   );
-}
-
-function activeRulesCount(label: LabelSetting) {
-  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete);
 }
 
 function ProviderIcon({ provider }: { provider: "gmail" | "hotmail" }) {

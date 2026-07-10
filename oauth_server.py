@@ -76,7 +76,10 @@ class OAuthOnboardingServer:
                             self._json(403, {"error": "forbidden"})
                             return
                         payload = json.loads(raw_body.decode("utf-8") or "{}")
-                        result = server.sync_label_settings(one({"client": [payload.get("client", "")]}, "client"))
+                        result = server.sync_label_settings(
+                            one({"client": [payload.get("client", "")]}, "client"),
+                            payload.get("removed_labels", []),
+                        )
                         self._json(200, result)
                         return
                     self._html(
@@ -131,16 +134,18 @@ class OAuthOnboardingServer:
 
         return Handler
 
-    def sync_label_settings(self, client_id: str) -> dict:
+    def sync_label_settings(self, client_id: str, removed_labels: list[str] | None = None) -> dict:
         self.settings = merge_registered_clients(self.settings)
         client = self.settings.get("clients", {}).get(client_id)
         if not client:
             raise ValueError(f"Client inconnu : {client_id}")
 
         synced = 0
+        deleted = 0
         skipped = 0
         errors = []
         labels = label_color_settings_for_client(client_id)
+        removed = [str(label).strip() for label in (removed_labels or []) if str(label).strip()]
         accounts = client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []
         for account_cfg in accounts:
             token_file = account_cfg.get("token_file", "")
@@ -149,12 +154,15 @@ class OAuthOnboardingServer:
                 continue
             try:
                 connector = GmailConnector(account_cfg["credentials_file"], token_file, self.store)
+                for label_name in removed:
+                    if connector.delete_label(label_name):
+                        deleted += 1
                 for label in labels:
                     connector.sync_label_color(label["name"], label["color"])
                     synced += 1
             except Exception as exc:
                 errors.append({"account": account_cfg.get("account", "main"), "error": str(exc)})
-        return {"synced": synced, "skipped": skipped, "errors": errors}
+        return {"synced": synced, "deleted": deleted, "skipped": skipped, "errors": errors}
 
     def start_gmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "gmail")
