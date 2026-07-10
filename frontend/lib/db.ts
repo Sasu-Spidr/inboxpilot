@@ -50,6 +50,12 @@ export async function findUserByClientId(clientId: string): Promise<DbUser | nul
   return result.rows[0] || null;
 }
 
+export async function listUsers(): Promise<DbUser[]> {
+  await ensureSchema();
+  const result = await getPool().query<DbUser>("select * from users order by created_at desc");
+  return result.rows;
+}
+
 export async function createUser(input: {
   clientId: string;
   ownerName: string;
