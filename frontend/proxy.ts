@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (!pathname.startsWith("/admin")) return NextResponse.next();
+  if (!pathname.startsWith("/73948261502839476150")) return NextResponse.next();
 
   const username = process.env.ADMIN_BASIC_USER || "";
   const password = process.env.ADMIN_BASIC_PASSWORD || "";
@@ -30,7 +30,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/73948261502839476150/:path*"],
 };
 
 function parseBasicAuthorization(header: string): { username: string; password: string } | null {
