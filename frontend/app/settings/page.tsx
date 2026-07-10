@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import AgentActivityMonitor from "./AgentActivityMonitor";
-import { currentUser } from "@/lib/auth";
+import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts } from "@/lib/clientRegistry";
 import { getClientSettings, type LabelSetting } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
@@ -27,6 +27,13 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
           <Link href="/dashboard">Vue d'ensemble</Link>
           <Link className="active" href="/settings" aria-current="page">Configuration IA</Link>
         </div>
+        {isAdmin(user) && (
+          <div className="topbar-actions">
+            <Link className="ghost-button" href="/73948261502839476150">
+              Admin
+            </Link>
+          </div>
+        )}
       </nav>
 
       <section className="dashboard-hero settings-hero">
