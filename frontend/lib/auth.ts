@@ -9,6 +9,7 @@ export type User = {
   clientId: string;
   ownerName: string;
   email: string;
+  role: "customer" | "admin";
   passwordHash: string;
   passwordSalt: string;
   createdAt: Date;
@@ -19,10 +20,15 @@ export function toUser(row: DbUser): User {
     clientId: row.client_id,
     ownerName: row.owner_name,
     email: row.email,
+    role: row.role || "customer",
     passwordHash: row.password_hash,
     passwordSalt: row.password_salt,
     createdAt: row.created_at,
   };
+}
+
+export function isAdmin(user: User | null): boolean {
+  return user?.role === "admin";
 }
 
 export function slugify(value: string): string {

@@ -7,6 +7,7 @@ export type DbUser = {
   client_id: string;
   owner_name: string;
   email: string;
+  role: "customer" | "admin";
   password_hash: string;
   password_salt: string;
   created_at: Date;
@@ -30,11 +31,14 @@ export async function ensureSchema(): Promise<void> {
       client_id text primary key,
       owner_name text not null,
       email text not null unique,
+      role text not null default 'customer',
       password_hash text not null,
       password_salt text not null,
       created_at timestamptz not null default now()
     )
   `);
+  await getPool().query("alter table users add column if not exists role text not null default 'customer'");
+  await getPool().query("create index if not exists users_role_idx on users(role)");
   initialized = true;
 }
 
@@ -60,15 +64,16 @@ export async function createUser(input: {
   clientId: string;
   ownerName: string;
   email: string;
+  role?: "customer" | "admin";
   passwordHash: string;
   passwordSalt: string;
 }): Promise<void> {
   await ensureSchema();
   await getPool().query(
     `
-    insert into users (client_id, owner_name, email, password_hash, password_salt)
-    values ($1, $2, $3, $4, $5)
+    insert into users (client_id, owner_name, email, role, password_hash, password_salt)
+    values ($1, $2, $3, $4, $5, $6)
   `,
-    [input.clientId, input.ownerName, input.email, input.passwordHash, input.passwordSalt],
+    [input.clientId, input.ownerName, input.email, input.role || "customer", input.passwordHash, input.passwordSalt],
   );
 }

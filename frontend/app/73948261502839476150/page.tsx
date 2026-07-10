@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { currentUser } from "@/lib/auth";
+import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
 import { listUsers, type DbUser } from "@/lib/db";
@@ -28,7 +28,7 @@ type AccountSummary = {
 export default async function AdminPage() {
   const user = await currentUser();
   if (!user) redirect("/");
-  if (!isAdminEmail(user.email)) notFound();
+  if (!isAdmin(user)) notFound();
 
   const users = await listUsers();
   const rows = users.map(buildClientRow);
@@ -51,7 +51,7 @@ export default async function AdminPage() {
           <p className="eyebrow">Vue sécurisée</p>
           <h2>Suivez les inscrits, les connexions mail et l'activité agent.</h2>
           <p>
-            Cette page n'est visible que pour les comptes listés dans <code>ADMIN_EMAILS</code>. Les clients classiques
+            Cette page n'est visible que pour les comptes ayant le rôle administrateur. Les clients classiques
             reçoivent une page introuvable.
           </p>
         </div>
@@ -166,14 +166,6 @@ function StatCard({ label, value }: { label: string; value: string }) {
       <span>{label}</span>
     </article>
   );
-}
-
-function isAdminEmail(email: string): boolean {
-  const admins = (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  return admins.includes(email.toLowerCase());
 }
 
 function isToday(date: Date): boolean {
