@@ -144,11 +144,11 @@ function ProviderBlock({ provider, title, summary }: { provider: Provider; title
 
       {summary.accounts.length ? (
         <ul>
-          {summary.accounts.map((account) => (
+          {summary.accounts.map((account, index) => (
             <li key={account.account}>
               <span>
                 <strong>{account.email}</strong>
-                <small>{account.account}</small>
+                <small>{providerAccountLabel(provider, index)}</small>
               </span>
               <b className={account.connected ? "connected" : "pending"}>{account.connected ? "Connectée" : "À finaliser"}</b>
             </li>
@@ -159,6 +159,10 @@ function ProviderBlock({ provider, title, summary }: { provider: Provider; title
       )}
     </div>
   );
+}
+
+function providerAccountLabel(provider: Provider, index: number): string {
+  return `${provider === "gmail" ? "Gmail" : "Outlook"} ${index + 1}`;
 }
 
 function ProviderIcon({ provider }: { provider: Provider }) {
