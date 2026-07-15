@@ -2718,20 +2718,22 @@ input {
 .admin-provider-icon {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  color: #ffffff;
-  font-size: 0.85rem;
-  font-weight: 800;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-.admin-provider-icon.gmail {
-  background: linear-gradient(135deg, #4285f4, #34a853 60%, #fbbc04);
+.admin-provider-icon .provider-logo {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
-.admin-provider-icon.hotmail {
-  background: linear-gradient(135deg, #28a8ea, #0a6cff);
+.admin-provider-icon.gmail .provider-logo {
+  width: 25px;
+  height: 19px;
 }
 
 .admin-provider-head strong {
