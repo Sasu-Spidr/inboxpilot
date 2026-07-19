@@ -70,6 +70,14 @@ export function saveClientSettings(clientId: string, labels: LabelSetting[]): Cl
   return settings;
 }
 
+export function deleteClientSettings(clientId: string): void {
+  try {
+    fs.unlinkSync(settingsFile(clientId));
+  } catch {
+    // The user may still be on default settings, so there may be no file to remove.
+  }
+}
+
 function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
   const usedKeys = new Set<string>();
   const fallbackByKey = new Map(DEFAULT_LABEL_SETTINGS.map((label) => [label.key, label]));

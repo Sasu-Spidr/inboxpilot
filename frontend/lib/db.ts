@@ -60,6 +60,11 @@ export async function listUsers(): Promise<DbUser[]> {
   return result.rows;
 }
 
+export async function deleteUserByClientId(clientId: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("delete from users where client_id = $1", [clientId]);
+}
+
 export async function createUser(input: {
   clientId: string;
   ownerName: string;

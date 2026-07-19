@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import yaml from "js-yaml";
 
-import { dataPath } from "./paths";
+import { dataPath, resolveTokenFilePath } from "./paths";
 
 export type Provider = "gmail" | "hotmail";
 
@@ -76,6 +76,23 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
 export function getClientMailAccounts(clientId: string, provider: Provider): MailAccount[] {
   const registry = readRegistry(registryPath());
   return registry.clients[clientId]?.connectors?.[provider]?.accounts || [];
+}
+
+export function deleteClientMailRegistry(clientId: string): void {
+  const file = registryPath();
+  const registry = readRegistry(file);
+  const client = registry.clients[clientId];
+  if (!client) return;
+
+  for (const connector of Object.values(client.connectors || {})) {
+    for (const account of connector?.accounts || []) {
+      safeUnlink(resolveTokenFilePath(account.token_file));
+    }
+  }
+
+  delete registry.clients[clientId];
+  fs.mkdirSync(dataPath("clients"), { recursive: true });
+  fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
 }
 
 export function ensureMailAccount(clientId: string, ownerName: string, email: string, provider: Provider, account = "main"): MailAccount {
@@ -169,4 +186,12 @@ function nextAccountName(provider: Provider, accounts: MailAccount[]): string {
 
 function safeAccountName(account: string): string {
   return account.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "main";
+}
+
+function safeUnlink(file: string): void {
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    // The token may not exist yet; deletion of the user should continue.
+  }
 }

@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 import { currentUser, isAdmin } from "@/lib/auth";
-import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
+import { deleteClientMailRegistry, getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
+import { deleteClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
-import { listUsers, type DbUser } from "@/lib/db";
+import { deleteUserByClientId, listUsers, type DbUser } from "@/lib/db";
 import { tokenFileExists } from "@/lib/paths";
 
 type AdminClientRow = {
@@ -81,7 +83,19 @@ export default async function AdminPage() {
                   <h3>{row.user.owner_name}</h3>
                   <p>{row.user.email}</p>
                 </div>
-                <span className="admin-date">{formatDateTime(row.user.created_at)}</span>
+                <div className="admin-client-actions">
+                  <span className="admin-date">{formatDateTime(row.user.created_at)}</span>
+                  {row.user.client_id !== user.clientId ? (
+                    <form action={deleteUserAction}>
+                      <input type="hidden" name="clientId" value={row.user.client_id} />
+                      <button className="admin-delete-button" type="submit">
+                        Supprimer
+                      </button>
+                    </form>
+                  ) : (
+                    <span className="admin-current-user">Votre compte</span>
+                  )}
+                </div>
               </header>
 
               <div className="admin-client-meta">
@@ -101,6 +115,25 @@ export default async function AdminPage() {
       </section>
     </main>
   );
+}
+
+async function deleteUserAction(formData: FormData) {
+  "use server";
+
+  const admin = await currentUser();
+  if (!admin) redirect("/");
+  if (!isAdmin(admin)) notFound();
+
+  const clientId = String(formData.get("clientId") || "").trim();
+  if (!clientId || clientId === admin.clientId) {
+    revalidatePath("/73948261502839476150");
+    return;
+  }
+
+  deleteClientMailRegistry(clientId);
+  deleteClientSettings(clientId);
+  await deleteUserByClientId(clientId);
+  revalidatePath("/73948261502839476150");
 }
 
 function buildClientRow(user: DbUser): AdminClientRow {
