@@ -1257,6 +1257,24 @@ input {
   gap: 0.55rem;
 }
 
+.settings-shell .provider-health-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  border-radius: 12px;
+  background: #f8ffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.settings-shell .provider-health-icon .provider-logo {
+  width: 1.35rem;
+  height: 1.35rem;
+  display: block;
+}
+
 .settings-shell .provider-health strong {
   color: var(--text);
   font-size: 0.98rem;

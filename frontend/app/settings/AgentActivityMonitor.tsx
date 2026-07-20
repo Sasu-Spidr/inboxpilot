@@ -90,11 +90,13 @@ export default function AgentActivityMonitor({
 
       <section className="provider-health-grid" aria-label="État des boîtes connectées">
         <ProviderHealthCard
+          provider="gmail"
           name="Gmail"
           summary={providers.gmail}
           emptyText="Aucun compte Gmail connecté."
         />
         <ProviderHealthCard
+          provider="hotmail"
           name="Outlook / Hotmail"
           summary={providers.hotmail}
           emptyText="Aucun compte Outlook connecté."
@@ -154,10 +156,12 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
 }
 
 function ProviderHealthCard({
+  provider,
   name,
   summary,
   emptyText,
 }: {
+  provider: "gmail" | "hotmail";
   name: string;
   summary: ProviderSummary;
   emptyText: string;
@@ -167,7 +171,9 @@ function ProviderHealthCard({
   return (
     <article className={connected ? "provider-health connected" : "provider-health pending"}>
       <div>
-        <span className="provider-health-dot" />
+        <span className={`provider-health-icon ${provider}`}>
+          <ProviderIcon provider={provider} />
+        </span>
         <strong>{name}</strong>
       </div>
       <p>
