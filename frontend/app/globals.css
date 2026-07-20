@@ -919,6 +919,15 @@ input {
   margin: 0;
 }
 
+.dashboard-shell .account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
 .dashboard-shell .account-action {
   flex-shrink: 0;
   border: 0;

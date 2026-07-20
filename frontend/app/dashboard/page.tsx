@@ -119,15 +119,16 @@ function MailCard({
                 <strong>{accountDisplayName(account, accountConnected)}</strong>
                 <span>{accountConnected ? "Agent actif sur cette boîte" : "Connexion à finaliser"}</span>
               </div>
-              {accountConnected ? (
-                <form action={`/api/accounts/disconnect/${providerKey}?account=${encodeURIComponent(account.account)}`} method="post">
-                  <button className="account-action danger" type="submit">Déconnexion <span aria-hidden="true">↪</span></button>
+              <div className="account-actions">
+                {!accountConnected && (
+                  <a className="account-action" href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
+                    Connecter <span aria-hidden="true">⊕</span>
+                  </a>
+                )}
+                <form action={`/api/accounts/remove/${providerKey}?account=${encodeURIComponent(account.account)}`} method="post">
+                  <button className="account-action danger" type="submit">Supprimer <span aria-hidden="true">×</span></button>
                 </form>
-              ) : (
-                <a className="account-action" href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
-                  Connecter <span aria-hidden="true">⊕</span>
-                </a>
-              )}
+              </div>
             </div>
           );
         })}

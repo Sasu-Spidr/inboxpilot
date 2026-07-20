@@ -95,6 +95,24 @@ export function deleteClientMailRegistry(clientId: string): void {
   fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
 }
 
+export function removeMailAccount(clientId: string, provider: Provider, accountName: string): boolean {
+  const file = registryPath();
+  const registry = readRegistry(file);
+  const accounts = registry.clients[clientId]?.connectors?.[provider]?.accounts;
+  if (!accounts) return false;
+
+  const index = accounts.findIndex((account) => account.account === accountName);
+  if (index === -1) return false;
+
+  const [removed] = accounts.splice(index, 1);
+  if (removed?.token_file) {
+    safeUnlink(resolveTokenFilePath(removed.token_file));
+  }
+
+  fs.writeFileSync(file, yaml.dump(registry, { noRefs: true, lineWidth: 120 }), "utf-8");
+  return true;
+}
+
 export function ensureMailAccount(clientId: string, ownerName: string, email: string, provider: Provider, account = "main"): MailAccount {
   const file = registryPath();
   fs.mkdirSync(dataPath("clients"), { recursive: true });
