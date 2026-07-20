@@ -15,9 +15,9 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <span>InboxPilot</span>
         </a>
         <nav aria-label="Navigation principale">
-          <a href="#fonctionnalites">Fonctionnalités</a>
+          <a href="#top">Fonctionnalités</a>
+          <a href="#preview">Fonctionnement</a>
           <a href="#tarifs">Tarifs</a>
-          <a href="#ressources">Ressources</a>
         </nav>
         <div className="marketing-nav-actions">
           <a className="marketing-link" href={user ? "#tarifs" : "#connexion"}>Connexion</a>
@@ -42,8 +42,12 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             pour ne garder que l&apos;essentiel. Gagnez du temps chaque jour.
           </p>
           <div className="marketing-hero-actions">
-            <a className="marketing-button primary large" href={user ? "#tarifs" : "#inscription"}>
+            <a className="marketing-button primary large" href="#tarifs">
               Démarrer gratuitement
+            </a>
+            <a className="marketing-button secondary large" href="#preview">
+              <PlayIcon />
+              Voir comment ça marche
             </a>
           </div>
           <div className="marketing-proof">
@@ -188,7 +192,8 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <p>Votre agent email IA pour classer, prioriser et garder le contrôle.</p>
         </div>
         <nav>
-          <a href="#fonctionnalites">Fonctionnalités</a>
+          <a href="#top">Fonctionnalités</a>
+          <a href="#preview">Fonctionnement</a>
           <a href="#tarifs">Tarifs</a>
           <a href={user ? "#tarifs" : "#connexion"}>Connexion</a>
         </nav>
@@ -307,6 +312,14 @@ function MailIcon() {
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <rect x="7" y="12" width="34" height="24" rx="5" fill="none" stroke="currentColor" strokeWidth="3" />
       <path d="m9 15 15 13 15-13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 7.5v9l7-4.5-7-4.5Z" fill="currentColor" />
     </svg>
   );
 }
