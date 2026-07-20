@@ -11,7 +11,6 @@ type Props = {
 export default function LabelSettingsForm({ initialLabels }: Props) {
   const [labels, setLabels] = useState<LabelSetting[]>(initialLabels);
   const labelCount = labels.length;
-
   const canDelete = useMemo(() => labels.length > 1, [labels.length]);
 
   function addLabel() {
@@ -152,14 +151,14 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
               </div>
 
               <label className="setting-field unread-delay-field">
-                Supprimer si le mail reste non lu aprÃ¨s
+                Supprimer si le mail reste non lu après
                 <span>
                   <input
                     name={`labels.${index}.autoDeleteUnreadAfterDays`}
                     type="number"
                     min={1}
                     max={365}
-                    placeholder="DÃ©sactivÃ©"
+                    placeholder="Désactivé"
                     value={label.autoDeleteUnreadAfterDays || ""}
                     onChange={(event) =>
                       updateLabel(index, {
