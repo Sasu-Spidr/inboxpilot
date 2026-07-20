@@ -29,7 +29,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
 
       <section id="top" className="marketing-hero">
         <div className="marketing-hero-copy">
-          <p className="marketing-badge">Agent email IA</p>
           <h1>
             Votre boîte mail.
             <br />
@@ -45,14 +44,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <a className="marketing-button primary large" href="#tarifs">
               Démarrer gratuitement
             </a>
-            <a className="marketing-button secondary large" href="#preview">
-              <PlayIcon />
-              Voir comment ça marche
-            </a>
-          </div>
-          <div className="marketing-proof">
-            <span>✓ Aucune carte requise</span>
-            <span>✓ Essai gratuit 14 jours</span>
           </div>
         </div>
 
@@ -149,7 +140,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <PricingCard name="Pro" price="19€" subtitle="Pour les professionnels" cta="Essayer 14 jours gratuitement" popular />
           <PricingCard name="Business" price="49€" subtitle="Pour les équipes" cta="Nous contacter" />
         </div>
-        <p className="pricing-note">Essai gratuit 14 jours · Sans engagement · Annulez à tout moment</p>
       </section>
 
       {!user && (
