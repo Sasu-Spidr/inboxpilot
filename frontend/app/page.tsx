@@ -45,10 +45,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <a className="marketing-button primary large" href={user ? "#tarifs" : "#inscription"}>
               Démarrer gratuitement
             </a>
-            <a className="marketing-button secondary large" href="#preview">
-              <PlayIcon />
-              Voir comment ça marche
-            </a>
           </div>
           <div className="marketing-proof">
             <span>✓ Aucune carte requise</span>
@@ -311,14 +307,6 @@ function MailIcon() {
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <rect x="7" y="12" width="34" height="24" rx="5" fill="none" stroke="currentColor" strokeWidth="3" />
       <path d="m9 15 15 13 15-13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PlayIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9 7.5v9l7-4.5-7-4.5Z" fill="currentColor" />
     </svg>
   );
 }

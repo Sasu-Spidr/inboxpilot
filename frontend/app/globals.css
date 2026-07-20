@@ -3184,27 +3184,38 @@ input {
 .floating-card {
   display: grid;
   place-items: center;
+  align-items: center;
+  justify-items: center;
   width: 118px;
   height: 106px;
   border-radius: 28px;
-  animation: marketing-float 5.5s ease-in-out infinite;
+  will-change: transform;
+  transform-origin: center;
+  animation: marketing-float 7.2s var(--m-ease) infinite;
 }
 
 .floating-card svg {
   width: 68px;
+  max-width: 68%;
+  max-height: 68%;
+  margin: auto;
 }
 
 .gmail-card {
   left: 76px;
   top: 120px;
-  transform: rotate(-8deg);
+  --float-rotate: -7deg;
+  --float-y: 0px;
+  transform: translate3d(0, var(--float-y), 0) rotate(var(--float-rotate));
 }
 
 .outlook-card {
   right: 58px;
   top: 150px;
-  transform: rotate(8deg);
-  animation-delay: -1.4s;
+  --float-rotate: 7deg;
+  --float-y: 0px;
+  transform: translate3d(0, var(--float-y), 0) rotate(var(--float-rotate));
+  animation-delay: -2.1s;
 }
 
 .bot-card {
@@ -3212,6 +3223,8 @@ input {
   top: 148px;
   display: grid;
   place-items: center;
+  align-items: center;
+  justify-items: center;
   width: 178px;
   height: 154px;
   border-radius: 32px;
@@ -3222,6 +3235,7 @@ input {
 .bot-card svg {
   width: 96px;
   height: 96px;
+  margin: auto;
 }
 
 .analysis-toast {
@@ -3913,11 +3927,17 @@ input {
 }
 
 @keyframes marketing-float {
-  0%, 100% {
-    margin-top: 0;
+  0% {
+    transform: translate3d(0, 0, 0) rotate(var(--float-rotate));
   }
-  50% {
-    margin-top: -14px;
+  35% {
+    transform: translate3d(0, -10px, 0) rotate(calc(var(--float-rotate) - 1deg));
+  }
+  70% {
+    transform: translate3d(0, 7px, 0) rotate(calc(var(--float-rotate) + 0.8deg));
+  }
+  100% {
+    transform: translate3d(0, 0, 0) rotate(var(--float-rotate));
   }
 }
 
