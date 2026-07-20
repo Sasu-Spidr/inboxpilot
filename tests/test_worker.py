@@ -48,7 +48,12 @@ class Drafts:
 
 class KeepUnreadClassifier:
     def safe_classify(self, *args):
-        return {"label": "FYI", "action": "mark_read", "priority": "low", "confidence": 0.9, "reason": "Information only"}
+        return {"label": "À lire", "action": "mark_read", "priority": "low", "confidence": 0.9, "reason": "Information only"}
+
+
+class CommercialClassifier:
+    def safe_classify(self, *args):
+        return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Commercial email"}
 
 
 class State:
@@ -87,8 +92,8 @@ def test_worker_replaces_managed_labels(monkeypatch):
     call = c.calls[0]
     assert call[0] == "replace_label"
     assert call[1][1] == "À répondre"
-    assert "Commentaire" in call[1][2]
-    assert "Marketing" in call[1][2]
+    assert "À lire" in call[1][2]
+    assert "Commercial" in call[1][2]
 
 
 def test_worker_passes_sender_name_to_draft(monkeypatch):
@@ -134,6 +139,22 @@ def test_worker_never_marks_gmail_message_as_read(monkeypatch):
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=KeepUnreadClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "read" not in [x[0] for x in c.calls]
+
+
+def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":true}]}',
+        encoding="utf-8",
+    )
+    c = Connector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert "trash" not in [x[0] for x in c.calls]
 
 
 def test_worker_syncs_gmail_label_color_from_client_settings(tmp_path, monkeypatch):

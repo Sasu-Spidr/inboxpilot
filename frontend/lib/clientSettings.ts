@@ -8,6 +8,7 @@ export type LabelSetting = {
   name: string;
   description: string;
   color: string;
+  priority?: number;
   prepareDraft: boolean;
   autoReply: boolean;
   autoDelete: boolean;
@@ -19,18 +20,26 @@ export type ClientSettings = {
 };
 
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À traiter", name: "À traiter", description: "Factures, contrats, documents, paiements, accès ou problèmes de compte à gérer manuellement.", color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "À répondre", name: "À répondre", description: "Messages qui demandent clairement une réponse humaine ou commerciale.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false },
-  { key: "Relance", name: "Relance", description: "Suivis ou rappels demandant de revenir vers une personne.", color: "#f97316", prepareDraft: true, autoReply: false, autoDelete: false },
-  { key: "Commentaire", name: "Commentaire", description: "Mentions, avis, remarques ou retours collaboratifs à lire.", color: "#eab308", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "FYI", name: "FYI", description: "Informations utiles à lire ou conserver, sans action immédiate.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "Notification", name: "Notification", description: "Alertes automatiques liées à un compte, une application, un code ou un service.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "Mise à jour de réunion", name: "Mise à jour de réunion", description: "Invitations, rappels, acceptations, annulations ou modifications de réunion.", color: "#93c5fd", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "Newsletter", name: "Newsletter", description: "Contenus éditoriaux récurrents : actualités, digest, bulletins ou résumés.", color: "#fed7aa", prepareDraft: false, autoReply: false, autoDelete: true },
-  { key: "Marketing", name: "Marketing", description: "Promotions, prospection, publicités, offres commerciales ou messages d'acquisition.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: true },
-  { key: "Traité", name: "Traité", description: "Messages déjà résolus, confirmés, terminés ou sans action restante.", color: "#a78bfa", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "En attente de réponse", name: "En attente de réponse", description: "Conversations où une réponse ou confirmation externe est encore attendue.", color: "#facc15", prepareDraft: false, autoReply: false, autoDelete: false },
+  { key: "À répondre", name: "À répondre", priority: 100, description: "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false },
+  { key: "À traiter", name: "À traiter", priority: 90, description: "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération.", color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false },
+  { key: "À lire", name: "À lire", priority: 60, description: "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative.", color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false },
+  { key: "Notification", name: "Notification", priority: 40, description: "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false },
+  { key: "Commercial", name: "Commercial", priority: 20, description: "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false },
 ];
+
+const LEGACY_DEFAULT_KEYS = new Set([
+  "À traiter",
+  "À répondre",
+  "Relance",
+  "Commentaire",
+  "FYI",
+  "Notification",
+  "Mise à jour de réunion",
+  "Newsletter",
+  "Marketing",
+  "Traité",
+  "En attente de réponse",
+]);
 
 const LEGACY_DEFAULT_DESCRIPTIONS = new Map<string, string>([
   ["À traiter", "Email important à gérer manuellement."],
@@ -49,6 +58,12 @@ const LEGACY_DEFAULT_DESCRIPTIONS = new Map<string, string>([
 export function getClientSettings(clientId: string): ClientSettings {
   const saved = readSettingsFile(clientId);
   if (saved && Array.isArray(saved.labels) && saved.labels.length > 0) {
+    if (isLegacyDefaultSet(saved.labels)) {
+      return {
+        labels: DEFAULT_LABEL_SETTINGS.map((label) => sanitizeLabel(label, label)),
+        updatedAt: saved.updatedAt || new Date(0).toISOString(),
+      };
+    }
     return {
       labels: sanitizeLabels(saved.labels),
       updatedAt: saved.updatedAt || new Date(0).toISOString(),
@@ -119,7 +134,14 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
     autoDelete: Boolean(label.autoDelete),
+    priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
   };
+}
+
+function isLegacyDefaultSet(labels: LabelSetting[]): boolean {
+  const keys = labels.map((label) => String(label.key || "").trim()).filter(Boolean);
+  if (keys.length < 8) return false;
+  return keys.every((key) => LEGACY_DEFAULT_KEYS.has(key));
 }
 
 function normalizeLegacyDescription(label: LabelSetting | undefined, fallback: LabelSetting): LabelSetting | undefined {

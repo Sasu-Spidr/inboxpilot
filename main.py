@@ -174,6 +174,9 @@ class MailWorker:
                 result["action"] = "keep"
             action = self.rules.action_for(label, result["action"])
             action = action_for_client(client_id, label, action)
+            if action == "trash" and not auto_delete_allowed(result, email):
+                log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
+                action = "keep"
             priority = result.get("priority", "medium")
             target = self.rules.target_for(label)
             log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
@@ -265,9 +268,33 @@ def normalize_active_label(client_id: str, label: str) -> str:
     active_keys = active_label_keys_for_client(client_id)
     if not active_keys or label in active_keys:
         return label
-    if "FYI" in active_keys:
-        return "FYI"
+    if "À lire" in active_keys:
+        return "À lire"
     return active_keys[0]
+
+
+def auto_delete_allowed(result: dict, email: dict) -> bool:
+    try:
+        confidence = float(result.get("confidence", 0))
+    except (TypeError, ValueError):
+        confidence = 0
+    if confidence < 0.85:
+        return False
+    text = f"{email.get('subject', '')}\n{email.get('sender', '')}\n{email.get('body', '')}".lower()
+    return any(
+        signal in text
+        for signal in (
+            "unsubscribe",
+            "désabonner",
+            "desabonner",
+            "newsletter",
+            "marketing",
+            "promotion",
+            "offre commerciale",
+            "se désinscrire",
+            "se desinscrire",
+        )
+    )
 
 
 def log_event(event: str, level: int = logging.INFO, **fields) -> None:

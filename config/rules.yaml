@@ -1,24 +1,10 @@
-"[Imap]/Drafts":
-  action: keep
 À répondre:
   action: draft
 À traiter:
   action: keep
-Commentaire:
+À lire:
   action: keep
-En attente de réponse:
-  action: keep
-FYI:
-  action: mark_read
-Marketing:
-  action: trash
-Mise à jour de réunion:
-  action: keep
-Newsletter:
-  action: trash
 Notification:
-  action: mark_read
-Relance:
-  action: draft
-Traité:
-  action: archive
+  action: keep
+Commercial:
+  action: keep

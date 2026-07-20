@@ -26,6 +26,7 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
         prepareDraft: false,
         autoReply: false,
         autoDelete: false,
+        priority: 10,
       },
     ]);
   }
@@ -74,6 +75,7 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
 
             <div className="settings-row-body">
               <input type="hidden" name={`labels.${index}.key`} value={label.key} />
+              <input type="hidden" name={`labels.${index}.priority`} value={label.priority || 10} />
 
               <label className="setting-field">
                 Nom affiché

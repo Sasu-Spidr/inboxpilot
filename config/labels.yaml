@@ -1,26 +1,12 @@
 gmail:
-  "[Imap]/Drafts": "[Imap]/Drafts"
   À répondre: À répondre
   À traiter: À traiter
-  Commentaire: Commentaire
-  En attente de réponse: En attente de réponse
-  FYI: FYI
-  Marketing: Marketing
-  Mise à jour de réunion: Mise à jour de réunion
-  Newsletter: Newsletter
+  À lire: À lire
   Notification: Notification
-  Relance: Relance
-  Traité: Traité
+  Commercial: Commercial
 hotmail:
-  "[Imap]/Drafts": "[Imap]/Drafts"
   À répondre: À répondre
   À traiter: À traiter
-  Commentaire: Commentaire
-  En attente de réponse: En attente de réponse
-  FYI: FYI
-  Marketing: Marketing
-  Mise à jour de réunion: Mise à jour de réunion
-  Newsletter: Newsletter
+  À lire: À lire
   Notification: Notification
-  Relance: Relance
-  Traité: Traité
+  Commercial: Commercial

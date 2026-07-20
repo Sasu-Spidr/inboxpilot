@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       name: String(form.get(`labels.${index}.name`) || ""),
       description: String(form.get(`labels.${index}.description`) || ""),
       color: String(form.get(`labels.${index}.color`) || ""),
+      priority: Number(form.get(`labels.${index}.priority`) || 10),
       prepareDraft: form.get(`labels.${index}.prepareDraft`) === "on",
       autoReply: form.get(`labels.${index}.autoReply`) === "on",
       autoDelete: form.get(`labels.${index}.autoDelete`) === "on",

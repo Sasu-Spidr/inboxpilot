@@ -1,4 +1,4 @@
-from classifier import EmailClassifier, format_label_definitions, parse_json_object
+from classifier import DEFAULT_LABEL, EmailClassifier, format_label_definitions, parse_json_object
 
 
 class Response:
@@ -54,32 +54,32 @@ def test_deterministic_gmail_examples():
 
     notification = classifier.classify("Notification", "me@example.com", "Votre compte a été mis à jour.")
     assert notification["label"] == "Notification"
-    assert notification["action"] == "mark_read"
+    assert notification["action"] == "keep"
 
     security = classifier.classify("Des informations de sécurité du compte Microsoft ont été ajoutées", "account@microsoft.com", "Compte Microsoft")
     assert security["label"] == "Notification"
 
     newsletter = classifier.classify("Newsletter", "me@example.com", "Découvrez nos nouveautés de la semaine.")
-    assert newsletter["label"] == "Newsletter"
-    assert newsletter["action"] == "trash"
+    assert newsletter["label"] == "Commercial"
+    assert newsletter["action"] == "keep"
 
     digest = classifier.classify("Agent Hub Security + Evals - 2026-06-30", "news@example.com", "A paper-heavy window")
-    assert digest["label"] == "Newsletter"
+    assert digest["label"] == "Commercial"
 
     promo = classifier.classify("Invitez un proche sur Wise et obtenez 20 EUR", "wise@example.com", "Partagez les nouveautés")
-    assert promo["label"] == "Marketing"
+    assert promo["label"] == "Commercial"
 
     uber = classifier.classify("De délicieuses offres vous attendent sur vos prochaines commandes", "Uber Eats", "Économisez sur vos plats favoris.")
-    assert uber["label"] == "Marketing"
+    assert uber["label"] == "Commercial"
 
     product_hunt = classifier.classify("Bots with bank accounts", "Product Hunt Daily", "The fintech that's moved $3B is now letting AI agents spend money safely.")
-    assert product_hunt["label"] == "Newsletter"
+    assert product_hunt["label"] == "Commercial"
 
     learning_rate = classifier.classify("Sonnet 5 + Agent Evals - 2026-07-01", "High Learning Rate", "A model-release-heavy window with practical lessons.")
-    assert learning_rate["label"] == "Newsletter"
+    assert learning_rate["label"] == "Commercial"
 
     article = classifier.classify("25 ans auprès de Pierre Cardin", "Alec - Entrepreneur", "Ce qu'une légende de la mode m'a appris.")
-    assert article["label"] == "Newsletter"
+    assert article["label"] == "Commercial"
 
     reply = classifier.classify("Demande de reponse", "me@example.com", "Bonjour, pouvez-vous me rappeler pour discuter de votre offre ?")
     assert reply["label"] == "À répondre"
@@ -107,7 +107,11 @@ def test_low_confidence_goes_to_manual_review():
         chat = Chat()
 
     result = EmailClassifier("", client=LowClient()).classify("Demo", "lead@example.com", "Maybe")
-    assert result == {"label": "FYI", "action": "keep", "priority": "low", "confidence": 0.0, "reason": "Unclear"}
+    assert result["label"] == DEFAULT_LABEL
+    assert result["action"] == "keep"
+    assert result["priority"] == "low"
+    assert result["confidence"] == 0.0
+    assert result["reason"] == "Unclear"
 
 
 def test_classifier_fallback():
@@ -122,7 +126,7 @@ def test_classifier_fallback():
         chat = Chat()
 
     result = EmailClassifier("", client=Bad()).safe_classify("", "", "")
-    assert result["label"] == "FYI"
+    assert result["label"] == DEFAULT_LABEL
     assert result["action"] == "keep"
 
 
@@ -133,5 +137,4 @@ def test_prompt_definitions_include_label_meaning():
             "Commentaire": {"description": "Vraies mentions", "action_hint": "keep", "examples": ["Mention"]},
         }
     )
-    assert "À traiter: Factures et documents" in text
-    assert "Commentaire: Vraies mentions" in text
+    assert "Factures et documents" in text
