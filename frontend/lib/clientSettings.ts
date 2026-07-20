@@ -12,6 +12,8 @@ export type LabelSetting = {
   prepareDraft: boolean;
   autoReply: boolean;
   autoDelete: boolean;
+  markAsRead: boolean;
+  autoDeleteUnreadAfterDays?: number | null;
 };
 
 export type ClientSettings = {
@@ -20,11 +22,11 @@ export type ClientSettings = {
 };
 
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À répondre", name: "À répondre", priority: 100, description: "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false },
-  { key: "À traiter", name: "À traiter", priority: 90, description: "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération.", color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "À lire", name: "À lire", priority: 60, description: "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative.", color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "Notification", name: "Notification", priority: 40, description: "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false },
-  { key: "Commercial", name: "Commercial", priority: 20, description: "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false },
+  { key: "À répondre", name: "À répondre", priority: 100, description: "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À traiter", name: "À traiter", priority: 90, description: "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération.", color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À lire", name: "À lire", priority: 60, description: "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative.", color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Notification", name: "Notification", priority: 40, description: "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Commercial", name: "Commercial", priority: 20, description: "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
 ];
 
 const LEGACY_DEFAULT_KEYS = new Set([
@@ -134,8 +136,16 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
     autoDelete: Boolean(label.autoDelete),
+    markAsRead: Boolean(label.markAsRead),
+    autoDeleteUnreadAfterDays: sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
     priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
   };
+}
+
+function sanitizeUnreadDeleteDays(value: unknown): number | null {
+  const days = Number(value);
+  if (!Number.isFinite(days) || days <= 0) return null;
+  return Math.min(365, Math.max(1, Math.floor(days)));
 }
 
 function isLegacyDefaultSet(labels: LabelSetting[]): boolean {

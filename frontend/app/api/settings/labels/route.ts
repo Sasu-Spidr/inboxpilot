@@ -30,6 +30,8 @@ export async function POST(request: NextRequest) {
       prepareDraft: form.get(`labels.${index}.prepareDraft`) === "on",
       autoReply: form.get(`labels.${index}.autoReply`) === "on",
       autoDelete: form.get(`labels.${index}.autoDelete`) === "on",
+      markAsRead: form.get(`labels.${index}.markAsRead`) === "on",
+      autoDeleteUnreadAfterDays: parseUnreadDeleteDays(form.get(`labels.${index}.autoDeleteUnreadAfterDays`)),
     });
   }
 
@@ -80,4 +82,10 @@ function redirectTo(request: NextRequest, path: string): NextResponse {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   return NextResponse.redirect(`${proto}://${host}${path}`, 303);
+}
+
+function parseUnreadDeleteDays(value: FormDataEntryValue | null): number | null {
+  const days = Number(value || 0);
+  if (!Number.isFinite(days) || days <= 0) return null;
+  return Math.min(365, Math.max(1, Math.floor(days)));
 }

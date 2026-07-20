@@ -26,6 +26,8 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
         prepareDraft: false,
         autoReply: false,
         autoDelete: false,
+        markAsRead: false,
+        autoDeleteUnreadAfterDays: null,
         priority: 10,
       },
     ]);
@@ -138,7 +140,36 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                   />
                   Suppression auto
                 </label>
+                <label>
+                  <input
+                    name={`labels.${index}.markAsRead`}
+                    type="checkbox"
+                    checked={label.markAsRead}
+                    onChange={(event) => updateLabel(index, { markAsRead: event.target.checked })}
+                  />
+                  Marquer comme lu
+                </label>
               </div>
+
+              <label className="setting-field unread-delay-field">
+                Supprimer si le mail reste non lu aprÃ¨s
+                <span>
+                  <input
+                    name={`labels.${index}.autoDeleteUnreadAfterDays`}
+                    type="number"
+                    min={1}
+                    max={365}
+                    placeholder="DÃ©sactivÃ©"
+                    value={label.autoDeleteUnreadAfterDays || ""}
+                    onChange={(event) =>
+                      updateLabel(index, {
+                        autoDeleteUnreadAfterDays: event.target.value ? Number(event.target.value) : null,
+                      })
+                    }
+                  />
+                  jours
+                </span>
+              </label>
 
               <div className="settings-row-controls">
                 <button type="button" className="delete-label-button" disabled={!canDelete} onClick={() => deleteLabel(index)}>
@@ -158,5 +189,5 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
 }
 
 function activeRulesCount(label: LabelSetting) {
-  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete);
+  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete) + Number(label.markAsRead) + Number(Boolean(label.autoDeleteUnreadAfterDays));
 }

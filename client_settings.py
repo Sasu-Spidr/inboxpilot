@@ -7,11 +7,11 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_LABELS: list[dict[str, Any]] = [
-    {"key": "À répondre", "name": "À répondre", "description": "Un humain identifiable attend une réponse écrite.", "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False},
-    {"key": "À traiter", "name": "À traiter", "description": "Action manuelle non limitée à une réponse.", "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False},
-    {"key": "À lire", "name": "À lire", "description": "Information destinée à un humain, à lire ou conserver.", "color": "#3b82f6", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False},
-    {"key": "Notification", "name": "Notification", "description": "Message généré par une machine, sans action manuelle.", "color": "#22c55e", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False},
-    {"key": "Commercial", "name": "Commercial", "description": "Newsletter, promotion, prospection ou offre commerciale.", "color": "#fb7185", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False},
+    {"key": "À répondre", "name": "À répondre", "description": "Un humain identifiable attend une réponse écrite.", "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À traiter", "name": "À traiter", "description": "Action manuelle non limitée à une réponse.", "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À lire", "name": "À lire", "description": "Information destinée à un humain, à lire ou conserver.", "color": "#3b82f6", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Notification", "name": "Notification", "description": "Message généré par une machine, sans action manuelle.", "color": "#22c55e", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Commercial", "name": "Commercial", "description": "Newsletter, promotion, prospection ou offre commerciale.", "color": "#fb7185", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
 ]
 
 LEGACY_DEFAULT_KEYS = {
@@ -104,6 +104,19 @@ def action_for_client(client_id: str, label: str, default_action: str) -> str:
     if setting.get("autoReply") or setting.get("prepareDraft"):
         return "draft"
     return default_action
+
+
+def mark_as_read_for_client(client_id: str, label: str) -> bool:
+    setting = _label_setting(client_id, label)
+    return bool(setting and setting.get("markAsRead"))
+
+
+def unread_delete_after_days_for_client(client_id: str, label: str) -> int | None:
+    setting = _label_setting(client_id, label)
+    if not setting:
+        return None
+    days = _int_setting(setting.get("autoDeleteUnreadAfterDays"), 0)
+    return days if days > 0 else None
 
 
 def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:

@@ -49,6 +49,7 @@ class ProcessedState:
         label: str,
         action: str,
         draft_created: bool = False,
+        received_at: Any = None,
     ) -> None:
         self.records[self.key(client_id, connector, account, message_id)] = {
             "connector": connector,
@@ -58,6 +59,7 @@ class ProcessedState:
             "label": label,
             "action": action,
             "draft_created": draft_created,
+            "received_at": received_at,
             "processed_at": now_iso(),
             "status": "in_progress",
         }
@@ -74,6 +76,7 @@ class ProcessedState:
         label: str,
         action: str,
         draft_created: bool,
+        received_at: Any = None,
     ) -> None:
         self.records[self.key(client_id, connector, account, message_id)] = {
             "connector": connector,
@@ -83,6 +86,7 @@ class ProcessedState:
             "label": label,
             "action": action,
             "draft_created": draft_created,
+            "received_at": received_at,
             "processed_at": now_iso(),
             "status": "completed",
         }

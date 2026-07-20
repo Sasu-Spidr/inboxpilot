@@ -2183,7 +2183,7 @@ input {
 .settings-shell .toggle-grid {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
 }
 
@@ -2203,6 +2203,26 @@ input {
 
 .settings-shell .toggle-grid input {
   accent-color: var(--accent);
+}
+
+.settings-shell .unread-delay-field {
+  grid-column: 1 / -1;
+  max-width: 460px;
+}
+
+.settings-shell .unread-delay-field span {
+  display: grid;
+  grid-template-columns: minmax(120px, 170px) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-shell .unread-delay-field input {
+  min-height: 48px;
 }
 
 .settings-shell .settings-row-controls {

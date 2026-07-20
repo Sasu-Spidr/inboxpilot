@@ -4,14 +4,14 @@ import argparse
 import logging
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client
+from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -148,6 +148,10 @@ class MailWorker:
         entry = self._entry(client_id, connector_name, account)
         connector = entry["connector"]
         if self.state.is_processed(client_id, connector_name, account, message_id):
+            record = self.state.get(client_id, connector_name, account, message_id) or {}
+            email = email or connector.get_email(message_id)
+            if self._delete_processed_unread_if_expired(connector, client_id, connector_name, account, message_id, email, record):
+                return True
             log_event("email_already_processed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
             return False
         try:
@@ -163,6 +167,7 @@ class MailWorker:
                     label="pre_activation",
                     action="skip",
                     draft_created=False,
+                    received_at=email.get("received_at"),
                 )
                 log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
                 return False
@@ -174,23 +179,51 @@ class MailWorker:
                 result["action"] = "keep"
             action = self.rules.action_for(label, result["action"])
             action = action_for_client(client_id, label, action)
+            if action != "trash" and unread_delete_due(client_id, label, email):
+                action = "trash"
             if action == "trash" and not auto_delete_allowed(result, email):
-                log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
-                action = "keep"
+                if unread_delete_due(client_id, label, email):
+                    log_event("unread_expired_delete_allowed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash", status="ok")
+                else:
+                    log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
+                    action = "keep"
             priority = result.get("priority", "medium")
             target = self.rules.target_for(label)
             log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
 
-            self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False)
+            self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False, received_at=email.get("received_at"))
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
-            self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created)
+            if action != "trash" and mark_as_read_for_client(client_id, label):
+                connector.mark_read(message_id)
+                log_event("email_marked_read", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created, received_at=email.get("received_at"))
             record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action=action, draft_created=draft_created)
             return True
         except Exception as exc:
             self.state.remove(client_id, connector_name, account, message_id)
             log_event("processing_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="failed", error=str(exc), exc_info=True)
             return False
+
+    def _delete_processed_unread_if_expired(self, connector, client_id: str, connector_name: str, account: str, message_id: str, email: dict, record: dict) -> bool:
+        label = str(record.get("label") or "")
+        if not label or not unread_delete_due(client_id, label, email):
+            return False
+        connector.trash(message_id)
+        self.state.complete(
+            client_id=client_id,
+            connector=connector_name,
+            account=account,
+            message_id=message_id,
+            thread_id=email.get("thread_id") or record.get("thread_id"),
+            label=label,
+            action="trash_unread_expired",
+            draft_created=bool(record.get("draft_created")),
+            received_at=email.get("received_at") or record.get("received_at"),
+        )
+        record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action="trash_unread_expired", draft_created=bool(record.get("draft_created")))
+        log_event("unread_expired_deleted", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash_unread_expired", status="ok")
+        return True
 
     def _entry(self, client_id: str, connector_name: str, account: str) -> dict:
         key = f"{connector_name}:{account}"
@@ -295,6 +328,21 @@ def auto_delete_allowed(result: dict, email: dict) -> bool:
             "se desinscrire",
         )
     )
+
+
+def unread_delete_due(client_id: str, label: str, email: dict, now: datetime | None = None) -> bool:
+    days = unread_delete_after_days_for_client(client_id, label)
+    if not days:
+        return False
+    received_at = email.get("received_at")
+    if not received_at:
+        return False
+    try:
+        received = parse_datetime_or_timestamp(received_at)
+    except (TypeError, ValueError):
+        return False
+    current = now or datetime.now(timezone.utc)
+    return received + timedelta(days=days) <= current
 
 
 def log_event(event: str, level: int = logging.INFO, **fields) -> None:

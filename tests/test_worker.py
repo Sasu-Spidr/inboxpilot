@@ -64,6 +64,9 @@ class State:
     def is_processed(self, *args):
         return args in self.records
 
+    def get(self, *args):
+        return {}
+
     def begin(self, **kwargs):
         self.records.add((kwargs["client_id"], kwargs["connector"], kwargs["account"], kwargs["message_id"]))
 
@@ -139,6 +142,71 @@ def test_worker_never_marks_gmail_message_as_read(monkeypatch):
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=KeepUnreadClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "read" not in [x[0] for x in c.calls]
+
+
+def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"markAsRead":true}]}',
+        encoding="utf-8",
+    )
+    c = Connector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert "read" in [x[0] for x in c.calls]
+
+
+def test_worker_deletes_unread_message_when_delay_is_already_due(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        encoding="utf-8",
+    )
+
+    class OldUnreadConnector(Connector):
+        def unread_emails(self, limit):
+            return [{"id": "1", "subject": "Promo", "sender": "shop@example.com", "body": "Hello", "thread_id": "t", "received_at": "2026-01-01T00:00:00Z"}]
+
+    c = OldUnreadConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert "trash" in [x[0] for x in c.calls]
+
+
+def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        encoding="utf-8",
+    )
+
+    class OldUnreadConnector(Connector):
+        def unread_emails(self, limit):
+            return [{"id": "1", "subject": "Promo", "sender": "shop@example.com", "body": "Hello", "thread_id": "t", "received_at": "2026-01-01T00:00:00Z"}]
+
+    class CompletedState(State):
+        def is_processed(self, *args):
+            return True
+
+        def get(self, *args):
+            return {"label": "Commercial", "thread_id": "t", "draft_created": False}
+
+    c = OldUnreadConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=CompletedState())
+    worker.run_cycle()
+    assert c.calls == [("trash", ("1",))]
 
 
 def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
