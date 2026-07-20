@@ -122,11 +122,11 @@ function MailCard({
               <div className="account-actions">
                 {!accountConnected && (
                   <a className="account-action" href={`/api/accounts/connect/${providerKey}?account=${encodeURIComponent(account.account)}`}>
-                    Connecter <span aria-hidden="true">⊕</span>
+                    Connecter
                   </a>
                 )}
                 <form action={`/api/accounts/remove/${providerKey}?account=${encodeURIComponent(account.account)}`} method="post">
-                  <button className="account-action danger" type="submit">Supprimer <span aria-hidden="true">×</span></button>
+                  <button className="account-action danger" type="submit">Supprimer</button>
                 </form>
               </div>
             </div>
@@ -135,7 +135,6 @@ function MailCard({
       </div>
 
       <a className="primary-link" href={`/api/accounts/connect/${providerKey}?new=1`}>
-        <span aria-hidden="true">⊕</span>
         Ajouter un autre compte {provider === "Gmail" ? "Gmail" : "Hotmail / Outlook"}
       </a>
     </article>
