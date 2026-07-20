@@ -1952,8 +1952,8 @@ input {
 }
 
 .settings-shell .activity-label {
-  background: #eef8ff;
-  color: #2563eb;
+  border: 1px solid currentColor;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
   font-size: 13px;
   font-weight: 600;
 }

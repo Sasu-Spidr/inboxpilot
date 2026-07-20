@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 
 import type { ActivityEvent, DashboardActivity } from "@/lib/dashboardActivity";
 
@@ -28,9 +28,11 @@ const EMPTY_PROVIDERS: ProviderSummaries = {
 export default function AgentActivityMonitor({
   initialActivity,
   initialConnectedMailboxes,
+  labelColors,
 }: {
   initialActivity: DashboardActivity;
   initialConnectedMailboxes: number;
+  labelColors: Record<string, string>;
 }) {
   const [payload, setPayload] = useState<ActivityPayload>({
     connectedMailboxes: initialConnectedMailboxes,
@@ -103,7 +105,7 @@ export default function AgentActivityMonitor({
         />
       </section>
 
-      <RecentActivity events={activity.recent} />
+      <RecentActivity events={activity.recent} labelColors={labelColors} />
     </section>
   );
 }
@@ -117,7 +119,7 @@ function StatCard({ value, label }: { value: string; label: string }) {
   );
 }
 
-function RecentActivity({ events }: { events: ActivityEvent[] }) {
+function RecentActivity({ events, labelColors }: { events: ActivityEvent[]; labelColors: Record<string, string> }) {
   return (
     <section className="activity-panel">
       <div className="section-heading">
@@ -139,7 +141,9 @@ function RecentActivity({ events }: { events: ActivityEvent[] }) {
                 <span>{event.sender || "Expéditeur inconnu"}</span>
               </div>
               <div className="activity-meta">
-                <span className="activity-label">{event.label}</span>
+                <span className="activity-label" style={labelBadgeStyle(event.label, labelColors)}>
+                  {event.label}
+                </span>
                 <small>{actionLabel(event)}</small>
               </div>
             </article>
@@ -211,6 +215,51 @@ function actionLabel(event: ActivityEvent): string {
   if (event.action === "trash") return "Supprimé selon vos règles";
   if (event.action === "archive") return "Archivé";
   return "Libellé appliqué";
+}
+
+function labelBadgeStyle(label: string, labelColors: Record<string, string>): CSSProperties {
+  const color = labelColors[label] || labelColors[canonicalLabel(label)] || fallbackLabelColor(label);
+  return {
+    backgroundColor: hexToRgba(color, 0.12),
+    color,
+  };
+}
+
+function canonicalLabel(label: string): string {
+  const normalized = label.trim().toLowerCase();
+  if (["marketing", "newsletter"].includes(normalized)) return "Commercial";
+  if (["fyi", "commentaire"].includes(normalized)) return "À lire";
+  if (normalized === "relance") return "À répondre";
+  if (normalized === "mise à jour de réunion") return "Notification";
+  return label;
+}
+
+function fallbackLabelColor(label: string): string {
+  return (
+    {
+      "À répondre": "#0d9488",
+      "À traiter": "#8b8b7a",
+      "À lire": "#3b82f6",
+      Notification: "#22c55e",
+      Commercial: "#fb7185",
+      Marketing: "#fb7185",
+      Newsletter: "#fb7185",
+      FYI: "#3b82f6",
+      Commentaire: "#3b82f6",
+      Relance: "#0d9488",
+      "Mise à jour de réunion": "#22c55e",
+    }[label] || "#3589e9"
+  );
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return `rgba(53, 137, 233, ${alpha})`;
+  const value = match[1];
+  const red = Number.parseInt(value.slice(0, 2), 16);
+  const green = Number.parseInt(value.slice(2, 4), 16);
+  const blue = Number.parseInt(value.slice(4, 6), 16);
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 function ProviderIcon({ provider }: { provider: "gmail" | "hotmail" }) {

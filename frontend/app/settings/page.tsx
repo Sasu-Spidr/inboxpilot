@@ -63,7 +63,11 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       {saved && <div className="success-banner">Paramètres enregistrés. Les libellés Gmail sont synchronisés.</div>}
 
-      <AgentActivityMonitor initialActivity={activity} initialConnectedMailboxes={connectedMailboxes} />
+      <AgentActivityMonitor
+        initialActivity={activity}
+        initialConnectedMailboxes={connectedMailboxes}
+        labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
+      />
 
       <LabelSettingsForm initialLabels={settings.labels} />
     </main>
