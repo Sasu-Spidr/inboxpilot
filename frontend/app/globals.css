@@ -3305,6 +3305,10 @@ input {
   overflow: hidden;
 }
 
+.dashboard-preview.compact-preview {
+  grid-template-columns: 1fr;
+}
+
 .dashboard-preview aside {
   display: flex;
   flex-direction: column;

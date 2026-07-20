@@ -20,12 +20,8 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <a href="#ressources">Ressources</a>
         </nav>
         <div className="marketing-nav-actions">
-          {user ? (
-            <a className="marketing-link" href="/dashboard">Mon espace</a>
-          ) : (
-            <a className="marketing-link" href="#connexion">Connexion</a>
-          )}
-          <a className="marketing-button primary" href={user ? "/dashboard" : "#inscription"}>
+          <a className="marketing-link" href={user ? "#tarifs" : "#connexion"}>Connexion</a>
+          <a className="marketing-button primary" href={user ? "#tarifs" : "#inscription"}>
             Essayer gratuitement
           </a>
         </div>
@@ -46,7 +42,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             pour ne garder que l&apos;essentiel. Gagnez du temps chaque jour.
           </p>
           <div className="marketing-hero-actions">
-            <a className="marketing-button primary large" href={user ? "/dashboard" : "#inscription"}>
+            <a className="marketing-button primary large" href={user ? "#tarifs" : "#inscription"}>
               Démarrer gratuitement
             </a>
             <a className="marketing-button secondary large" href="#preview">
@@ -85,33 +81,18 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <span><GmailLogo /> Gmail</span>
           <span><OutlookLogo /> Outlook</span>
           <span><MicrosoftLogo /> Microsoft 365</span>
-          <span><GoogleLogo /> Google Workspace</span>
-          <span><MailIcon /> IMAP</span>
         </div>
       </section>
 
-      <section id="preview" className="dashboard-preview" aria-label="Aperçu du dashboard InboxPilot">
-        <aside>
-          <div className="preview-brand"><span><BotIcon /></span> InboxPilot</div>
-          {["Vue d'ensemble", "Boîtes connectées", "Agents IA", "Brouillons", "Libellés & automatisations", "Activité", "Paramètres"].map((item, index) => (
-            <div key={item} className={index === 0 ? "preview-menu active" : "preview-menu"}>
-              {item}
-            </div>
-          ))}
-          <div className="preview-plan">
-            <strong>Plan Pro</strong>
-            <span>1 000 emails / mois</span>
-            <a href="#tarifs">Gérer mon abonnement →</a>
-          </div>
-        </aside>
+      <section id="preview" className="dashboard-preview compact-preview" aria-label="Aperçu du dashboard InboxPilot">
         <div className="preview-main">
           <div className="preview-top">
             <strong>Vue d&apos;ensemble</strong>
-            <a href={user ? "/settings" : "#inscription"}>Configurer l&apos;agent</a>
+            <a href={user ? "#tarifs" : "#inscription"}>Configurer l&apos;agent</a>
           </div>
           <div className="preview-hero">
             <div>
-              <h2>Bonjour <span>Ilyesse</span></h2>
+              <h2>Bonjour</h2>
               <p>
                 InboxPilot a classé 3 emails cette semaine et vous aide à garder votre boîte
                 de réception sous contrôle.
@@ -130,7 +111,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <PreviewEmail icon={<OutlookLogo />} title="Bienvenue dans votre nouveau compte Outlook.com" label="FYI" />
             <PreviewEmail icon={<GmailLogo />} title="Votre code à usage unique" label="Notification" />
             <PreviewEmail icon={<GmailLogo />} title="RECRUTEMENT" label="FYI" />
-            <a href={user ? "/dashboard" : "#inscription"}>Voir toute l&apos;activité →</a>
+            <a href={user ? "#tarifs" : "#inscription"}>Voir toute l&apos;activité →</a>
           </div>
         </div>
       </section>
@@ -213,7 +194,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
         <nav>
           <a href="#fonctionnalites">Fonctionnalités</a>
           <a href="#tarifs">Tarifs</a>
-          <a href={user ? "/dashboard" : "#connexion"}>Connexion</a>
+          <a href={user ? "#tarifs" : "#connexion"}>Connexion</a>
         </nav>
         <small>© 2026 InboxPilot. Tous droits réservés.</small>
       </footer>
