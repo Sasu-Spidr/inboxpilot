@@ -25,6 +25,11 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -2947,6 +2952,15 @@ input {
 .marketing-footer {
   width: var(--m-container);
   margin-inline: auto;
+}
+
+.marketing-hero,
+.dashboard-preview,
+.feature-section,
+.pricing-section,
+.marketing-auth,
+.marketing-footer {
+  scroll-margin-top: 96px;
 }
 
 .marketing-nav {
