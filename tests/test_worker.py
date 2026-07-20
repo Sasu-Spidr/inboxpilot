@@ -202,6 +202,30 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
     assert c.calls == [("color", ("À traiter", "#856082"))]
 
 
+def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+    (settings_dir / "exuvie.json").write_text(
+        '{"labels":[{"key":"Ã€ traiter","name":"Ã€ traiter","color":"#0a6cff","prepareDraft":false,"autoReply":false,"autoDelete":false}]}',
+        encoding="utf-8",
+    )
+
+    class EmptyColorConnector(Connector):
+        def unread_emails(self, limit):
+            return []
+
+        def sync_label_color(self, *args):
+            self.calls.append(("color", args))
+
+    c = EmptyColorConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"hotmail:main": {"name": "hotmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert c.calls == [("color", ("Ã€ traiter", "#0a6cff"))]
+
+
 def test_error_on_one_email_does_not_block_next(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 

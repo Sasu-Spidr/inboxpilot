@@ -1,13 +1,34 @@
 from __future__ import annotations
 import logging
+import re
+from urllib.parse import quote
 import msal
 import requests
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from token_store import TokenStore
 
 LOG = logging.getLogger(__name__)
-SCOPES = ["Mail.ReadWrite", "Mail.Read", "User.Read"]
+SCOPES = ["Mail.ReadWrite", "Mail.Read", "User.Read", "MailboxSettings.ReadWrite"]
 GRAPH = "https://graph.microsoft.com/v1.0"
+
+
+OUTLOOK_CATEGORY_COLORS = {
+    "preset0": "#c4314b",  # Red
+    "preset1": "#e67c20",  # Orange
+    "preset2": "#8e562e",  # Brown
+    "preset3": "#f2c744",  # Yellow
+    "preset4": "#2c9f45",  # Green
+    "preset5": "#00a3a3",  # Teal
+    "preset6": "#6b8e23",  # Olive
+    "preset7": "#3175d1",  # Blue
+    "preset8": "#7b61c9",  # Purple
+    "preset9": "#c23977",  # Cranberry
+    "preset10": "#8796a5",  # Steel
+    "preset11": "#4b5f73",  # DarkSteel
+    "preset12": "#8a8a8a",  # Gray
+    "preset13": "#5f5f5f",  # DarkGray
+    "preset14": "#1f2937",  # Black
+}
 
 
 class HotmailConnector:
@@ -56,6 +77,11 @@ class HotmailConnector:
     def apply_label(self, message_id: str, category: str) -> None:
         self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})
 
+    def sync_label_color(self, category_name: str, preferred_color: str) -> None:
+        category_id = self._category_id(category_name)
+        color = outlook_category_color(preferred_color)
+        self._request("PATCH", f"/me/outlook/masterCategories/{quote(category_id, safe='')}", json={"color": color})
+
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
@@ -70,3 +96,31 @@ class HotmailConnector:
     def mark_read(self, message_id: str) -> None: self._request("PATCH", f"/me/messages/{message_id}", json={"isRead": True})
     def create_draft(self, email: dict, text: str) -> None:
         self._request("POST", f"/me/messages/{email['id']}/createReply", json={"comment": text})
+
+    def _category_id(self, display_name: str) -> str:
+        data = self._request("GET", "/me/outlook/masterCategories")
+        for category in data.get("value", []) or []:
+            if category.get("displayName") == display_name:
+                return category["id"]
+        created = self._request(
+            "POST",
+            "/me/outlook/masterCategories",
+            json={"displayName": display_name, "color": "preset12"},
+        )
+        return created["id"]
+
+
+def outlook_category_color(preferred_color: str) -> str:
+    preferred = hex_to_rgb(preferred_color)
+    return min(OUTLOOK_CATEGORY_COLORS, key=lambda preset: color_distance(preferred, hex_to_rgb(OUTLOOK_CATEGORY_COLORS[preset])))
+
+
+def color_distance(left: tuple[int, int, int], right: tuple[int, int, int]) -> int:
+    return sum((a - b) ** 2 for a, b in zip(left, right))
+
+
+def hex_to_rgb(color: str) -> tuple[int, int, int]:
+    value = color.strip().lower()
+    if not re.fullmatch(r"#[0-9a-f]{6}", value):
+        return (138, 138, 138)
+    return tuple(int(value[index:index + 2], 16) for index in (1, 3, 5))

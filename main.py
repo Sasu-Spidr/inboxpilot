@@ -129,7 +129,7 @@ class MailWorker:
             self.process_email(client_id, connector_name, account, email["id"], email=email)
 
     def _sync_account_settings(self, client_id: str, connector_name: str, account: str, connector) -> None:
-        if connector_name != "gmail" or not hasattr(connector, "sync_label_color"):
+        if connector_name not in {"gmail", "hotmail"} or not hasattr(connector, "sync_label_color"):
             return
         connector_labels = self.labels.get(connector_name, {})
         for setting in label_color_settings_for_client(client_id):
@@ -204,7 +204,7 @@ class MailWorker:
             connector.replace_label(message_id, label_name, managed_labels)
         else:
             connector.apply_label(message_id, label_name)
-        if connector_name == "gmail" and hasattr(connector, "sync_label_color"):
+        if connector_name in {"gmail", "hotmail"} and hasattr(connector, "sync_label_color"):
             label_color = label_color_for_client(client_id, label)
             if label_color:
                 try:
