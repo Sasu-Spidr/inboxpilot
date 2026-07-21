@@ -10,7 +10,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
       <header className="marketing-nav">
         <a className="marketing-brand" href="#top" aria-label="InboxPilot">
           <span className="marketing-logo" aria-hidden="true">
-            <BotIcon />
+            <InboxPilotLogo />
           </span>
           <span>InboxPilot</span>
         </a>
@@ -56,7 +56,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <OutlookLogo />
           </div>
           <div className="bot-card">
-            <BotIcon />
+            <InboxPilotLogo />
           </div>
           <div className="analysis-toast">
             <span />
@@ -176,7 +176,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
       <footer id="ressources" className="marketing-footer">
         <div>
           <a className="marketing-brand" href="#top">
-            <span className="marketing-logo" aria-hidden="true"><BotIcon /></span>
+            <span className="marketing-logo" aria-hidden="true"><InboxPilotLogo /></span>
             <span>InboxPilot</span>
           </a>
           <p>Votre agent email IA pour classer, prioriser et garder le contrôle.</p>
@@ -237,16 +237,17 @@ function PreviewEmail({ icon, title, label }: { icon: ReactNode; title: string; 
   );
 }
 
-function BotIcon() {
+function InboxPilotLogo() {
   return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="8" y="14" width="32" height="24" rx="10" fill="currentColor" opacity=".18" />
-      <path d="M17 27c0-4 3-7 7-7s7 3 7 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="18" cy="28" r="2" fill="currentColor" />
-      <circle cx="30" cy="28" r="2" fill="currentColor" />
-      <path d="M24 14V8" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="24" cy="7" r="3" fill="currentColor" />
-      <path d="M16 35h16" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    <svg className="inboxpilot-logo-mark" viewBox="0 0 96 96" aria-hidden="true">
+      <rect x="8" y="8" width="80" height="80" rx="22" fill="#fff" />
+      <rect x="25" y="24" width="13" height="13" rx="2" fill="#2563ff" />
+      <rect x="43" y="24" width="13" height="13" rx="2" fill="#2563ff" />
+      <rect x="25" y="43" width="13" height="31" rx="2" fill="#111827" />
+      <path
+        d="M43 43h17.5C72.5 43 81 35.7 81 25.6C81 15.8 73.2 9 61.1 9H43v65h13V54h4.4C74.2 54 88 43.6 88 26.2C88 8.9 75.4 0 60.3 0H43v12h16.5C69.8 12 76 17.7 76 26.4C76 35.1 69.6 43 59.4 43H43Z"
+        fill="#2563ff"
+      />
     </svg>
   );
 }

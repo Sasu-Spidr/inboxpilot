@@ -3012,15 +3012,19 @@ input {
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 11px;
-  color: #ffffff;
-  background: linear-gradient(180deg, #18c1ac 0%, #0f8f83 100%);
-  box-shadow: 0 14px 28px rgba(20, 184, 166, 0.22);
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.84);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
 }
 
 .marketing-logo svg {
-  width: 23px;
-  height: 23px;
+  width: 31px;
+  height: 31px;
+}
+
+.inboxpilot-logo-mark {
+  filter: drop-shadow(0 10px 22px rgba(15, 23, 42, 0.08));
 }
 
 .marketing-nav nav {
@@ -3262,13 +3266,12 @@ input {
   width: 178px;
   height: 154px;
   border-radius: 32px;
-  color: var(--m-brand-dark);
   transform: translateX(-50%);
 }
 
 .bot-card svg {
-  width: 96px;
-  height: 96px;
+  width: 122px;
+  height: 122px;
   margin: auto;
 }
 
