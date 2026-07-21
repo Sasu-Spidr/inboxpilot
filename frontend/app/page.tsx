@@ -2,10 +2,9 @@ import { currentUser } from "@/lib/auth";
 import { PricingSection } from "./PricingSection";
 import type { ReactNode } from "react";
 
-export default async function Home({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+export default async function Home() {
   const user = await currentUser();
-  const error = (await searchParams)?.error;
-  const connectionHref = user ? "/dashboard" : "#inscription";
+  const connectionHref = user ? "/dashboard" : "/connexion";
 
   return (
     <main className="marketing-shell">
@@ -23,7 +22,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
         </nav>
         <div className="marketing-nav-actions">
           <a className="marketing-link" href={connectionHref}>Connexion</a>
-          <a className="marketing-button primary" href={user ? "#tarifs" : "#inscription"}>
+          <a className="marketing-button primary" href="#tarifs">
             Voir les offres
           </a>
         </div>
@@ -81,7 +80,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
         <div className="preview-main">
           <div className="preview-top">
             <strong>Vue d&apos;ensemble</strong>
-            <a href={user ? "#tarifs" : "#inscription"}>Configurer l&apos;agent</a>
+            <a href={connectionHref}>Configurer l&apos;agent</a>
           </div>
           <div className="preview-hero">
             <div>
@@ -104,7 +103,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <PreviewEmail icon={<OutlookLogo />} title="Bienvenue dans votre nouveau compte Outlook.com" label="FYI" />
             <PreviewEmail icon={<GmailLogo />} title="Votre code à usage unique" label="Notification" />
             <PreviewEmail icon={<GmailLogo />} title="RECRUTEMENT" label="FYI" />
-            <a href={user ? "#tarifs" : "#inscription"}>Voir toute l&apos;activité →</a>
+            <a href={connectionHref}>Voir toute l&apos;activité →</a>
           </div>
         </div>
       </section>
@@ -129,7 +128,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
 
       <PricingSection />
 
-      {!user && (
+      {false && (
         <section id="inscription" className="marketing-auth">
           <div>
             <p className="marketing-badge">Créer votre espace</p>
@@ -137,7 +136,6 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
             <p>Créez votre compte, connectez Gmail ou Outlook, puis laissez l&apos;agent classer les nouveaux emails.</p>
           </div>
           <div className="marketing-forms">
-            {error && <div className="error">Vérifie les informations saisies puis réessaie.</div>}
             <form action="/api/auth/register" method="post" className="marketing-form-card">
               <h3>Créer mon espace</h3>
               <label>Prénom et nom</label>

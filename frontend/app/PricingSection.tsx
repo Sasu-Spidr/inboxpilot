@@ -92,7 +92,7 @@ function PricingCard({ plan, billingCycle }: { plan: (typeof PLANS)[number]; bil
       <ul>
         {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
       </ul>
-      <a href="#inscription">{plan.cta}</a>
+      <a href="/connexion">{plan.cta}</a>
     </article>
   );
 }

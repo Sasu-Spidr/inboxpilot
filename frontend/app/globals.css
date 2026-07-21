@@ -4019,6 +4019,25 @@ input {
   box-shadow: 0 20px 40px rgba(15, 157, 138, 0.25);
 }
 
+.auth-page-shell {
+  min-height: 100vh;
+  padding: 32px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(20, 184, 166, 0.12), transparent 34%),
+    radial-gradient(circle at 8% 85%, rgba(53, 137, 233, 0.08), transparent 32%),
+    #fcfcfb;
+}
+
+.auth-page-brand {
+  width: min(1120px, 100%);
+  margin: 0 auto 32px;
+}
+
+.auth-page-card {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+}
+
 .marketing-footer {
   display: grid;
   grid-template-columns: 1fr auto auto;
