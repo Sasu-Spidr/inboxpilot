@@ -128,36 +128,6 @@ export default async function Home() {
 
       <PricingSection />
 
-      {false && (
-        <section id="inscription" className="marketing-auth">
-          <div>
-            <p className="marketing-badge">Créer votre espace</p>
-            <h2>Lancez InboxPilot en quelques minutes.</h2>
-            <p>Créez votre compte, connectez Gmail ou Outlook, puis laissez l&apos;agent classer les nouveaux emails.</p>
-          </div>
-          <div className="marketing-forms">
-            <form action="/api/auth/register" method="post" className="marketing-form-card">
-              <h3>Créer mon espace</h3>
-              <label>Prénom et nom</label>
-              <input name="ownerName" placeholder="Jean Martin" required />
-              <label>Email professionnel</label>
-              <input name="email" type="email" placeholder="jean@entreprise.fr" required />
-              <label>Mot de passe</label>
-              <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
-              <button type="submit">Créer et continuer →</button>
-            </form>
-            <form id="connexion" action="/api/auth/login" method="post" className="marketing-form-card compact">
-              <h3>Se connecter</h3>
-              <label>Email</label>
-              <input name="email" type="email" placeholder="jean@entreprise.fr" required />
-              <label>Mot de passe</label>
-              <input name="password" type="password" required />
-              <button type="submit">Se connecter</button>
-            </form>
-          </div>
-        </section>
-      )}
-
       <footer id="ressources" className="marketing-footer">
         <div>
           <a className="marketing-brand" href="#top">
