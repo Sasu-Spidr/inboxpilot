@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 export default async function Home({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
   const user = await currentUser();
   const error = (await searchParams)?.error;
+  const connectionHref = user ? "/dashboard" : "#inscription";
 
   return (
     <main className="marketing-shell">
@@ -21,7 +22,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <a href="#tarifs">Tarifs</a>
         </nav>
         <div className="marketing-nav-actions">
-          <a className="marketing-link" href={user ? "#tarifs" : "#connexion"}>Connexion</a>
+          <a className="marketing-link" href={connectionHref}>Connexion</a>
           <a className="marketing-button primary" href={user ? "#tarifs" : "#inscription"}>
             Voir les offres
           </a>
@@ -171,7 +172,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           <a href="#top">Fonctionnalités</a>
           <a href="#preview">Fonctionnement</a>
           <a href="#tarifs">Tarifs</a>
-          <a href={user ? "#tarifs" : "#connexion"}>Connexion</a>
+          <a href={connectionHref}>Connexion</a>
         </nav>
         <small>© 2026 InboxPilot. Tous droits réservés.</small>
       </footer>
