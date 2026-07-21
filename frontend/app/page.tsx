@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
           </p>
           <div className="marketing-hero-actions">
             <a className="marketing-button primary large" href="#tarifs">
-              Démarrer gratuitement
+              Démarrer mon abonnement
             </a>
           </div>
         </div>
