@@ -21,12 +21,37 @@ export type ClientSettings = {
   updatedAt: string;
 };
 
+const CEO_LABEL_DESCRIPTIONS = {
+  "À répondre": `Définition. Un humain identifiable attend une réponse écrite de ma part.
+Une réponse textuelle réglerait le mail. Inclut les relances (quelqu'un réclame un retour promis). Signaux. Question directe, demande d'info ou de devis, sollicitation commerciale d'un prospect réel, message personnel appelant un retour, rappel dirigé vers moi (« avez-vous eu le temps de… »). Ne pas confondre :
+• Facture/contrat/accès où répondre par texte ne suffit pas → À traiter.
+• Expéditeur automatique (no-reply) même avec un « confirmez » → Notification.
+• Compliment ou mise au courant sans réponse réellement attendue → À lire.
+Métadonnée urgence : mets haute si le mail est une relance, mentionne une échéance proche, ou emploie un ton pressant ; sinon normale.`,
+  "À traiter": `Définition. Le mail exige une action manuelle qui n'est pas une simple réponse : payer, signer, valider un document, gérer un accès ou un compte, effectuer une opération. Signaux. Facture à régler, contrat à signer, document à valider, demande d'accès légitime, alerte de sécurité exigeant une action réelle. Ne pas confondre :
+• Simple question sur un document (« quel est le montant ? ») → À répondre.
+• Reçu / confirmation d'une opération déjà faite → Notification.
+• Promo urgente déguisée (« dernière chance -50 % ») → Commercial.`,
+  "À lire": `Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe FYI, mises au courant, commentaires et mentions collaboratifs. Signaux. Transfert « pour info », note interne, mention dans un fil, commentaire sur un document, retour d'un collègue, document partagé sans demande. Ne pas confondre :
+• Le message attend un retour de ma part → À répondre.
+• Message généré par un système/application → Notification.
+• Contenu éditorial d'abonnement ou promotion → Commercial.`,
+  Notification: `Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, événement calendaire. Aucune action manuelle requise. Signaux. Expéditeur no-reply / notifications@, code de connexion, alerte système, reçu, invitation ou modification de réunion (fichier .ics), rappel automatique d'événement. Ne pas confondre :
+• L'alerte exige une action manuelle réelle (« connexion suspecte, sécurisez votre compte ») → À traiter.
+• Message écrit par un humain pour être lu → À lire.
+• Promotion ou prospection → Commercial.`,
+  Commercial: `Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition. Signaux. Newsletter récurrente, cold email, promo/remise, argumentaire de vente, lien de désabonnement, envoi de masse. Ne pas confondre :
+• Mail transactionnel légitime d'un service que j'utilise (reçu, confirmation) → Notification.
+• Message personnel ou professionnel individuel → À répondre ou À lire.
+• ⚠ Ce libellé peut déclencher une suppression (si l'utilisateur l'a activée). Au moindre doute sur le caractère de masse/commercial, ne choisis pas Commercial → Notification ou À lire.`,
+} as const;
+
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À répondre", name: "À répondre", priority: 100, description: "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À traiter", name: "À traiter", priority: 90, description: "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération.", color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À lire", name: "À lire", priority: 60, description: "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative.", color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Notification", name: "Notification", priority: 40, description: "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Commercial", name: "Commercial", priority: 20, description: "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À répondre", name: "À répondre", priority: 100, description: CEO_LABEL_DESCRIPTIONS["À répondre"], color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À traiter", name: "À traiter", priority: 90, description: CEO_LABEL_DESCRIPTIONS["À traiter"], color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À lire", name: "À lire", priority: 60, description: CEO_LABEL_DESCRIPTIONS["À lire"], color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Notification", name: "Notification", priority: 40, description: CEO_LABEL_DESCRIPTIONS.Notification, color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Commercial", name: "Commercial", priority: 20, description: CEO_LABEL_DESCRIPTIONS.Commercial, color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
 ];
 
 const LEGACY_DEFAULT_KEYS = new Set([
@@ -43,9 +68,19 @@ const LEGACY_DEFAULT_KEYS = new Set([
   "En attente de réponse",
 ]);
 
-const LEGACY_DEFAULT_DESCRIPTIONS = new Map<string, string>([
+const LEGACY_DEFAULT_DESCRIPTIONS: Array<[string, string]> = [
   ["À traiter", "Email important à gérer manuellement."],
+  ["À traiter", "Action manuelle non limitée à une réponse."],
+  ["À traiter", "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération."],
   ["À répondre", "Email qui nécessite une réponse."],
+  ["À répondre", "Un humain identifiable attend une réponse écrite."],
+  ["À répondre", "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour."],
+  ["À lire", "Information destinée à un humain, à lire ou conserver."],
+  ["À lire", "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative."],
+  ["Notification", "Message généré par une machine, sans action manuelle."],
+  ["Notification", "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle."],
+  ["Commercial", "Newsletter, promotion, prospection ou offre commerciale."],
+  ["Commercial", "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut."],
   ["Relance", "Email de suivi ou rappel à traiter."],
   ["Commentaire", "Message contenant un avis, une remarque ou une discussion à lire."],
   ["FYI", "Information transmise pour lecture, sans action directe attendue."],
@@ -55,7 +90,7 @@ const LEGACY_DEFAULT_DESCRIPTIONS = new Map<string, string>([
   ["Marketing", "Offres commerciales, promotions ou prospection."],
   ["Traité", "Email déjà géré ou ne nécessitant plus d'action."],
   ["En attente de réponse", "Conversation en attente d'un retour externe."],
-]);
+];
 
 export function getClientSettings(clientId: string): ClientSettings {
   const saved = readSettingsFile(clientId);
@@ -126,7 +161,7 @@ function settingsFile(clientId: string): string {
 
 function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSetting {
   const name = String(label.name || "").trim().slice(0, 64) || fallback.name;
-  const description = String(label.description || "").trim().slice(0, 360) || fallback.description || "Libellé personnalisé.";
+  const description = String(label.description || "").trim().slice(0, 2000) || fallback.description || "Libellé personnalisé.";
   const color = /^#[0-9a-fA-F]{6}$/.test(String(label.color || "")) ? label.color : fallback.color || "#14b8a6";
   return {
     key: String(label.key || fallback.key || slugify(name)).trim().slice(0, 80),
@@ -156,8 +191,11 @@ function isLegacyDefaultSet(labels: LabelSetting[]): boolean {
 
 function normalizeLegacyDescription(label: LabelSetting | undefined, fallback: LabelSetting): LabelSetting | undefined {
   if (!label) return undefined;
-  const legacyDescription = LEGACY_DEFAULT_DESCRIPTIONS.get(fallback.key);
-  if (!legacyDescription || String(label.description || "").trim() !== legacyDescription) return label;
+  const description = String(label.description || "").trim();
+  const isLegacyDescription = LEGACY_DEFAULT_DESCRIPTIONS.some(
+    ([key, legacyDescription]) => key === fallback.key && description === legacyDescription,
+  );
+  if (!isLegacyDescription) return label;
   return { ...label, description: fallback.description };
 }
 
