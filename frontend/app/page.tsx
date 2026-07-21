@@ -38,7 +38,7 @@ export default async function Home() {
             <span>Sous contrôle.</span>
           </h1>
           <p>
-            InboxPilot est un agent IA qui analyse, classe et traite automatiquement vos emails
+            InboxPilot est un agent IA qui analyse, classe, labellise et traite automatiquement vos emails
             pour ne garder que l&apos;essentiel. Gagnez du temps chaque jour.
           </p>
           <div className="marketing-hero-actions">
