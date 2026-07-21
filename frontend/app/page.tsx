@@ -1,4 +1,5 @@
 import { currentUser } from "@/lib/auth";
+import { PricingSection } from "./PricingSection";
 import type { ReactNode } from "react";
 
 export default async function Home({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
@@ -125,22 +126,7 @@ export default async function Home({ searchParams }: { searchParams?: Promise<{ 
         </div>
       </section>
 
-      <section id="tarifs" className="pricing-section">
-        <div className="section-title">
-          <h2>Des tarifs simples et transparents</h2>
-          <p>Choisissez l&apos;offre qui correspond à vos besoins.</p>
-          <div className="billing-toggle">
-            <span className="active">Mensuel</span>
-            <span>Annuel</span>
-            <em>-20%</em>
-          </div>
-        </div>
-        <div className="pricing-grid">
-          <PricingCard name="Free" price="0€" subtitle="Pour découvrir InboxPilot" cta="Commencer gratuitement" />
-          <PricingCard name="Pro" price="19€" subtitle="Pour les professionnels" cta="Essayer 14 jours gratuitement" popular />
-          <PricingCard name="Business" price="49€" subtitle="Pour les équipes" cta="Nous contacter" />
-        </div>
-      </section>
+      <PricingSection />
 
       {!user && (
         <section id="inscription" className="marketing-auth">
@@ -199,27 +185,6 @@ function FeatureCard({ icon, title, children }: { icon: ReactNode; title: string
       <span>{icon}</span>
       <h3>{title}</h3>
       <p>{children}</p>
-    </article>
-  );
-}
-
-function PricingCard({ name, price, subtitle, cta, popular = false }: { name: string; price: string; subtitle: string; cta: string; popular?: boolean }) {
-  const features = name === "Free"
-    ? ["1 boîte connectée", "200 emails / mois", "Classement intelligent", "Brouillons manuels"]
-    : name === "Pro"
-      ? ["5 boîtes connectées", "5 000 emails / mois", "Actions automatiques", "Brouillons & réponses auto", "Support prioritaire"]
-      : ["Boîtes illimitées", "Emails illimités", "Règles avancées & IA", "Statistiques avancées", "Support dédié"];
-
-  return (
-    <article className={popular ? "popular" : ""}>
-      {popular && <em>Le plus populaire</em>}
-      <h3>{name}</h3>
-      <p>{subtitle}</p>
-      <div><strong>{price}</strong><span>/ mois</span></div>
-      <ul>
-        {features.map((feature) => <li key={feature}>✓ {feature}</li>)}
-      </ul>
-      <a href="#inscription">{cta}</a>
     </article>
   );
 }

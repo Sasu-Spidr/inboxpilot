@@ -3766,7 +3766,7 @@ input {
   border: 1px solid var(--m-border);
 }
 
-.billing-toggle span,
+.billing-toggle button,
 .billing-toggle em {
   padding: 0.44rem 0.9rem;
   border-radius: 999px;
@@ -3776,9 +3776,27 @@ input {
   font-weight: 700;
 }
 
-.billing-toggle .active {
+.billing-toggle button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.18s ease, background 0.18s ease, transform 0.18s var(--m-ease);
+}
+
+.billing-toggle button:hover {
+  color: var(--m-brand-dark);
+}
+
+.billing-toggle button:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.22);
+  outline-offset: 2px;
+}
+
+.billing-toggle button.active {
   color: #fff;
   background: var(--m-brand-dark);
+  box-shadow: 0 10px 22px rgba(15, 157, 138, 0.18);
 }
 
 .billing-toggle em {
@@ -3834,16 +3852,24 @@ input {
   font-size: 0.84rem;
 }
 
-.pricing-grid div strong {
+.pricing-price strong {
   font-size: 2.5rem;
   letter-spacing: -0.06em;
 }
 
-.pricing-grid div span {
+.pricing-price span {
   margin-left: 0.4rem;
   color: var(--m-muted);
   font-size: 0.86rem;
   font-weight: 700;
+}
+
+.pricing-saving {
+  min-height: 1.25rem;
+  margin: 0.45rem 0 0 !important;
+  color: var(--m-brand-dark) !important;
+  font-size: 0.8rem !important;
+  font-weight: 800;
 }
 
 .pricing-grid ul {
