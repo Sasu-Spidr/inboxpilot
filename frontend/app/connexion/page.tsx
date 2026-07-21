@@ -11,7 +11,9 @@ export default async function ConnexionPage({ searchParams }: { searchParams?: P
     <main className="auth-shell">
       <section className="hero-card" aria-label="Présentation InboxPilot">
         <div className="brand-pill">
-          <span className="brand-icon" aria-hidden="true">◆</span>
+          <span className="brand-icon" aria-hidden="true">
+            <InboxPilotLogo />
+          </span>
           <span>InboxPilot</span>
         </div>
 
@@ -62,5 +64,20 @@ export default async function ConnexionPage({ searchParams }: { searchParams?: P
         </div>
       </section>
     </main>
+  );
+}
+
+function InboxPilotLogo() {
+  return (
+    <svg className="inboxpilot-logo-mark" viewBox="0 0 96 96" aria-hidden="true">
+      <rect x="8" y="8" width="80" height="80" rx="22" fill="#fff" />
+      <rect x="25" y="24" width="13" height="13" rx="2" fill="#2563ff" />
+      <rect x="43" y="24" width="13" height="13" rx="2" fill="#2563ff" />
+      <rect x="25" y="43" width="13" height="31" rx="2" fill="#111827" />
+      <path
+        d="M43 43h17.5C72.5 43 81 35.7 81 25.6C81 15.8 73.2 9 61.1 9H43v65h13V54h4.4C74.2 54 88 43.6 88 26.2C88 8.9 75.4 0 60.3 0H43v12h16.5C69.8 12 76 17.7 76 26.4C76 35.1 69.6 43 59.4 43H43Z"
+        fill="#2563ff"
+      />
+    </svg>
   );
 }
