@@ -80,7 +80,7 @@ export default async function Home() {
         <div className="preview-main">
           <div className="preview-top">
             <strong>Vue d&apos;ensemble</strong>
-            <a href={connectionHref}>Configurer l&apos;agent</a>
+            <a href="#tarifs">Configurer l&apos;agent</a>
           </div>
           <div className="preview-hero">
             <div>
@@ -103,7 +103,7 @@ export default async function Home() {
             <PreviewEmail icon={<OutlookLogo />} title="Bienvenue dans votre nouveau compte Outlook.com" label="FYI" />
             <PreviewEmail icon={<GmailLogo />} title="Votre code à usage unique" label="Notification" />
             <PreviewEmail icon={<GmailLogo />} title="RECRUTEMENT" label="FYI" />
-            <a href={connectionHref}>Voir toute l&apos;activité →</a>
+            <a href="#tarifs">Voir toute l&apos;activité →</a>
           </div>
         </div>
       </section>
