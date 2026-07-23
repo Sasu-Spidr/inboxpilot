@@ -12,11 +12,11 @@ export async function POST(request: Request) {
   const clientId = clientIdFromEmail(email);
 
   if (!ownerName || !email || !password || password.length < 8) {
-    return redirectTo(request, "/connexion?error=register");
+    return redirectTo(request, "/?error=register");
   }
 
   if (await findUserByEmail(email)) {
-    return redirectTo(request, "/connexion?error=exists");
+    return redirectTo(request, "/?error=exists");
   }
 
   const { hash, salt } = createPasswordHash(password);
