@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   const user = row ? toUser(row) : null;
 
   if (!user || !verifyPassword(password, user)) {
-    return redirectTo(request, "/?error=login");
+    return redirectTo(request, "/connexion?error=login");
   }
 
   await setSession(user.clientId);
