@@ -8,11 +8,6 @@ export async function POST(request: Request) {
 }
 
 function redirectTo(request: Request, path: string): NextResponse {
-  const configuredBaseUrl = process.env.FRONTEND_BASE_URL;
-  if (configuredBaseUrl) {
-    return NextResponse.redirect(new URL(path, configuredBaseUrl).toString(), 303);
-  }
-
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   return NextResponse.redirect(`${proto}://${host}${path}`, 303);
