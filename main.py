@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
+from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, never_delete_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -181,6 +181,9 @@ class MailWorker:
             action = action_for_client(client_id, label, action)
             if action != "trash" and unread_delete_due(client_id, label, email):
                 action = "trash"
+            if action == "trash" and never_delete_for_client(client_id, label):
+                log_event("delete_blocked_by_label_setting", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
+                action = "keep"
             if action == "trash" and not auto_delete_allowed(result, email):
                 if unread_delete_due(client_id, label, email):
                     log_event("unread_expired_delete_allowed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash", status="ok")

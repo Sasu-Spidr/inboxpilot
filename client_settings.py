@@ -32,11 +32,11 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 }
 
 DEFAULT_LABELS: list[dict[str, Any]] = [
-    {"key": "À répondre", "name": "À répondre", "description": CEO_LABEL_DESCRIPTIONS["À répondre"], "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "À traiter", "name": "À traiter", "description": CEO_LABEL_DESCRIPTIONS["À traiter"], "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "À lire", "name": "À lire", "description": CEO_LABEL_DESCRIPTIONS["À lire"], "color": "#3b82f6", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Notification", "name": "Notification", "description": CEO_LABEL_DESCRIPTIONS["Notification"], "color": "#22c55e", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Commercial", "name": "Commercial", "description": CEO_LABEL_DESCRIPTIONS["Commercial"], "color": "#fb7185", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À répondre", "name": "À répondre", "description": CEO_LABEL_DESCRIPTIONS["À répondre"], "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "neverDelete": True, "autoDeleteUnreadAfterDays": None},
+    {"key": "À traiter", "name": "À traiter", "description": CEO_LABEL_DESCRIPTIONS["À traiter"], "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "neverDelete": True, "autoDeleteUnreadAfterDays": None},
+    {"key": "À lire", "name": "À lire", "description": CEO_LABEL_DESCRIPTIONS["À lire"], "color": "#3b82f6", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "neverDelete": True, "autoDeleteUnreadAfterDays": None},
+    {"key": "Notification", "name": "Notification", "description": CEO_LABEL_DESCRIPTIONS["Notification"], "color": "#22c55e", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "neverDelete": True, "autoDeleteUnreadAfterDays": None},
+    {"key": "Commercial", "name": "Commercial", "description": CEO_LABEL_DESCRIPTIONS["Commercial"], "color": "#fb7185", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "neverDelete": False, "autoDeleteUnreadAfterDays": None},
 ]
 
 OLD_DEFAULT_DESCRIPTIONS = {
@@ -137,6 +137,10 @@ def action_for_client(client_id: str, label: str, default_action: str) -> str:
     setting = _label_setting(client_id, label)
     if not setting:
         return default_action
+    if setting.get("neverDelete"):
+        if setting.get("autoReply") or setting.get("prepareDraft"):
+            return "draft"
+        return "keep" if default_action == "trash" else default_action
     if setting.get("autoDelete"):
         return "trash"
     if setting.get("autoReply") or setting.get("prepareDraft"):
@@ -153,8 +157,15 @@ def unread_delete_after_days_for_client(client_id: str, label: str) -> int | Non
     setting = _label_setting(client_id, label)
     if not setting:
         return None
+    if setting.get("neverDelete"):
+        return None
     days = _int_setting(setting.get("autoDeleteUnreadAfterDays"), 0)
     return days if days > 0 else None
+
+
+def never_delete_for_client(client_id: str, label: str) -> bool:
+    setting = _label_setting(client_id, label)
+    return bool(setting and setting.get("neverDelete"))
 
 
 def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:

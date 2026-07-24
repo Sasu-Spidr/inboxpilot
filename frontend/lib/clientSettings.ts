@@ -13,6 +13,7 @@ export type LabelSetting = {
   autoReply: boolean;
   autoDelete: boolean;
   markAsRead: boolean;
+  neverDelete: boolean;
   autoDeleteUnreadAfterDays?: number | null;
 };
 
@@ -47,11 +48,11 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 } as const;
 
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À répondre", name: "À répondre", priority: 100, description: CEO_LABEL_DESCRIPTIONS["À répondre"], color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À traiter", name: "À traiter", priority: 90, description: CEO_LABEL_DESCRIPTIONS["À traiter"], color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À lire", name: "À lire", priority: 60, description: CEO_LABEL_DESCRIPTIONS["À lire"], color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Notification", name: "Notification", priority: 40, description: CEO_LABEL_DESCRIPTIONS.Notification, color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Commercial", name: "Commercial", priority: 20, description: CEO_LABEL_DESCRIPTIONS.Commercial, color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À répondre", name: "À répondre", priority: 100, description: CEO_LABEL_DESCRIPTIONS["À répondre"], color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, neverDelete: true, autoDeleteUnreadAfterDays: null },
+  { key: "À traiter", name: "À traiter", priority: 90, description: CEO_LABEL_DESCRIPTIONS["À traiter"], color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, neverDelete: true, autoDeleteUnreadAfterDays: null },
+  { key: "À lire", name: "À lire", priority: 60, description: CEO_LABEL_DESCRIPTIONS["À lire"], color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, neverDelete: true, autoDeleteUnreadAfterDays: null },
+  { key: "Notification", name: "Notification", priority: 40, description: CEO_LABEL_DESCRIPTIONS.Notification, color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, neverDelete: true, autoDeleteUnreadAfterDays: null },
+  { key: "Commercial", name: "Commercial", priority: 20, description: CEO_LABEL_DESCRIPTIONS.Commercial, color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, neverDelete: false, autoDeleteUnreadAfterDays: null },
 ];
 
 const LEGACY_DEFAULT_KEYS = new Set([
@@ -163,6 +164,7 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
   const name = String(label.name || "").trim().slice(0, 64) || fallback.name;
   const description = String(label.description || "").trim().slice(0, 2000) || fallback.description || "Libellé personnalisé.";
   const color = /^#[0-9a-fA-F]{6}$/.test(String(label.color || "")) ? label.color : fallback.color || "#14b8a6";
+  const neverDelete = Boolean(label.neverDelete);
   return {
     key: String(label.key || fallback.key || slugify(name)).trim().slice(0, 80),
     name,
@@ -170,9 +172,10 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
     color,
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
-    autoDelete: Boolean(label.autoDelete),
+    autoDelete: neverDelete ? false : Boolean(label.autoDelete),
     markAsRead: Boolean(label.markAsRead),
-    autoDeleteUnreadAfterDays: sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
+    neverDelete,
+    autoDeleteUnreadAfterDays: neverDelete ? null : sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
     priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
   };
 }

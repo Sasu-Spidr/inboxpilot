@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       autoReply: form.get(`labels.${index}.autoReply`) === "on",
       autoDelete: form.get(`labels.${index}.autoDelete`) === "on",
       markAsRead: form.get(`labels.${index}.markAsRead`) === "on",
+      neverDelete: form.get(`labels.${index}.neverDelete`) === "on",
       autoDeleteUnreadAfterDays: parseUnreadDeleteDays(form.get(`labels.${index}.autoDeleteUnreadAfterDays`)),
     });
   }
