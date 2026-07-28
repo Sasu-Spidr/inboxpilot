@@ -72,6 +72,8 @@ LEGACY_DEFAULT_KEYS = {
     "En attente de réponse",
 }
 
+REMOVED_LEGACY_DEFAULT_KEYS = {"À lire", "Commercial"}
+
 
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
@@ -176,6 +178,14 @@ def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:
 
 def normalized_labels_for_client(client_id: str) -> list[dict[str, Any]]:
     labels = load_client_settings(client_id).get("labels", [])
+    if not labels:
+        return DEFAULT_LABELS
+    labels = [
+        setting
+        for setting in labels
+        if str(setting.get("key", "")).strip() not in REMOVED_LEGACY_DEFAULT_KEYS
+        and str(setting.get("name", "")).strip() not in REMOVED_LEGACY_DEFAULT_KEYS
+    ]
     if not labels:
         return DEFAULT_LABELS
     keys = [str(setting.get("key", "")).strip() for setting in labels if str(setting.get("key", "")).strip()]

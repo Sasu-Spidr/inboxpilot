@@ -74,6 +74,8 @@ const LEGACY_DEFAULT_KEYS = new Set([
   "En attente de réponse",
 ]);
 
+const REMOVED_LEGACY_DEFAULT_KEYS = new Set(["À lire", "Commercial"]);
+
 const LEGACY_DEFAULT_DESCRIPTIONS: Array<[string, string]> = [
   ["À traiter", "Email important à gérer manuellement."],
   ["À traiter", "Action manuelle non limitée à une réponse."],
@@ -142,6 +144,9 @@ function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
   const sanitized: LabelSetting[] = [];
 
   for (const raw of labels) {
+    if (REMOVED_LEGACY_DEFAULT_KEYS.has(String(raw.key || "").trim()) || REMOVED_LEGACY_DEFAULT_KEYS.has(String(raw.name || "").trim())) {
+      continue;
+    }
     const fallback = fallbackByKey.get(raw.key) || raw;
     const label = sanitizeLabel(normalizeLegacyDescription(raw, fallback) || raw, fallback);
     if (!label.name) continue;
