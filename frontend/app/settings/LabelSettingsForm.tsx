@@ -26,7 +26,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
         autoReply: false,
         autoDelete: false,
         markAsRead: false,
-        neverDelete: true,
         autoDeleteUnreadAfterDays: null,
         priority: 10,
       },
@@ -136,7 +135,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                     name={`labels.${index}.autoDelete`}
                     type="checkbox"
                     checked={label.autoDelete}
-                    disabled={label.neverDelete}
                     onChange={(event) => updateLabel(index, { autoDelete: event.target.checked })}
                   />
                   Suppression auto
@@ -150,21 +148,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                   />
                   Marquer comme lu
                 </label>
-                <label>
-                  <input
-                    name={`labels.${index}.neverDelete`}
-                    type="checkbox"
-                    checked={label.neverDelete}
-                    onChange={(event) =>
-                      updateLabel(index, {
-                        neverDelete: event.target.checked,
-                        autoDelete: event.target.checked ? false : label.autoDelete,
-                        autoDeleteUnreadAfterDays: event.target.checked ? null : label.autoDeleteUnreadAfterDays,
-                      })
-                    }
-                  />
-                  Ne jamais supprimer
-                </label>
               </div>
 
               <label className="setting-field unread-delay-field">
@@ -176,7 +159,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                     min={1}
                     max={365}
                     placeholder="Désactivé"
-                    disabled={label.neverDelete}
                     value={label.autoDeleteUnreadAfterDays || ""}
                     onChange={(event) =>
                       updateLabel(index, {
@@ -206,5 +188,5 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
 }
 
 function activeRulesCount(label: LabelSetting) {
-  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete) + Number(label.markAsRead) + Number(Boolean(label.autoDeleteUnreadAfterDays)) + Number(label.neverDelete);
+  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete) + Number(label.markAsRead) + Number(Boolean(label.autoDeleteUnreadAfterDays));
 }

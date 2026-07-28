@@ -47,7 +47,7 @@ def test_client_settings_override_action_priority(tmp_path, monkeypatch):
         encoding="utf-8",
     )
 
-    assert action_for_client("client-a", "Newsletter", "keep") == "trash"
+    assert action_for_client("client-a", "Newsletter", "keep") == "draft"
     assert action_for_client("client-a", "Relance", "keep") == "draft"
     assert action_for_client("client-a", "FYI", "mark_read") == "draft"
     assert action_for_client("client-a", "Notification", "mark_read") == "mark_read"
