@@ -47,11 +47,17 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 } as const;
 
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À répondre", name: "À répondre", priority: 100, description: CEO_LABEL_DESCRIPTIONS["À répondre"], color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À traiter", name: "À traiter", priority: 90, description: CEO_LABEL_DESCRIPTIONS["À traiter"], color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À lire", name: "À lire", priority: 60, description: CEO_LABEL_DESCRIPTIONS["À lire"], color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Notification", name: "Notification", priority: 40, description: CEO_LABEL_DESCRIPTIONS.Notification, color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Commercial", name: "Commercial", priority: 20, description: CEO_LABEL_DESCRIPTIONS.Commercial, color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À traiter", name: "À traiter", priority: 110, description: "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte.", color: "#8b8b7a", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À répondre", name: "À répondre", priority: 100, description: "Message qui demande clairement une réponse humaine ou une action de réponse commerciale.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Relance", name: "Relance", priority: 95, description: "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action.", color: "#f97316", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Commentaire", name: "Commentaire", priority: 80, description: "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate.", color: "#eab308", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "FYI", name: "FYI", priority: 70, description: "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident.", color: "#64748b", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Notification", name: "Notification", priority: 60, description: "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Mise à jour de réunion", name: "Mise à jour de réunion", priority: 50, description: "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence.", color: "#93c5fd", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Newsletter", name: "Newsletter", priority: 40, description: "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel.", color: "#fed7aa", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Marketing", name: "Marketing", priority: 30, description: "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "Traité", name: "Traité", priority: 20, description: "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière.", color: "#a78bfa", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "En attente de réponse", name: "En attente de réponse", priority: 10, description: "Conversation où une réponse, une confirmation ou un retour externe est encore attendu.", color: "#44403c", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
 ];
 
 const LEGACY_DEFAULT_KEYS = new Set([
@@ -141,6 +147,16 @@ function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
     if (!label.name) continue;
     const key = uniqueKey(label.key || slugify(label.name), usedKeys);
     sanitized.push({ ...label, key });
+  }
+
+  const present = new Set(sanitized.flatMap((label) => [label.key.trim(), label.name.trim()].filter(Boolean)));
+  for (const defaultLabel of DEFAULT_LABEL_SETTINGS) {
+    if (present.has(defaultLabel.key) || present.has(defaultLabel.name)) continue;
+    const label = sanitizeLabel(defaultLabel, defaultLabel);
+    const key = uniqueKey(label.key, usedKeys);
+    sanitized.push({ ...label, key });
+    present.add(key);
+    present.add(label.name);
   }
 
   return sanitized;

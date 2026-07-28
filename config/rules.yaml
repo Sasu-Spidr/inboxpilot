@@ -1,10 +1,22 @@
+À traiter:
+  action: draft
 À répondre:
   action: draft
-À traiter:
+Relance:
+  action: draft
+Commentaire:
   action: keep
-À lire:
+FYI:
   action: keep
 Notification:
   action: keep
-Commercial:
+Mise à jour de réunion:
+  action: keep
+Newsletter:
+  action: keep
+Marketing:
+  action: keep
+Traité:
+  action: keep
+En attente de réponse:
   action: keep

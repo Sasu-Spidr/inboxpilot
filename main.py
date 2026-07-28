@@ -299,10 +299,16 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
 
 def normalize_active_label(client_id: str, label: str) -> str:
     active_keys = active_label_keys_for_client(client_id)
-    if not active_keys or label in active_keys:
-        return label
-    if "À lire" in active_keys:
-        return "À lire"
+    aliases = {
+        "Commercial": "Marketing",
+        "À lire": "FYI",
+        "A lire": "FYI",
+    }
+    mapped_label = aliases.get(label, label)
+    if not active_keys or mapped_label in active_keys:
+        return mapped_label
+    if "FYI" in active_keys:
+        return "FYI"
     return active_keys[0]
 
 

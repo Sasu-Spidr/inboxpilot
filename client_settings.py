@@ -32,11 +32,17 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 }
 
 DEFAULT_LABELS: list[dict[str, Any]] = [
-    {"key": "À répondre", "name": "À répondre", "description": CEO_LABEL_DESCRIPTIONS["À répondre"], "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "À traiter", "name": "À traiter", "description": CEO_LABEL_DESCRIPTIONS["À traiter"], "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "À lire", "name": "À lire", "description": CEO_LABEL_DESCRIPTIONS["À lire"], "color": "#3b82f6", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Notification", "name": "Notification", "description": CEO_LABEL_DESCRIPTIONS["Notification"], "color": "#22c55e", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Commercial", "name": "Commercial", "description": CEO_LABEL_DESCRIPTIONS["Commercial"], "color": "#fb7185", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À traiter", "name": "À traiter", "description": "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte.", "color": "#8b8b7a", "priority": 110, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À répondre", "name": "À répondre", "description": "Message qui demande clairement une réponse humaine ou une action de réponse commerciale.", "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Relance", "name": "Relance", "description": "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action.", "color": "#f97316", "priority": 95, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Commentaire", "name": "Commentaire", "description": "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate.", "color": "#eab308", "priority": 80, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "FYI", "name": "FYI", "description": "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident.", "color": "#64748b", "priority": 70, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Notification", "name": "Notification", "description": "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service.", "color": "#22c55e", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Mise à jour de réunion", "name": "Mise à jour de réunion", "description": "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence.", "color": "#93c5fd", "priority": 50, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Newsletter", "name": "Newsletter", "description": "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel.", "color": "#fed7aa", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Marketing", "name": "Marketing", "description": "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition.", "color": "#fb7185", "priority": 30, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "Traité", "name": "Traité", "description": "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière.", "color": "#a78bfa", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "En attente de réponse", "name": "En attente de réponse", "description": "Conversation où une réponse, une confirmation ou un retour externe est encore attendu.", "color": "#44403c", "priority": 10, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
 ]
 
 OLD_DEFAULT_DESCRIPTIONS = {
@@ -175,7 +181,26 @@ def normalized_labels_for_client(client_id: str) -> list[dict[str, Any]]:
     keys = [str(setting.get("key", "")).strip() for setting in labels if str(setting.get("key", "")).strip()]
     if len(keys) >= 8 and all(key in LEGACY_DEFAULT_KEYS for key in keys):
         return DEFAULT_LABELS
-    return [_normalize_default_description(setting) for setting in labels]
+    return _with_missing_default_labels([_normalize_default_description(setting) for setting in labels])
+
+
+def _with_missing_default_labels(labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged = list(labels)
+    present = {
+        value
+        for setting in merged
+        for value in (str(setting.get("key", "")).strip(), str(setting.get("name", "")).strip())
+        if value
+    }
+    for default_label in DEFAULT_LABELS:
+        key = str(default_label.get("key", "")).strip()
+        name = str(default_label.get("name", "")).strip()
+        if key in present or name in present:
+            continue
+        merged.append(dict(default_label))
+        present.add(key)
+        present.add(name)
+    return merged
 
 
 def _normalize_default_description(setting: dict[str, Any]) -> dict[str, Any]:

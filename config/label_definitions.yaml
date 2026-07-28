@@ -1,66 +1,98 @@
+À traiter:
+  priority: 110
+  description: "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte."
+  action_hint: draft
+  examples:
+    - "Facture à régler"
+    - "Document à signer"
+    - "Mode de paiement à mettre à jour"
+
 À répondre:
   priority: 100
-  description: |-
-    Définition. Un humain identifiable attend une réponse écrite de ma part.
-    Une réponse textuelle réglerait le mail. Inclut les relances (quelqu'un réclame un retour promis). Signaux. Question directe, demande d'info ou de devis, sollicitation commerciale d'un prospect réel, message personnel appelant un retour, rappel dirigé vers moi (« avez-vous eu le temps de… »). Ne pas confondre :
-    • Facture/contrat/accès où répondre par texte ne suffit pas → À traiter.
-    • Expéditeur automatique (no-reply) même avec un « confirmez » → Notification.
-    • Compliment ou mise au courant sans réponse réellement attendue → À lire.
-    Métadonnée urgence : mets haute si le mail est une relance, mentionne une échéance proche, ou emploie un ton pressant ; sinon normale.
+  description: "Message qui demande clairement une réponse humaine ou une action de réponse commerciale."
   action_hint: draft
   examples:
     - "Pouvez-vous me confirmer le devis ?"
     - "Avez-vous eu le temps de regarder ?"
     - "Je suis intéressé par vos services"
 
-À traiter:
-  priority: 90
-  description: |-
-    Définition. Le mail exige une action manuelle qui n'est pas une simple réponse : payer, signer, valider un document, gérer un accès ou un compte, effectuer une opération. Signaux. Facture à régler, contrat à signer, document à valider, demande d'accès légitime, alerte de sécurité exigeant une action réelle. Ne pas confondre :
-    • Simple question sur un document (« quel est le montant ? ») → À répondre.
-    • Reçu / confirmation d'une opération déjà faite → Notification.
-    • Promo urgente déguisée (« dernière chance -50 % ») → Commercial.
+Relance:
+  priority: 95
+  description: "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action."
+  action_hint: draft
+  examples:
+    - "Je me permets de vous relancer"
+    - "Avez-vous eu le temps de..."
+    - "Following up"
+
+Commentaire:
+  priority: 80
+  description: "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate."
   action_hint: keep
   examples:
-    - "Facture à régler"
-    - "Document à signer"
-    - "Mode de paiement à mettre à jour"
+    - "Quelqu'un vous a mentionné"
+    - "Commentaire sur un document"
+    - "Retour collaboratif"
 
-À lire:
-  priority: 60
-  description: |-
-    Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe FYI, mises au courant, commentaires et mentions collaboratifs. Signaux. Transfert « pour info », note interne, mention dans un fil, commentaire sur un document, retour d'un collègue, document partagé sans demande. Ne pas confondre :
-    • Le message attend un retour de ma part → À répondre.
-    • Message généré par un système/application → Notification.
-    • Contenu éditorial d'abonnement ou promotion → Commercial.
+FYI:
+  priority: 70
+  description: "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident."
   action_hint: keep
   examples:
     - "Pour info"
-    - "Quelqu'un vous a mentionné"
-    - "Commentaire sur un document"
+    - "Mise au courant"
+    - "Information à conserver"
 
 Notification:
-  priority: 40
-  description: |-
-    Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, événement calendaire. Aucune action manuelle requise. Signaux. Expéditeur no-reply / notifications@, code de connexion, alerte système, reçu, invitation ou modification de réunion (fichier .ics), rappel automatique d'événement. Ne pas confondre :
-    • L'alerte exige une action manuelle réelle (« connexion suspecte, sécurisez votre compte ») → À traiter.
-    • Message écrit par un humain pour être lu → À lire.
-    • Promotion ou prospection → Commercial.
+  priority: 60
+  description: "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service."
   action_hint: keep
   examples:
     - "Code à usage unique"
+    - "Alerte sécurité"
     - "Reçu de paiement"
-    - "Invitation calendrier"
 
-Commercial:
-  priority: 20
-  description: |-
-    Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition. Signaux. Newsletter récurrente, cold email, promo/remise, argumentaire de vente, lien de désabonnement, envoi de masse. Ne pas confondre :
-    • Mail transactionnel légitime d'un service que j'utilise (reçu, confirmation) → Notification.
-    • Message personnel ou professionnel individuel → À répondre ou À lire.
-    • ⚠ Ce libellé peut déclencher une suppression (si l'utilisateur l'a activée). Au moindre doute sur le caractère de masse/commercial, ne choisis pas Commercial → Notification ou À lire.
+Mise à jour de réunion:
+  priority: 50
+  description: "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence."
+  action_hint: keep
+  examples:
+    - "Invitation calendrier"
+    - "Réunion annulée"
+    - "Reminder meeting"
+
+Newsletter:
+  priority: 40
+  description: "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel."
   action_hint: keep
   examples:
     - "Newsletter hebdomadaire"
+    - "Digest mensuel"
+    - "Actualités du mois"
+
+Marketing:
+  priority: 30
+  description: "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition."
+  action_hint: keep
+  examples:
     - "Offre spéciale"
-    - "Prospection commerciale"
+    - "Promotion"
+    - "Cold email commercial"
+
+Traité:
+  priority: 20
+  description: "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière."
+  action_hint: keep
+  examples:
+    - "C'est confirmé"
+    - "Sujet clôturé"
+    - "Déjà résolu"
+
+En attente de réponse:
+  priority: 10
+  description: "Conversation où une réponse, une confirmation ou un retour externe est encore attendu."
+  action_hint: keep
+  examples:
+    - "En attente de votre retour"
+    - "Nous revenons vers vous"
+    - "Confirmation à venir"

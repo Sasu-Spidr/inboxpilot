@@ -60,26 +60,26 @@ def test_deterministic_gmail_examples():
     assert security["label"] == "Notification"
 
     newsletter = classifier.classify("Newsletter", "me@example.com", "Découvrez nos nouveautés de la semaine.")
-    assert newsletter["label"] == "Commercial"
+    assert newsletter["label"] == "Newsletter"
     assert newsletter["action"] == "keep"
 
     digest = classifier.classify("Agent Hub Security + Evals - 2026-06-30", "news@example.com", "A paper-heavy window")
-    assert digest["label"] == "Commercial"
+    assert digest["label"] == "Newsletter"
 
     promo = classifier.classify("Invitez un proche sur Wise et obtenez 20 EUR", "wise@example.com", "Partagez les nouveautés")
-    assert promo["label"] == "Commercial"
+    assert promo["label"] == "Marketing"
 
     uber = classifier.classify("De délicieuses offres vous attendent sur vos prochaines commandes", "Uber Eats", "Économisez sur vos plats favoris.")
-    assert uber["label"] == "Commercial"
+    assert uber["label"] == "Marketing"
 
     product_hunt = classifier.classify("Bots with bank accounts", "Product Hunt Daily", "The fintech that's moved $3B is now letting AI agents spend money safely.")
-    assert product_hunt["label"] == "Commercial"
+    assert product_hunt["label"] == "Newsletter"
 
     learning_rate = classifier.classify("Sonnet 5 + Agent Evals - 2026-07-01", "High Learning Rate", "A model-release-heavy window with practical lessons.")
-    assert learning_rate["label"] == "Commercial"
+    assert learning_rate["label"] == "Newsletter"
 
     article = classifier.classify("25 ans auprès de Pierre Cardin", "Alec - Entrepreneur", "Ce qu'une légende de la mode m'a appris.")
-    assert article["label"] == "Commercial"
+    assert article["label"] == "Newsletter"
 
     reply = classifier.classify("Demande de reponse", "me@example.com", "Bonjour, pouvez-vous me rappeler pour discuter de votre offre ?")
     assert reply["label"] == "À répondre"
