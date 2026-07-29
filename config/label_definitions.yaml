@@ -1,98 +1,44 @@
-À traiter:
-  priority: 110
-  description: "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte."
-  action_hint: draft
-  examples:
-    - "Facture à régler"
-    - "Document à signer"
-    - "Mode de paiement à mettre à jour"
-
 À répondre:
   priority: 100
-  description: "Message qui demande clairement une réponse humaine ou une action de réponse commerciale."
+  description: "Définition. Un humain identifiable attend une réponse écrite de ma part. Une réponse textuelle réglerait le mail. Inclut les relances, demandes d'information, devis, sollicitations personnelles ou commerciales individuelles."
   action_hint: draft
   examples:
     - "Pouvez-vous me confirmer le devis ?"
     - "Avez-vous eu le temps de regarder ?"
-    - "Je suis intéressé par vos services"
-
-Relance:
-  priority: 95
-  description: "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action."
-  action_hint: draft
-  examples:
     - "Je me permets de vous relancer"
-    - "Avez-vous eu le temps de..."
-    - "Following up"
 
-Commentaire:
-  priority: 80
-  description: "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate."
+À traiter:
+  priority: 90
+  description: "Définition. Le mail exige une action manuelle qui n'est pas une simple réponse : payer, signer, valider un document, gérer un accès ou un compte, effectuer une opération."
   action_hint: keep
   examples:
-    - "Quelqu'un vous a mentionné"
-    - "Commentaire sur un document"
-    - "Retour collaboratif"
+    - "Facture à régler"
+    - "Document à signer"
+    - "Accès à valider"
 
-FYI:
+À lire:
   priority: 70
-  description: "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident."
+  description: "Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe FYI, mises au courant, commentaires et mentions collaboratifs."
   action_hint: keep
   examples:
     - "Pour info"
-    - "Mise au courant"
-    - "Information à conserver"
+    - "Commentaire sur un document"
+    - "Retour d'un collègue"
 
 Notification:
-  priority: 60
-  description: "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service."
+  priority: 50
+  description: "Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, reçu, invitation ou modification de réunion, rappel automatique d'événement."
   action_hint: keep
   examples:
     - "Code à usage unique"
-    - "Alerte sécurité"
-    - "Reçu de paiement"
-
-Mise à jour de réunion:
-  priority: 50
-  description: "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence."
-  action_hint: keep
-  examples:
+    - "Alerte système"
     - "Invitation calendrier"
-    - "Réunion annulée"
-    - "Reminder meeting"
 
-Newsletter:
-  priority: 40
-  description: "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel."
-  action_hint: keep
-  examples:
-    - "Newsletter hebdomadaire"
-    - "Digest mensuel"
-    - "Actualités du mois"
-
-Marketing:
+Commercial:
   priority: 30
-  description: "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition."
+  description: "Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition ou envoi de masse. Au moindre doute, choisir Notification ou À lire."
   action_hint: keep
   examples:
-    - "Offre spéciale"
+    - "Newsletter récurrente"
     - "Promotion"
     - "Cold email commercial"
-
-Traité:
-  priority: 20
-  description: "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière."
-  action_hint: keep
-  examples:
-    - "C'est confirmé"
-    - "Sujet clôturé"
-    - "Déjà résolu"
-
-En attente de réponse:
-  priority: 10
-  description: "Conversation où une réponse, une confirmation ou un retour externe est encore attendu."
-  action_hint: keep
-  examples:
-    - "En attente de votre retour"
-    - "Nous revenons vers vous"
-    - "Confirmation à venir"

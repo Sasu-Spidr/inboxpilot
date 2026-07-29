@@ -95,8 +95,8 @@ def test_worker_replaces_managed_labels(monkeypatch):
     call = c.calls[0]
     assert call[0] == "replace_label"
     assert call[1][1] == "À répondre"
-    assert "FYI" in call[1][2]
-    assert "Marketing" in call[1][2]
+    assert "À lire" in call[1][2]
+    assert "Commercial" in call[1][2]
 
 
 def test_worker_passes_sender_name_to_draft(monkeypatch):
@@ -135,13 +135,13 @@ def test_worker_does_not_process_duplicate(monkeypatch):
     assert [x[0] for x in c.calls].count("draft") == 1
 
 
-def test_worker_never_marks_gmail_message_as_read(monkeypatch):
+def test_worker_marks_message_as_read_when_label_default_allows_it(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=KeepUnreadClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert "read" not in [x[0] for x in c.calls]
+    assert "read" in [x[0] for x in c.calls]
 
 
 def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, monkeypatch):
@@ -150,7 +150,7 @@ def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, mon
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Marketing","name":"Marketing","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"markAsRead":true}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"markAsRead":true}]}',
         encoding="utf-8",
     )
     c = Connector()
@@ -166,7 +166,7 @@ def test_worker_deletes_unread_message_when_delay_is_already_due(tmp_path, monke
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Relance","name":"Relance","color":"#f97316","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
         encoding="utf-8",
     )
 
@@ -178,26 +178,26 @@ def test_worker_deletes_unread_message_when_delay_is_already_due(tmp_path, monke
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     class DelayedClassifier:
         def safe_classify(self, *args):
-            return {"label": "Relance", "action": "keep", "priority": "high", "confidence": 0.95, "reason": "Follow-up"}
+            return {"label": "Commercial", "action": "keep", "priority": "high", "confidence": 0.95, "reason": "Commercial"}
 
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=DelayedClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "trash" in [x[0] for x in c.calls]
 
 
-def test_worker_does_not_delete_legacy_marketing_by_default(tmp_path, monkeypatch):
+def test_worker_guards_commercial_auto_delete_without_mass_signal(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Marketing","name":"Marketing","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":true}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":true}]}',
         encoding="utf-8",
     )
 
     class MarketingClassifier:
         def safe_classify(self, *args):
-            return {"label": "Marketing", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
+            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
 
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
@@ -206,13 +206,13 @@ def test_worker_does_not_delete_legacy_marketing_by_default(tmp_path, monkeypatc
     assert "trash" not in [x[0] for x in c.calls]
 
 
-def test_worker_does_not_delete_old_unread_legacy_marketing_by_default(tmp_path, monkeypatch):
+def test_worker_deletes_old_unread_commercial_after_delay(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Marketing","name":"Marketing","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
         encoding="utf-8",
     )
 
@@ -222,13 +222,13 @@ def test_worker_does_not_delete_old_unread_legacy_marketing_by_default(tmp_path,
 
     class MarketingClassifier:
         def safe_classify(self, *args):
-            return {"label": "Marketing", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
+            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
 
     c = OldUnreadConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=MarketingClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert "trash" not in [x[0] for x in c.calls]
+    assert "trash" in [x[0] for x in c.calls]
 
 
 def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, monkeypatch):
@@ -237,7 +237,7 @@ def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, m
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Relance","name":"Relance","color":"#f97316","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
         encoding="utf-8",
     )
 
@@ -250,7 +250,7 @@ def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, m
             return True
 
         def get(self, *args):
-            return {"label": "Relance", "thread_id": "t", "draft_created": False}
+            return {"label": "Commercial", "thread_id": "t", "draft_created": False}
 
     c = OldUnreadConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
@@ -318,7 +318,7 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert ("color", ("À traiter", "#856082")) in c.calls
-    assert ("color", ("Relance", "#f97316")) in c.calls
+    assert ("color", ("Commercial", "#fb7185")) in c.calls
 
 
 def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monkeypatch):
@@ -327,7 +327,7 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Ã€ traiter","name":"Ã€ traiter","color":"#0a6cff","prepareDraft":false,"autoReply":false,"autoDelete":false}]}',
+        '{"labels":[{"key":"À traiter","name":"À traiter","color":"#0a6cff","prepareDraft":false,"autoReply":false,"autoDelete":false}]}',
         encoding="utf-8",
     )
 
@@ -342,8 +342,8 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"hotmail:main": {"name": "hotmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert ("color", ("Ã€ traiter", "#0a6cff")) in c.calls
-    assert ("color", ("Marketing", "#fb7185")) in c.calls
+    assert ("color", ("À traiter", "#0a6cff")) in c.calls
+    assert ("color", ("Commercial", "#fb7185")) in c.calls
 
 
 def test_error_on_one_email_does_not_block_next(monkeypatch):

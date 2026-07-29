@@ -28,8 +28,8 @@ def test_client_settings_override_label_name_and_managed_labels(tmp_path, monkey
     assert label_name_for_client("client-a", "À traiter", "À traiter") == "Factures"
     assert label_color_for_client("client-a", "À traiter") == "#0d9488"
     assert "Factures" in managed_label_names_for_client("client-a")
-    assert "Relance" in managed_label_names_for_client("client-a")
-    assert "Marketing" in managed_label_names_for_client("client-a")
+    assert "À lire" in managed_label_names_for_client("client-a")
+    assert "Commercial" in managed_label_names_for_client("client-a")
 
 
 def test_client_settings_override_action_priority(tmp_path, monkeypatch):
@@ -40,16 +40,16 @@ def test_client_settings_override_action_priority(tmp_path, monkeypatch):
         json.dumps(
             {
                 "labels": [
-                    {"key": "Newsletter", "name": "Newsletter", "autoDelete": True, "prepareDraft": True, "autoReply": True},
-                    {"key": "Relance", "name": "Relance", "autoDelete": False, "prepareDraft": True, "autoReply": False},
-                    {"key": "FYI", "name": "FYI", "autoDelete": False, "prepareDraft": False, "autoReply": True},
+                    {"key": "Commercial", "name": "Commercial", "autoDelete": True, "prepareDraft": False, "autoReply": False},
+                    {"key": "À répondre", "name": "À répondre", "autoDelete": False, "prepareDraft": True, "autoReply": False},
+                    {"key": "À lire", "name": "À lire", "autoDelete": False, "prepareDraft": False, "autoReply": True},
                 ]
             }
         ),
         encoding="utf-8",
     )
 
-    assert action_for_client("client-a", "Newsletter", "keep") == "draft"
+    assert action_for_client("client-a", "Commercial", "keep") == "trash"
     assert action_for_client("client-a", "Relance", "keep") == "draft"
     assert action_for_client("client-a", "FYI", "mark_read") == "draft"
     assert action_for_client("client-a", "Notification", "mark_read") == "mark_read"
@@ -63,15 +63,6 @@ def test_client_settings_default_labels_are_added_without_overwriting_existing(t
         json.dumps(
             {
                 "labels": [
-                    {
-                        "key": "Fnac",
-                        "name": "Fnac",
-                        "description": "Emails Fnac.",
-                        "color": "#111111",
-                        "prepareDraft": False,
-                        "autoReply": False,
-                        "autoDelete": False,
-                    },
                     {
                         "key": "À répondre",
                         "name": "Réponses prioritaires",
@@ -90,9 +81,8 @@ def test_client_settings_default_labels_are_added_without_overwriting_existing(t
     labels = normalized_labels_for_client("client-a")
     names = [label["name"] for label in labels]
 
-    assert "Fnac" in names
     assert "Réponses prioritaires" in names
     assert "À répondre" not in names
     assert "À traiter" in names
-    assert "En attente de réponse" in names
-    assert len(labels) == 12
+    assert "Commercial" in names
+    assert len(labels) == 5

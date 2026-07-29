@@ -47,68 +47,34 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 } as const;
 
 export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
-  { key: "À traiter", name: "À traiter", priority: 110, description: "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte.", color: "#8b8b7a", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "À répondre", name: "À répondre", priority: 100, description: "Message qui demande clairement une réponse humaine ou une action de réponse commerciale.", color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Relance", name: "Relance", priority: 95, description: "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action.", color: "#f97316", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Commentaire", name: "Commentaire", priority: 80, description: "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate.", color: "#eab308", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "FYI", name: "FYI", priority: 70, description: "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident.", color: "#64748b", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Notification", name: "Notification", priority: 60, description: "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service.", color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Mise à jour de réunion", name: "Mise à jour de réunion", priority: 50, description: "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence.", color: "#93c5fd", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Newsletter", name: "Newsletter", priority: 40, description: "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel.", color: "#fed7aa", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Marketing", name: "Marketing", priority: 30, description: "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition.", color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "Traité", name: "Traité", priority: 20, description: "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière.", color: "#a78bfa", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
-  { key: "En attente de réponse", name: "En attente de réponse", priority: 10, description: "Conversation où une réponse, une confirmation ou un retour externe est encore attendu.", color: "#44403c", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À répondre", name: "À répondre", priority: 100, description: CEO_LABEL_DESCRIPTIONS["À répondre"], color: "#0d9488", prepareDraft: true, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À traiter", name: "À traiter", priority: 90, description: CEO_LABEL_DESCRIPTIONS["À traiter"], color: "#8b8b7a", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: null },
+  { key: "À lire", name: "À lire", priority: 70, description: CEO_LABEL_DESCRIPTIONS["À lire"], color: "#3b82f6", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: true, autoDeleteUnreadAfterDays: null },
+  { key: "Notification", name: "Notification", priority: 50, description: CEO_LABEL_DESCRIPTIONS.Notification, color: "#22c55e", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: 10 },
+  { key: "Commercial", name: "Commercial", priority: 30, description: CEO_LABEL_DESCRIPTIONS.Commercial, color: "#fb7185", prepareDraft: false, autoReply: false, autoDelete: false, markAsRead: false, autoDeleteUnreadAfterDays: 2 },
 ];
 
-const LEGACY_DEFAULT_KEYS = new Set([
-  "À traiter",
-  "À répondre",
-  "Relance",
-  "Commentaire",
-  "FYI",
-  "Notification",
-  "Mise à jour de réunion",
-  "Newsletter",
-  "Marketing",
-  "Traité",
-  "En attente de réponse",
+const CANONICAL_LABEL_KEYS = new Set(DEFAULT_LABEL_SETTINGS.map((label) => label.key));
+
+const LABEL_ALIASES = new Map([
+  ["A répondre", "À répondre"],
+  ["Relance", "À répondre"],
+  ["A traiter", "À traiter"],
+  ["FYI", "À lire"],
+  ["Commentaire", "À lire"],
+  ["Newsletter", "À lire"],
+  ["Traité", "À lire"],
+  ["Traite", "À lire"],
+  ["En attente de réponse", "À lire"],
+  ["En attente de reponse", "À lire"],
+  ["Mise à jour de réunion", "Notification"],
+  ["Mise a jour de reunion", "Notification"],
+  ["Marketing", "Commercial"],
 ]);
-
-const REMOVED_LEGACY_DEFAULT_KEYS = new Set(["À lire", "Commercial"]);
-
-const LEGACY_DEFAULT_DESCRIPTIONS: Array<[string, string]> = [
-  ["À traiter", "Email important à gérer manuellement."],
-  ["À traiter", "Action manuelle non limitée à une réponse."],
-  ["À traiter", "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération."],
-  ["À répondre", "Email qui nécessite une réponse."],
-  ["À répondre", "Un humain identifiable attend une réponse écrite."],
-  ["À répondre", "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour."],
-  ["À lire", "Information destinée à un humain, à lire ou conserver."],
-  ["À lire", "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative."],
-  ["Notification", "Message généré par une machine, sans action manuelle."],
-  ["Notification", "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle."],
-  ["Commercial", "Newsletter, promotion, prospection ou offre commerciale."],
-  ["Commercial", "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut."],
-  ["Relance", "Email de suivi ou rappel à traiter."],
-  ["Commentaire", "Message contenant un avis, une remarque ou une discussion à lire."],
-  ["FYI", "Information transmise pour lecture, sans action directe attendue."],
-  ["Notification", "Information automatique sans action urgente."],
-  ["Mise à jour de réunion", "Invitation, acceptation, annulation ou changement de réunion."],
-  ["Newsletter", "Contenu informatif récurrent."],
-  ["Marketing", "Offres commerciales, promotions ou prospection."],
-  ["Traité", "Email déjà géré ou ne nécessitant plus d'action."],
-  ["En attente de réponse", "Conversation en attente d'un retour externe."],
-];
 
 export function getClientSettings(clientId: string): ClientSettings {
   const saved = readSettingsFile(clientId);
   if (saved && Array.isArray(saved.labels) && saved.labels.length > 0) {
-    if (isLegacyDefaultSet(saved.labels)) {
-      return {
-        labels: DEFAULT_LABEL_SETTINGS.map((label) => sanitizeLabel(label, label)),
-        updatedAt: saved.updatedAt || new Date(0).toISOString(),
-      };
-    }
     return {
       labels: sanitizeLabels(saved.labels),
       updatedAt: saved.updatedAt || new Date(0).toISOString(),
@@ -138,33 +104,24 @@ export function deleteClientSettings(clientId: string): void {
   }
 }
 
+export function canonicalLabelKey(label: string): string {
+  const trimmed = String(label || "").trim();
+  return LABEL_ALIASES.get(trimmed) || trimmed;
+}
+
 function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
-  const usedKeys = new Set<string>();
   const fallbackByKey = new Map(DEFAULT_LABEL_SETTINGS.map((label) => [label.key, label]));
-  const sanitized: LabelSetting[] = [];
+  const grouped = new Map<string, LabelSetting>();
 
   for (const raw of labels) {
-    if (REMOVED_LEGACY_DEFAULT_KEYS.has(String(raw.key || "").trim()) || REMOVED_LEGACY_DEFAULT_KEYS.has(String(raw.name || "").trim())) {
-      continue;
-    }
-    const fallback = fallbackByKey.get(raw.key) || raw;
-    const label = sanitizeLabel(normalizeLegacyDescription(raw, fallback) || raw, fallback);
-    if (!label.name) continue;
-    const key = uniqueKey(label.key || slugify(label.name), usedKeys);
-    sanitized.push({ ...label, key });
+    const key = canonicalLabelKey(raw.key || raw.name);
+    if (!CANONICAL_LABEL_KEYS.has(key) || grouped.has(key)) continue;
+    const fallback = fallbackByKey.get(key);
+    if (!fallback) continue;
+    grouped.set(key, sanitizeLabel(raw, fallback));
   }
 
-  const present = new Set(sanitized.flatMap((label) => [label.key.trim(), label.name.trim()].filter(Boolean)));
-  for (const defaultLabel of DEFAULT_LABEL_SETTINGS) {
-    if (present.has(defaultLabel.key) || present.has(defaultLabel.name)) continue;
-    const label = sanitizeLabel(defaultLabel, defaultLabel);
-    const key = uniqueKey(label.key, usedKeys);
-    sanitized.push({ ...label, key });
-    present.add(key);
-    present.add(label.name);
-  }
-
-  return sanitized;
+  return DEFAULT_LABEL_SETTINGS.map((label) => grouped.get(label.key) || sanitizeLabel(label, label));
 }
 
 function readSettingsFile(clientId: string): ClientSettings | null {
@@ -181,20 +138,23 @@ function settingsFile(clientId: string): string {
 }
 
 function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSetting {
-  const name = String(label.name || "").trim().slice(0, 64) || fallback.name;
-  const description = String(label.description || "").trim().slice(0, 2000) || fallback.description || "Libellé personnalisé.";
+  const key = fallback.key;
+  const rawName = String(label.name || "").trim().slice(0, 64);
+  const rawKey = String(label.key || "").trim();
+  const cameFromLegacyAlias = Boolean(rawKey && rawKey !== key && canonicalLabelKey(rawKey) === key);
+  const name = cameFromLegacyAlias ? fallback.name : rawName || fallback.name;
+  const description = String(label.description || "").trim().slice(0, 2000);
   const color = /^#[0-9a-fA-F]{6}$/.test(String(label.color || "")) ? label.color : fallback.color || "#14b8a6";
-  const legacyAutoDeleteKey = ["Marketing", "Newsletter"].includes(String(label.key || "").trim());
   return {
-    key: String(label.key || fallback.key || slugify(name)).trim().slice(0, 80),
+    key,
     name,
-    description,
+    description: description.length > 80 ? description : fallback.description,
     color,
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
-    autoDelete: legacyAutoDeleteKey ? false : Boolean(label.autoDelete),
+    autoDelete: Boolean(label.autoDelete),
     markAsRead: Boolean(label.markAsRead),
-    autoDeleteUnreadAfterDays: legacyAutoDeleteKey ? null : sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
+    autoDeleteUnreadAfterDays: sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
     priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
   };
 }
@@ -203,42 +163,4 @@ function sanitizeUnreadDeleteDays(value: unknown): number | null {
   const days = Number(value);
   if (!Number.isFinite(days) || days <= 0) return null;
   return Math.min(365, Math.max(1, Math.floor(days)));
-}
-
-function isLegacyDefaultSet(labels: LabelSetting[]): boolean {
-  const keys = labels.map((label) => String(label.key || "").trim()).filter(Boolean);
-  if (keys.length < 8) return false;
-  return keys.every((key) => LEGACY_DEFAULT_KEYS.has(key));
-}
-
-function normalizeLegacyDescription(label: LabelSetting | undefined, fallback: LabelSetting): LabelSetting | undefined {
-  if (!label) return undefined;
-  const description = String(label.description || "").trim();
-  const isLegacyDescription = LEGACY_DEFAULT_DESCRIPTIONS.some(
-    ([key, legacyDescription]) => key === fallback.key && description === legacyDescription,
-  );
-  if (!isLegacyDescription) return label;
-  return { ...label, description: fallback.description };
-}
-
-function uniqueKey(value: string, usedKeys: Set<string>): string {
-  const base = value.trim() || "label";
-  let key = base;
-  let suffix = 2;
-  while (usedKeys.has(key)) {
-    key = `${base}-${suffix}`;
-    suffix += 1;
-  }
-  usedKeys.add(key);
-  return key;
-}
-
-function slugify(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60) || `custom-${Date.now()}`;
 }

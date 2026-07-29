@@ -13,22 +13,16 @@ import yaml
 LOG = logging.getLogger(__name__)
 
 LABELS = (
-    "À traiter",
     "À répondre",
-    "Relance",
-    "Commentaire",
-    "FYI",
+    "À traiter",
+    "À lire",
     "Notification",
-    "Mise à jour de réunion",
-    "Newsletter",
-    "Marketing",
-    "Traité",
-    "En attente de réponse",
+    "Commercial",
 )
 ACTIONS = ("keep", "trash", "draft", "archive", "mark_read", "move")
 PRIORITIES = ("low", "medium", "high")
 MIN_CONFIDENCE = 0.75
-DEFAULT_LABEL = "FYI"
+DEFAULT_LABEL = "À lire"
 
 
 class EmailClassifier:
@@ -61,7 +55,7 @@ Si aucun ne correspond clairement, choisis "{default_label(allowed_labels)}".
 GARDE-FOUS
 - Expéditeur automatique (no-reply, noreply, donotreply, notifications@, mailer@) : ne choisis JAMAIS un libellé de type réponse. Un CTA dans un mail automatique ne rend pas une réponse attendue.
 - Pour tout libellé pouvant déclencher une suppression : n'y range un mail que si son caractère de masse/commercial est certain. Dans le doute, choisis un libellé de classement non destructif.
-- Les libellés Marketing et Newsletter ne doivent être choisis que si le caractère commercial, promotionnel, éditorial récurrent ou envoi de masse est clair.
+- Le libellé Commercial ne doit être choisi que si le caractère commercial, promotionnel, éditorial récurrent ou envoi de masse est clair.
 - Le LLM choisit seulement le libellé, l'urgence, la confiance et une raison. L'action finale est appliquée ensuite par le SaaS selon les paramètres utilisateur.
 
 LIBELLÉS DISPONIBLES
@@ -148,9 +142,19 @@ def normalize_model_result(result: dict, allowed_labels: tuple[str, ...]) -> dic
 
 def normalize_label_alias(label: str, allowed_labels: tuple[str, ...]) -> str:
     aliases = {
-        "Commercial": "Marketing",
-        "À lire": "FYI",
-        "A lire": "FYI",
+        "A répondre": "À répondre",
+        "Relance": "À répondre",
+        "A traiter": "À traiter",
+        "FYI": "À lire",
+        "Commentaire": "À lire",
+        "Newsletter": "À lire",
+        "Traité": "À lire",
+        "Traite": "À lire",
+        "En attente de réponse": "À lire",
+        "En attente de reponse": "À lire",
+        "Mise à jour de réunion": "Notification",
+        "Mise a jour de reunion": "Notification",
+        "Marketing": "Commercial",
     }
     mapped = aliases.get(label, label)
     return mapped if mapped in allowed_labels else label
@@ -165,22 +169,22 @@ def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
         return decision("À répondre", "draft", "high", 0.98, "Le message demande clairement une réponse.")
 
     if has_any(text, "a commente", "a commenté", "commentaire", "mentioned you", "vous a mentionne", "vous a mentionné", "tagged you", "a reagi", "a réagi"):
-        return decision("Commentaire", "keep", "medium", 0.97, "Le message signale une mention ou une interaction à lire.")
+        return decision("À lire", "keep", "medium", 0.97, "Le message signale une mention ou une interaction à lire.")
 
     if not automatic_sender and has_any(text, "relance", "follow up", "following up", "rappel de suivi"):
-        return decision("Relance", "draft", "high", 0.96, "Le message ressemble à une relance ou demande de suivi.")
+        return decision("À répondre", "draft", "high", 0.96, "Le message ressemble à une relance ou demande de suivi.")
 
     if has_any(text, "newsletter", "unsubscribe", "desabonner", "désabonner", "product hunt daily", "daily newsletter", "weekly digest", "digest", "bulletin", "agent hub security", "paper-heavy window", "model-release-heavy window", "practical lessons", "high learning rate", "25 ans aupres", "25 ans auprès", "ce qu'une legende", "ce qu'une légende", "appris", "decouvrez nos nouveautes", "découvrez nos nouveautés", "nouveautes de la semaine", "votre actualite du mois", "votre actualité du mois"):
-        return decision("Newsletter", "keep", "low", 0.98, "Le message est clairement une newsletter ou un envoi de masse.")
+        return decision("Commercial", "keep", "low", 0.98, "Le message est clairement une newsletter ou un envoi de masse.")
 
     if has_any(text, "notification", "welcome to your azure free account", "informations de securite", "informations de sécurité", "code a usage unique", "code à usage unique", "votre compte a ete mis a jour", "votre compte a été mis à jour", "verifiez votre adresse", "vérifiez votre adresse", "code de verification", "nouvelle application autorisee", "nouvelle application autorisée"):
         return decision("Notification", "keep", "low", 0.97, "Le message est une notification automatique.")
 
     if has_any(text, "marketing", "promotion", "promo", "offre", "offres", "offre speciale", "offre spéciale", "economisez", "économisez", "lancement produit", "product launch", "invite a friend", "invitez un proche", "obtenez", "cadeau ideal", "cadeau idéal", "delicieuses offres", "délicieuses offres", "plats favoris", "uber eats", "decouvrez", "découvrez", "essayez", "profitez", "nouveaux profils disponibles", "commence ici", "tournois", "stages", "academy"):
-        return decision("Marketing", "keep", "low", 0.94, "Le message ressemble à du contenu commercial.")
+        return decision("Commercial", "keep", "low", 0.94, "Le message ressemble à du contenu commercial.")
 
     if has_any(text, "reunion", "réunion", "meeting", "calendar", "invitation"):
-        return decision("Mise à jour de réunion", "keep", "medium", 0.94, "Le message concerne une réunion ou une invitation automatique.")
+        return decision("Notification", "keep", "medium", 0.94, "Le message concerne une réunion ou une invitation automatique.")
 
     if has_any(text, "facture", "factures", "invoice", "invoicing", "billing", "bill", "paiement", "payment", "payment received", "recu", "reçu", "receipt", "abonnement", "subscription", "contrat", "contract", "devis signe", "document a traiter", "document à traiter", "documents a traiter", "documents à traiter", "document a signer", "document à signer", "documents a signer", "documents à signer", "invite a signer", "invité à signer", "signature de document", "mode de paiement", "numero de facture", "numéro de facture"):
         return decision("À traiter", "keep", "high", 0.99, "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.")
@@ -219,7 +223,7 @@ def default_label(allowed_labels: tuple[str, ...]) -> str:
 
 
 def default_action_for_label(label: str) -> str:
-    return "draft" if label in {"À répondre", "À traiter", "Relance"} else "keep"
+    return "draft" if label == "À répondre" else "keep"
 
 
 def is_automatic_sender(sender: str) -> bool:
@@ -276,17 +280,11 @@ def priority_for_label(label: str, definitions: dict | None = None) -> int:
         except (TypeError, ValueError):
             pass
     return {
-        "À traiter": 110,
         "À répondre": 100,
-        "Relance": 95,
-        "Commentaire": 80,
-        "FYI": 70,
-        "Notification": 60,
-        "Mise à jour de réunion": 50,
-        "Newsletter": 40,
-        "Marketing": 30,
-        "Traité": 20,
-        "En attente de réponse": 10,
+        "À traiter": 90,
+        "À lire": 70,
+        "Notification": 50,
+        "Commercial": 30,
     }.get(label, 10)
 
 

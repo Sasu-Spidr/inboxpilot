@@ -30,7 +30,7 @@ export function getDashboardActivity(clientId: string): DashboardActivity {
   return {
     totalProcessed7d: recent7d.length,
     drafts7d: recent7d.filter((event) => event.draft_created || event.action === "draft").length,
-    trashed7d: recent7d.filter((event) => event.action === "trash").length,
+    trashed7d: recent7d.filter((event) => event.action === "trash" || event.action === "trash_unread_expired").length,
     recent: events.slice(0, 5),
   };
 }
@@ -44,10 +44,22 @@ function readActivityEvents(clientId: string): ActivityEvent[] {
       .filter(Boolean)
       .map((line) => JSON.parse(line) as ActivityEvent)
       .filter((event) => event.client_id === clientId)
+      .map((event) => ({ ...event, label: canonicalActivityLabel(event.label) }))
       .sort((a, b) => eventTimestamp(b) - eventTimestamp(a));
   } catch {
     return [];
   }
+}
+
+function canonicalActivityLabel(label: string): string {
+  const normalized = String(label || "").trim().toLowerCase();
+  if (["marketing", "newsletter"].includes(normalized)) return "Commercial";
+  if (["fyi", "commentaire", "traité", "traite", "en attente de réponse", "en attente de reponse"].includes(normalized)) {
+    return "À lire";
+  }
+  if (normalized === "relance") return "À répondre";
+  if (normalized === "mise à jour de réunion" || normalized === "mise a jour de reunion") return "Notification";
+  return label;
 }
 
 function eventTimestamp(event: ActivityEvent): number {

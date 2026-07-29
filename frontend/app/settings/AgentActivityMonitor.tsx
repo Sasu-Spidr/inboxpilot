@@ -212,7 +212,7 @@ function agentStatusText(connectedMailboxes: number, totalProcessed7d: number): 
 
 function actionLabel(event: ActivityEvent): string {
   if (event.draft_created || event.action === "draft") return "Brouillon préparé";
-  if (event.action === "trash") return "Supprimé selon vos règles";
+  if (event.action === "trash" || event.action === "trash_unread_expired") return "Supprimé selon vos règles";
   if (event.action === "archive") return "Archivé";
   return "Libellé appliqué";
 }
@@ -228,9 +228,9 @@ function labelBadgeStyle(label: string, labelColors: Record<string, string>): CS
 function canonicalLabel(label: string): string {
   const normalized = label.trim().toLowerCase();
   if (["marketing", "newsletter"].includes(normalized)) return "Commercial";
-  if (["fyi", "commentaire"].includes(normalized)) return "À lire";
+  if (["fyi", "commentaire", "traité", "traite", "en attente de réponse", "en attente de reponse"].includes(normalized)) return "À lire";
   if (normalized === "relance") return "À répondre";
-  if (normalized === "mise à jour de réunion") return "Notification";
+  if (normalized === "mise à jour de réunion" || normalized === "mise a jour de reunion") return "Notification";
   return label;
 }
 

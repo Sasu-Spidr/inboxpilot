@@ -32,47 +32,30 @@ Métadonnée urgence : mets haute si le mail est une relance, mentionne une éch
 }
 
 DEFAULT_LABELS: list[dict[str, Any]] = [
-    {"key": "À traiter", "name": "À traiter", "description": "Élément important à gérer manuellement : facture, contrat, document, paiement, accès ou problème de compte.", "color": "#8b8b7a", "priority": 110, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "À répondre", "name": "À répondre", "description": "Message qui demande clairement une réponse humaine ou une action de réponse commerciale.", "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Relance", "name": "Relance", "description": "Suivi ou rappel demandant explicitement de revenir vers une personne ou de confirmer une action.", "color": "#f97316", "priority": 95, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Commentaire", "name": "Commentaire", "description": "Avis, remarque, mention ou retour collaboratif à lire, sans demande d'action immédiate.", "color": "#eab308", "priority": 80, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "FYI", "name": "FYI", "description": "Information utile à conserver ou lire rapidement, sans urgence, réponse attendue ni caractère commercial évident.", "color": "#64748b", "priority": 70, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Notification", "name": "Notification", "description": "Alerte automatique liée à un compte, une application, un code, la sécurité ou un service.", "color": "#22c55e", "priority": 60, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Mise à jour de réunion", "name": "Mise à jour de réunion", "description": "Invitation, rappel, acceptation, annulation ou modification de réunion, calendrier ou visioconférence.", "color": "#93c5fd", "priority": 50, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Newsletter", "name": "Newsletter", "description": "Contenu éditorial récurrent : actualités, digest, bulletin, résumé hebdomadaire ou mensuel.", "color": "#fed7aa", "priority": 40, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Marketing", "name": "Marketing", "description": "Prospection, publicité, promotion, offre commerciale, invitation à acheter ou message d'acquisition.", "color": "#fb7185", "priority": 30, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "Traité", "name": "Traité", "description": "Message déjà résolu, confirmé, terminé ou ne nécessitant plus aucune action particulière.", "color": "#a78bfa", "priority": 20, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
-    {"key": "En attente de réponse", "name": "En attente de réponse", "description": "Conversation où une réponse, une confirmation ou un retour externe est encore attendu.", "color": "#44403c", "priority": 10, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À répondre", "name": "À répondre", "description": CEO_LABEL_DESCRIPTIONS["À répondre"], "color": "#0d9488", "priority": 100, "prepareDraft": True, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À traiter", "name": "À traiter", "description": CEO_LABEL_DESCRIPTIONS["À traiter"], "color": "#8b8b7a", "priority": 90, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": None},
+    {"key": "À lire", "name": "À lire", "description": CEO_LABEL_DESCRIPTIONS["À lire"], "color": "#3b82f6", "priority": 70, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": True, "autoDeleteUnreadAfterDays": None},
+    {"key": "Notification", "name": "Notification", "description": CEO_LABEL_DESCRIPTIONS["Notification"], "color": "#22c55e", "priority": 50, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": 10},
+    {"key": "Commercial", "name": "Commercial", "description": CEO_LABEL_DESCRIPTIONS["Commercial"], "color": "#fb7185", "priority": 30, "prepareDraft": False, "autoReply": False, "autoDelete": False, "markAsRead": False, "autoDeleteUnreadAfterDays": 2},
 ]
 
-OLD_DEFAULT_DESCRIPTIONS = {
-    "Un humain identifiable attend une réponse écrite.",
-    "Action manuelle non limitée à une réponse.",
-    "Information destinée à un humain, à lire ou conserver.",
-    "Message généré par une machine, sans action manuelle.",
-    "Newsletter, promotion, prospection ou offre commerciale.",
-    "Un humain identifiable attend une réponse écrite : question directe, demande d'info/de devis, rappel ou relance demandant un retour.",
-    "Action manuelle non limitée à une réponse : payer, signer, valider un document, gérer un accès, un compte ou une opération.",
-    "Information destinée à un humain, à lire ou conserver, sans action attendue : FYI, mise au courant, commentaire ou mention collaborative.",
-    "Message généré par une machine : alerte, code, reçu, confirmation transactionnelle, rappel ou événement calendaire sans action manuelle.",
-    "Newsletter, promotion, prospection, publicité, offre commerciale ou envoi de masse. Ne supprime jamais par défaut.",
-}
+CANONICAL_LABEL_KEYS = {label["key"] for label in DEFAULT_LABELS}
 
-LEGACY_DEFAULT_KEYS = {
-    "À traiter",
-    "À répondre",
-    "Relance",
-    "Commentaire",
-    "FYI",
-    "Notification",
-    "Mise à jour de réunion",
-    "Newsletter",
-    "Marketing",
-    "Traité",
-    "En attente de réponse",
+LABEL_ALIASES = {
+    "A répondre": "À répondre",
+    "Relance": "À répondre",
+    "A traiter": "À traiter",
+    "FYI": "À lire",
+    "Commentaire": "À lire",
+    "Newsletter": "À lire",
+    "Traité": "À lire",
+    "Traite": "À lire",
+    "En attente de réponse": "À lire",
+    "En attente de reponse": "À lire",
+    "Mise à jour de réunion": "Notification",
+    "Mise a jour de reunion": "Notification",
+    "Marketing": "Commercial",
 }
-
-REMOVED_LEGACY_DEFAULT_KEYS = {"À lire", "Commercial"}
 
 
 def settings_path(client_id: str) -> Path:
@@ -124,12 +107,7 @@ def label_settings_for_classifier(client_id: str) -> list[dict[str, str]]:
 
 
 def active_label_keys_for_client(client_id: str) -> list[str]:
-    keys: list[str] = []
-    for setting in normalized_labels_for_client(client_id):
-        key = str(setting.get("key", "")).strip()
-        if key and key not in keys:
-            keys.append(key)
-    return keys
+    return [str(setting["key"]) for setting in normalized_labels_for_client(client_id)]
 
 
 def managed_label_names_for_client(client_id: str) -> list[str]:
@@ -145,8 +123,6 @@ def action_for_client(client_id: str, label: str, default_action: str) -> str:
     setting = _label_setting(client_id, label)
     if not setting:
         return default_action
-    if str(setting.get("key", "")).strip() in {"Marketing", "Newsletter"}:
-        return "draft" if setting.get("autoReply") or setting.get("prepareDraft") else default_action
     if setting.get("autoDelete"):
         return "trash"
     if setting.get("autoReply") or setting.get("prepareDraft"):
@@ -163,15 +139,19 @@ def unread_delete_after_days_for_client(client_id: str, label: str) -> int | Non
     setting = _label_setting(client_id, label)
     if not setting:
         return None
-    if str(setting.get("key", "")).strip() in {"Marketing", "Newsletter"}:
-        return None
     days = _int_setting(setting.get("autoDeleteUnreadAfterDays"), 0)
     return days if days > 0 else None
 
 
+def canonical_label_key(label: str) -> str:
+    label = str(label or "").strip()
+    return LABEL_ALIASES.get(label, label)
+
+
 def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:
+    canonical = canonical_label_key(label)
     for setting in normalized_labels_for_client(client_id):
-        if setting.get("key") == label or setting.get("name") == label:
+        if setting.get("key") == canonical or setting.get("name") == canonical:
             return setting
     return None
 
@@ -179,46 +159,52 @@ def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:
 def normalized_labels_for_client(client_id: str) -> list[dict[str, Any]]:
     labels = load_client_settings(client_id).get("labels", [])
     if not labels:
-        return DEFAULT_LABELS
-    labels = [
-        setting
-        for setting in labels
-        if str(setting.get("key", "")).strip() not in REMOVED_LEGACY_DEFAULT_KEYS
-        and str(setting.get("name", "")).strip() not in REMOVED_LEGACY_DEFAULT_KEYS
-    ]
-    if not labels:
-        return DEFAULT_LABELS
-    keys = [str(setting.get("key", "")).strip() for setting in labels if str(setting.get("key", "")).strip()]
-    if len(keys) >= 8 and all(key in LEGACY_DEFAULT_KEYS for key in keys):
-        return DEFAULT_LABELS
-    return _with_missing_default_labels([_normalize_default_description(setting) for setting in labels])
+        return [dict(label) for label in DEFAULT_LABELS]
+    return _with_canonical_defaults(labels)
 
 
-def _with_missing_default_labels(labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    merged = list(labels)
-    present = {
-        value
-        for setting in merged
-        for value in (str(setting.get("key", "")).strip(), str(setting.get("name", "")).strip())
-        if value
-    }
-    for default_label in DEFAULT_LABELS:
-        key = str(default_label.get("key", "")).strip()
-        name = str(default_label.get("name", "")).strip()
-        if key in present or name in present:
+def _with_canonical_defaults(labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    fallback_by_key = {label["key"]: label for label in DEFAULT_LABELS}
+    grouped: dict[str, dict[str, Any]] = {}
+
+    for raw in labels:
+        key = canonical_label_key(str(raw.get("key") or raw.get("name") or "").strip())
+        if key not in CANONICAL_LABEL_KEYS:
             continue
-        merged.append(dict(default_label))
-        present.add(key)
-        present.add(name)
-    return merged
+        fallback = fallback_by_key[key]
+        if key not in grouped:
+            grouped[key] = _sanitize_label(raw, fallback)
+
+    return [grouped.get(label["key"], dict(label)) for label in DEFAULT_LABELS]
 
 
-def _normalize_default_description(setting: dict[str, Any]) -> dict[str, Any]:
-    key = str(setting.get("key", "")).strip()
-    description = str(setting.get("description", "")).strip()
-    if key not in CEO_LABEL_DESCRIPTIONS or description not in OLD_DEFAULT_DESCRIPTIONS:
-        return setting
-    return {**setting, "description": CEO_LABEL_DESCRIPTIONS[key]}
+def _sanitize_label(label: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
+    key = fallback["key"]
+    name = str(label.get("name", "")).strip() or fallback["name"]
+    raw_key = str(label.get("key", "")).strip()
+    if raw_key and raw_key != key and canonical_label_key(raw_key) == key:
+        name = fallback["name"]
+    color = str(label.get("color", "")).strip()
+    description = str(label.get("description", "")).strip()
+    return {
+        "key": key,
+        "name": name,
+        "description": description if description and len(description) > 80 else fallback["description"],
+        "color": color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else fallback["color"],
+        "priority": _int_setting(label.get("priority"), fallback["priority"]),
+        "prepareDraft": bool(label.get("prepareDraft")),
+        "autoReply": bool(label.get("autoReply")),
+        "autoDelete": bool(label.get("autoDelete")),
+        "markAsRead": bool(label.get("markAsRead")),
+        "autoDeleteUnreadAfterDays": _sanitize_unread_days(label.get("autoDeleteUnreadAfterDays")),
+    }
+
+
+def _sanitize_unread_days(value: Any) -> int | None:
+    days = _int_setting(value, 0)
+    if days <= 0:
+        return None
+    return min(365, max(1, days))
 
 
 def _int_setting(value: Any, default: int) -> int:
