@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from client_registry import load_registered_clients
 from oauth_server import OAuthOnboardingServer, load_settings
 
 REMOVED_LEGACY_LABELS = [
@@ -25,8 +26,11 @@ def main() -> None:
     parser.add_argument("--data-dir", default="./data")
     args = parser.parse_args()
 
-    server = OAuthOnboardingServer(load_settings(args.config), args.base_url)
-    clients = sorted(path.stem for path in (Path(args.data_dir) / "client-settings").glob("*.json"))
+    settings = load_settings(args.config)
+    server = OAuthOnboardingServer(settings, args.base_url)
+    settings_clients = {path.stem for path in (Path(args.data_dir) / "client-settings").glob("*.json")}
+    registry_clients = set(load_registered_clients(settings).keys())
+    clients = sorted(settings_clients | registry_clients)
     results = {}
     for client_id in clients:
         try:
