@@ -135,13 +135,13 @@ def test_worker_does_not_process_duplicate(monkeypatch):
     assert [x[0] for x in c.calls].count("draft") == 1
 
 
-def test_worker_marks_message_as_read_when_label_default_allows_it(monkeypatch):
+def test_worker_keeps_message_unread_by_default(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=KeepUnreadClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert "read" in [x[0] for x in c.calls]
+    assert "read" not in [x[0] for x in c.calls]
 
 
 def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, monkeypatch):

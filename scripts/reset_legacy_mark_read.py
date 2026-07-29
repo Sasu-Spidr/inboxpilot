@@ -11,6 +11,7 @@ def main() -> None:
     settings_dir.mkdir(parents=True, exist_ok=True)
     clients_updated = 0
     flags_cleared = 0
+    unread_delete_delays_cleared = 0
 
     for path in sorted(settings_dir.glob("*.json")):
         try:
@@ -28,15 +29,19 @@ def main() -> None:
                 label["markAsRead"] = False
                 flags_cleared += 1
                 changed = True
+            if isinstance(label, dict) and label.get("autoDeleteUnreadAfterDays"):
+                label["autoDeleteUnreadAfterDays"] = None
+                unread_delete_delays_cleared += 1
+                changed = True
 
         if not changed:
             continue
 
-        payload["markAsReadLegacyResetAt"] = datetime.now(UTC).isoformat()
+        payload["safeUnreadDefaultsResetAt"] = datetime.now(UTC).isoformat()
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         clients_updated += 1
 
-    print(f"clients_updated={clients_updated} mark_as_read_flags_cleared={flags_cleared}")
+    print(f"clients_updated={clients_updated} mark_as_read_flags_cleared={flags_cleared} unread_delete_delays_cleared={unread_delete_delays_cleared}")
 
 
 if __name__ == "__main__":
