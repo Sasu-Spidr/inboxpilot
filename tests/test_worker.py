@@ -160,7 +160,7 @@ def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, mon
     assert "read" in [x[0] for x in c.calls]
 
 
-def test_worker_deletes_unread_message_when_delay_is_already_due(tmp_path, monkeypatch):
+def test_worker_keeps_unread_message_when_delay_is_set_without_auto_delete(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings_dir = tmp_path / "client-settings"
@@ -182,7 +182,7 @@ def test_worker_deletes_unread_message_when_delay_is_already_due(tmp_path, monke
 
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=DelayedClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert "trash" in [x[0] for x in c.calls]
+    assert "trash" not in [x[0] for x in c.calls]
 
 
 def test_worker_guards_commercial_auto_delete_without_mass_signal(tmp_path, monkeypatch):
@@ -212,7 +212,7 @@ def test_worker_deletes_old_unread_commercial_after_delay(tmp_path, monkeypatch)
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":true,"autoDeleteUnreadAfterDays":1}]}',
         encoding="utf-8",
     )
 
@@ -237,7 +237,7 @@ def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, m
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
     (settings_dir / "exuvie.json").write_text(
-        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":false,"autoDeleteUnreadAfterDays":1}]}',
+        '{"labels":[{"key":"Commercial","name":"Commercial","color":"#fb7185","prepareDraft":false,"autoReply":false,"autoDelete":true,"autoDeleteUnreadAfterDays":1}]}',
         encoding="utf-8",
     )
 

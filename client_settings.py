@@ -139,6 +139,8 @@ def unread_delete_after_days_for_client(client_id: str, label: str) -> int | Non
     setting = _label_setting(client_id, label)
     if not setting:
         return None
+    if not setting.get("autoDelete"):
+        return None
     days = _int_setting(setting.get("autoDeleteUnreadAfterDays"), 0)
     return days if days > 0 else None
 
