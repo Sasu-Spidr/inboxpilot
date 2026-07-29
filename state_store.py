@@ -77,6 +77,7 @@ class ProcessedState:
         action: str,
         draft_created: bool,
         received_at: Any = None,
+        **extra: Any,
     ) -> None:
         self.records[self.key(client_id, connector, account, message_id)] = {
             "connector": connector,
@@ -89,6 +90,7 @@ class ProcessedState:
             "received_at": received_at,
             "processed_at": now_iso(),
             "status": "completed",
+            **extra,
         }
         self.save()
 

@@ -282,6 +282,41 @@ def test_worker_reconciles_processed_unread_label_without_marking_read(monkeypat
     assert "draft" not in [x[0] for x in c.calls]
 
 
+def test_worker_cleans_legacy_labels_on_already_processed_message_once(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class CompletedState(State):
+        def __init__(self):
+            super().__init__()
+            self.record = {"label": "Notification", "thread_id": "t", "draft_created": False, "action": "keep"}
+
+        def is_processed(self, *args):
+            return True
+
+        def get(self, *args):
+            return self.record
+
+        def complete(self, **kwargs):
+            self.record = kwargs
+            self.completed.append(kwargs)
+
+    c = Connector()
+    state = CompletedState()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"hotmail:main": {"name": "hotmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=state)
+
+    worker.run_cycle()
+    worker.run_cycle()
+
+    replace_calls = [call for call in c.calls if call[0] == "replace_label"]
+    assert len(replace_calls) == 1
+    assert replace_calls[0][1][1] == "Notification"
+    assert "Mise à jour de réunion" in replace_calls[0][1][2]
+    assert state.record["legacy_labels_cleaned_at"]
+    assert "read" not in [x[0] for x in c.calls]
+    assert "trash" not in [x[0] for x in c.calls]
+
+
 def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
