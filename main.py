@@ -24,6 +24,20 @@ from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
 
+LEGACY_MANAGED_LABEL_NAMES = [
+    "Relance",
+    "Commentaire",
+    "FYI",
+    "Mise à jour de réunion",
+    "Mise a jour de reunion",
+    "Newsletter",
+    "Marketing",
+    "Traité",
+    "Traite",
+    "En attente de réponse",
+    "En attente de reponse",
+]
+
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
@@ -258,7 +272,7 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id), *LEGACY_MANAGED_LABEL_NAMES]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:

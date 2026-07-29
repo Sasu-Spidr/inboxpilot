@@ -273,7 +273,11 @@ def test_worker_reconciles_processed_unread_label_without_marking_read(monkeypat
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=CompletedState())
     worker.run_cycle()
-    assert ("replace_label", ("1", "À lire", ["À répondre", "À traiter", "À lire", "Notification", "Commercial"])) in c.calls
+    replace_call = c.calls[0]
+    assert replace_call[0] == "replace_label"
+    assert replace_call[1][1] == "À lire"
+    assert "Notification" in replace_call[1][2]
+    assert "Mise à jour de réunion" in replace_call[1][2]
     assert "read" not in [x[0] for x in c.calls]
     assert "draft" not in [x[0] for x in c.calls]
 

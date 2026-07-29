@@ -94,7 +94,13 @@ class HotmailConnector:
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
-        categories = [item for item in existing if item not in set(managed_categories)]
+        managed = {normalize_category_name(item) for item in managed_categories}
+        target = normalize_category_name(category)
+        categories = [
+            item
+            for item in existing
+            if normalize_category_name(item) not in managed and normalize_category_name(item) != target
+        ]
         if category not in categories:
             categories.append(category)
         self._request("PATCH", f"/me/messages/{message_id}", json={"categories": categories})

@@ -102,3 +102,30 @@ def test_delete_label_removes_existing_outlook_category():
         ("GET", "/me/outlook/masterCategories", {}),
         ("DELETE", "/me/outlook/masterCategories/old%2Fcategory%20id", {}),
     ]
+
+
+def test_replace_label_removes_legacy_outlook_category():
+    calls = []
+
+    class CaptureHotmailConnector(HotmailConnector):
+        def authenticate(self):
+            return None
+
+        def _request(self, method, path, **kwargs):
+            calls.append((method, path, kwargs))
+            if method == "GET":
+                return {"categories": ["Mise à jour de réunion", "Client"]}
+            return {}
+
+    connector = CaptureHotmailConnector(
+        "client-id",
+        "consumers",
+        "unused",
+        TokenStore(TokenStore.generate_key()),
+    )
+    connector.replace_label("message-id", "Notification", ["Notification", "Mise à jour de réunion"])
+
+    assert calls == [
+        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client", "Notification"]}}),
+    ]
