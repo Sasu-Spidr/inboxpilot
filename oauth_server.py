@@ -22,7 +22,7 @@ from google_auth_oauthlib.flow import Flow
 from client_settings import label_color_settings_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
-from hotmail_connector import SCOPES as HOTMAIL_SCOPES
+from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
 from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_oauth")
@@ -146,22 +146,25 @@ class OAuthOnboardingServer:
         errors = []
         labels = label_color_settings_for_client(client_id)
         removed = [str(label).strip() for label in (removed_labels or []) if str(label).strip()]
-        accounts = client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []
-        for account_cfg in accounts:
-            token_file = account_cfg.get("token_file", "")
-            if not token_file or not Path(token_file).exists():
-                skipped += 1
-                continue
-            try:
-                connector = GmailConnector(account_cfg["credentials_file"], token_file, self.store)
-                for label_name in removed:
-                    if connector.delete_label(label_name):
-                        deleted += 1
-                for label in labels:
-                    connector.sync_label_color(label["name"], label["color"])
-                    synced += 1
-            except Exception as exc:
-                errors.append({"account": account_cfg.get("account", "main"), "error": str(exc)})
+        for provider, accounts in (
+            ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
+            ("hotmail", client.get("connectors", {}).get("hotmail", {}).get("accounts", []) or []),
+        ):
+            for account_cfg in accounts:
+                token_file = account_cfg.get("token_file", "")
+                if not token_file or not Path(token_file).exists():
+                    skipped += 1
+                    continue
+                try:
+                    connector = self._label_sync_connector(provider, account_cfg, token_file)
+                    for label_name in removed:
+                        if connector.delete_label(label_name):
+                            deleted += 1
+                    for label in labels:
+                        connector.sync_label_color(label["name"], label["color"])
+                        synced += 1
+                except Exception as exc:
+                    errors.append({"provider": provider, "account": account_cfg.get("account", "main"), "error": str(exc)})
         result = {"synced": synced, "deleted": deleted, "removed_requested": len(removed), "skipped": skipped, "errors": errors}
         LOG.info(
             "Gmail label settings synced client=%s synced=%s deleted=%s removed_requested=%s skipped=%s errors=%s",
@@ -173,6 +176,15 @@ class OAuthOnboardingServer:
             len(errors),
         )
         return result
+
+    def _label_sync_connector(self, provider: str, account_cfg: dict, token_file: str):
+        if provider == "gmail":
+            return GmailConnector(account_cfg["credentials_file"], token_file, self.store)
+        client_id = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+        if not client_id:
+            raise ValueError("Microsoft client_id manquant")
+        client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+        return HotmailConnector(client_id, account_cfg.get("tenant_id", "consumers"), token_file, self.store, client_secret=client_secret)
 
     def start_gmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "gmail")

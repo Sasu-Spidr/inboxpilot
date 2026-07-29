@@ -75,3 +75,30 @@ def test_sync_label_color_creates_category_then_updates_color():
             {"json": {"color": "preset7"}},
         ),
     ]
+
+
+def test_delete_label_removes_existing_outlook_category():
+    calls = []
+
+    class CaptureHotmailConnector(HotmailConnector):
+        def authenticate(self):
+            return None
+
+        def _request(self, method, path, **kwargs):
+            calls.append((method, path, kwargs))
+            if method == "GET":
+                return {"value": [{"id": "old/category id", "displayName": "Commercial"}]}
+            return {}
+
+    connector = CaptureHotmailConnector(
+        "client-id",
+        "consumers",
+        "unused",
+        TokenStore(TokenStore.generate_key()),
+    )
+
+    assert connector.delete_label(" commercial ") is True
+    assert calls == [
+        ("GET", "/me/outlook/masterCategories", {}),
+        ("DELETE", "/me/outlook/masterCategories/old%2Fcategory%20id", {}),
+    ]

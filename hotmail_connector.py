@@ -82,6 +82,15 @@ class HotmailConnector:
         color = outlook_category_color(preferred_color)
         self._request("PATCH", f"/me/outlook/masterCategories/{quote(category_id, safe='')}", json={"color": color})
 
+    def delete_label(self, category_name: str) -> bool:
+        target = normalize_category_name(category_name)
+        data = self._request("GET", "/me/outlook/masterCategories")
+        for category in data.get("value", []) or []:
+            if normalize_category_name(category.get("displayName", "")) == target:
+                self._request("DELETE", f"/me/outlook/masterCategories/{quote(category['id'], safe='')}")
+                return True
+        return False
+
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
@@ -124,3 +133,7 @@ def hex_to_rgb(color: str) -> tuple[int, int, int]:
     if not re.fullmatch(r"#[0-9a-f]{6}", value):
         return (138, 138, 138)
     return tuple(int(value[index:index + 2], 16) for index in (1, 3, 5))
+
+
+def normalize_category_name(value: str) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
