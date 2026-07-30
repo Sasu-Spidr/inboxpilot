@@ -139,15 +139,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                   />
                   Suppression auto
                 </label>
-                <label>
-                  <input
-                    name={`labels.${index}.markAsRead`}
-                    type="checkbox"
-                    checked={label.markAsRead}
-                    onChange={(event) => updateLabel(index, { markAsRead: event.target.checked })}
-                  />
-                  Marquer comme lu
-                </label>
               </div>
 
               <label className="setting-field unread-delay-field">
@@ -188,5 +179,5 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
 }
 
 function activeRulesCount(label: LabelSetting) {
-  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete) + Number(label.markAsRead) + Number(Boolean(label.autoDeleteUnreadAfterDays));
+  return Number(label.prepareDraft) + Number(label.autoReply) + Number(label.autoDelete) + Number(Boolean(label.autoDeleteUnreadAfterDays));
 }

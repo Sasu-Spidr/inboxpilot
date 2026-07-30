@@ -153,7 +153,7 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
     autoDelete: Boolean(label.autoDelete),
-    markAsRead: Boolean(label.markAsRead),
+    markAsRead: false,
     autoDeleteUnreadAfterDays: sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
     priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
   };
