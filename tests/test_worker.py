@@ -144,7 +144,7 @@ def test_worker_keeps_message_unread_by_default(monkeypatch):
     assert "read" not in [x[0] for x in c.calls]
 
 
-def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, monkeypatch):
+def test_worker_never_marks_message_as_read_even_when_label_setting_allows_it(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings_dir = tmp_path / "client-settings"
@@ -157,7 +157,7 @@ def test_worker_marks_message_as_read_when_label_setting_allows_it(tmp_path, mon
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
-    assert "read" in [x[0] for x in c.calls]
+    assert "read" not in [x[0] for x in c.calls]
 
 
 def test_worker_keeps_unread_message_when_delay_is_set_without_auto_delete(tmp_path, monkeypatch):

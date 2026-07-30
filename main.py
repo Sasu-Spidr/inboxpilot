@@ -213,8 +213,7 @@ class MailWorker:
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
             if action != "trash" and mark_as_read_for_client(client_id, label):
-                connector.mark_read(message_id)
-                log_event("email_marked_read", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+                log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="guarded")
             self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created, received_at=email.get("received_at"))
             record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action=action, draft_created=draft_created)
             return True
