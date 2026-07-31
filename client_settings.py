@@ -57,6 +57,8 @@ LABEL_ALIASES = {
     "Marketing": "Commercial",
 }
 
+LEGACY_LABEL_NAMES = list(LABEL_ALIASES.keys())
+
 
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
@@ -131,8 +133,7 @@ def action_for_client(client_id: str, label: str, default_action: str) -> str:
 
 
 def mark_as_read_for_client(client_id: str, label: str) -> bool:
-    setting = _label_setting(client_id, label)
-    return bool(setting and setting.get("markAsRead"))
+    return False
 
 
 def unread_delete_after_days_for_client(client_id: str, label: str) -> int | None:
@@ -197,7 +198,7 @@ def _sanitize_label(label: dict[str, Any], fallback: dict[str, Any]) -> dict[str
         "prepareDraft": bool(label.get("prepareDraft")),
         "autoReply": bool(label.get("autoReply")),
         "autoDelete": bool(label.get("autoDelete")),
-        "markAsRead": bool(label.get("markAsRead")),
+        "markAsRead": False,
         "autoDeleteUnreadAfterDays": _sanitize_unread_days(label.get("autoDeleteUnreadAfterDays")),
     }
 

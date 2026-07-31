@@ -19,7 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_settings import label_color_settings_for_client
+from client_settings import LEGACY_LABEL_NAMES, label_color_settings_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
@@ -145,7 +145,7 @@ class OAuthOnboardingServer:
         skipped = 0
         errors = []
         labels = label_color_settings_for_client(client_id)
-        removed = [str(label).strip() for label in (removed_labels or []) if str(label).strip()]
+        removed = list(dict.fromkeys([*(str(label).strip() for label in (removed_labels or []) if str(label).strip()), *LEGACY_LABEL_NAMES]))
         for provider, accounts in (
             ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
             ("hotmail", client.get("connectors", {}).get("hotmail", {}).get("accounts", []) or []),
@@ -211,6 +211,7 @@ class OAuthOnboardingServer:
         email = gmail_profile_email(flow.credentials)
         update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
+        self.sync_label_settings(state["client"])
         return success_page("Gmail", state["client"], state["account"], email)
 
     def start_hotmail(self, query: str) -> str:
@@ -243,6 +244,7 @@ class OAuthOnboardingServer:
         email = microsoft_profile_email(result["access_token"])
         update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
+        self.sync_label_settings(state["client"])
         return success_page("Hotmail / Outlook", state["client"], state["account"], email)
 
     def _account(self, query: str, connector: str) -> tuple[str, str, dict]:
