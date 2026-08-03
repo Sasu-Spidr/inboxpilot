@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
+from client_settings import LEGACY_LABEL_NAMES, active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -284,7 +284,7 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id), *LEGACY_LABEL_NAMES]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:

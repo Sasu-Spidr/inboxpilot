@@ -30,6 +30,8 @@ OUTLOOK_CATEGORY_COLORS = {
     "preset14": "#1f2937",  # Black
 }
 
+ALLOWED_CATEGORIES = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+
 
 class HotmailConnector:
     def __init__(self, client_id: str, tenant_id: str, token_file: str, token_store: TokenStore, session=None, client_secret: str = ""):
@@ -78,11 +80,11 @@ class HotmailConnector:
         self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})
 
     def sync_label_color(self, category_name: str, preferred_color: str) -> None:
-        category_id = self._category_id(category_name)
-        if not category_id:
-            LOG.warning("Outlook category sync skipped because it does not exist: %s", category_name)
-            return
         color = outlook_category_color(preferred_color)
+        category_id = self._category_id(category_name, create_color=color)
+        if not category_id:
+            LOG.warning("Outlook category sync skipped because category is not managed: %s", category_name)
+            return
         self._request("PATCH", f"/me/outlook/masterCategories/{quote(category_id, safe='')}", json={"color": color})
 
     def delete_label(self, category_name: str) -> bool:
@@ -99,8 +101,9 @@ class HotmailConnector:
         return [str(category.get("displayName", "")).strip() for category in data.get("value", []) or [] if str(category.get("displayName", "")).strip()]
 
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
-        category_id = self._category_id(category)
+        category_id = self._category_id(category, create_color="preset12")
         if not category_id:
+            LOG.warning("Outlook category skipped because it is not managed: %s", category)
             return
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
@@ -121,11 +124,14 @@ class HotmailConnector:
     def create_draft(self, email: dict, text: str) -> None:
         self._request("POST", f"/me/messages/{email['id']}/createReply", json={"comment": text})
 
-    def _category_id(self, display_name: str) -> str:
+    def _category_id(self, display_name: str, create_color: str | None = None) -> str:
         data = self._request("GET", "/me/outlook/masterCategories")
         for category in data.get("value", []) or []:
             if category.get("displayName") == display_name:
                 return category["id"]
+        if create_color and display_name in ALLOWED_CATEGORIES:
+            created = self._request("POST", "/me/outlook/masterCategories", json={"displayName": display_name, "color": create_color})
+            return created.get("id", "")
         return ""
 
 

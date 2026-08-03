@@ -65,6 +65,8 @@ LEGACY_LABEL_ALIASES = {
     "Marketing": "Commercial",
 }
 
+LEGACY_LABEL_NAMES = tuple(LEGACY_LABEL_ALIASES.keys())
+
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
     safe_client_id = re.sub(r"[^a-zA-Z0-9._-]", "-", client_id)

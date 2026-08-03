@@ -34,12 +34,15 @@ def test_reads_unread_email():
     assert c.unread_emails(1) == [{"id":"m1","subject":"Hello","sender":"x@y.com","body":"Hi","thread_id":"t1"}]
 
 
-def test_replace_label_skips_missing_label():
+def test_replace_label_creates_missing_managed_label_and_removes_legacy_label():
     calls = []
 
     class LabelOps:
         def list(self, **kwargs):
             return Execute({"labels": [{"name": "Commentaire", "id": "old-comment"}]})
+
+        def create(self, **kwargs):
+            return CaptureExecute({"id": "new-label"}, calls, "create_label", kwargs)
 
     class MessageOps:
         def modify(self, **kwargs):
@@ -59,15 +62,24 @@ def test_replace_label_skips_missing_label():
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
     c.replace_label("msg-1", "À traiter", ["Commentaire", "Marketing", "À traiter"])
 
-    assert calls == []
+    assert calls == [
+        ("create_label", {"userId": "me", "body": {"name": "À traiter", "labelListVisibility": "labelShow", "messageListVisibility": "show"}}),
+        ("modify_message", {"userId": "me", "id": "msg-1", "body": {"addLabelIds": ["new-label"], "removeLabelIds": ["old-comment"]}}),
+    ]
 
 
-def test_sync_label_color_skips_missing_gmail_label():
+def test_sync_label_color_creates_missing_managed_gmail_label():
     calls = []
 
     class LabelOps:
         def list(self, **kwargs):
             return Execute({"labels": []})
+
+        def create(self, **kwargs):
+            return CaptureExecute({"id": "label-1"}, calls, "create_label", kwargs)
+
+        def patch(self, **kwargs):
+            return CaptureExecute({}, calls, "patch_label", kwargs)
 
     class CaptureUsers:
         def labels(self):
@@ -79,6 +91,38 @@ def test_sync_label_color_skips_missing_gmail_label():
 
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
     c.sync_label_color("À traiter", "#8b5a83")
+
+    assert calls[0] == ("create_label", {"userId": "me", "body": {"name": "À traiter", "labelListVisibility": "labelShow", "messageListVisibility": "show"}})
+    assert calls[1][0] == "patch_label"
+
+
+def test_replace_label_does_not_create_unmanaged_label():
+    calls = []
+
+    class LabelOps:
+        def list(self, **kwargs):
+            return Execute({"labels": []})
+
+        def create(self, **kwargs):
+            return CaptureExecute({"id": "bad"}, calls, "create_label", kwargs)
+
+    class MessageOps:
+        def modify(self, **kwargs):
+            return CaptureExecute({}, calls, "modify_message", kwargs)
+
+    class CaptureUsers:
+        def labels(self):
+            return LabelOps()
+
+        def messages(self):
+            return MessageOps()
+
+    class CaptureService:
+        def users(self):
+            return CaptureUsers()
+
+    c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
+    c.replace_label("msg-1", "FYI", ["FYI"])
 
     assert calls == []
 

@@ -39,7 +39,7 @@ def test_outlook_category_color_maps_to_closest_preset():
     assert outlook_category_color("#dc4c4c") == "preset0"
 
 
-def test_sync_label_color_skips_missing_category():
+def test_sync_label_color_creates_missing_managed_category():
     calls = []
 
     class CaptureHotmailConnector(HotmailConnector):
@@ -50,6 +50,8 @@ def test_sync_label_color_skips_missing_category():
             calls.append((method, path, kwargs))
             if method == "GET":
                 return {"value": []}
+            if method == "POST":
+                return {"id": "cat-id"}
             return {}
 
     connector = CaptureHotmailConnector(
@@ -60,7 +62,11 @@ def test_sync_label_color_skips_missing_category():
     )
     connector.sync_label_color("À traiter", "#0a6cff")
 
-    assert calls == [("GET", "/me/outlook/masterCategories", {})]
+    assert calls == [
+        ("GET", "/me/outlook/masterCategories", {}),
+        ("POST", "/me/outlook/masterCategories", {"json": {"displayName": "À traiter", "color": "preset7"}}),
+        ("PATCH", "/me/outlook/masterCategories/cat-id", {"json": {"color": "preset7"}}),
+    ]
 
 
 def test_delete_label_removes_existing_outlook_category():
@@ -90,7 +96,7 @@ def test_delete_label_removes_existing_outlook_category():
     ]
 
 
-def test_replace_label_skips_missing_category():
+def test_replace_label_creates_missing_managed_category():
     calls = []
 
     class CaptureHotmailConnector(HotmailConnector):
@@ -103,6 +109,8 @@ def test_replace_label_skips_missing_category():
                 return {"categories": ["Mise à jour de réunion", "Client"]}
             if method == "GET" and path == "/me/outlook/masterCategories":
                 return {"value": []}
+            if method == "POST":
+                return {"id": "category-id"}
             return {}
 
     connector = CaptureHotmailConnector(
@@ -113,7 +121,12 @@ def test_replace_label_skips_missing_category():
     )
     connector.replace_label("message-id", "Notification", ["Notification", "Mise à jour de réunion"])
 
-    assert calls == [("GET", "/me/outlook/masterCategories", {})]
+    assert calls == [
+        ("GET", "/me/outlook/masterCategories", {}),
+        ("POST", "/me/outlook/masterCategories", {"json": {"displayName": "Notification", "color": "preset12"}}),
+        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client", "Notification"]}}),
+    ]
 
 
 def test_replace_label_does_not_create_custom_outlook_category():

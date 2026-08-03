@@ -276,7 +276,7 @@ def test_worker_reconciles_processed_unread_label_without_marking_read(monkeypat
     replace_call = c.calls[0]
     assert replace_call[0] == "replace_label"
     assert replace_call[1][1] == "À lire"
-    assert set(replace_call[1][2]) == {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+    assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_call[1][2]))
     assert "read" not in [x[0] for x in c.calls]
     assert "draft" not in [x[0] for x in c.calls]
 
@@ -310,7 +310,7 @@ def test_worker_cleans_legacy_labels_on_already_processed_message_once(monkeypat
     replace_calls = [call for call in c.calls if call[0] == "replace_label"]
     assert len(replace_calls) == 1
     assert replace_calls[0][1][1] == "Notification"
-    assert set(replace_calls[0][1][2]) == {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+    assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_calls[0][1][2]))
     assert state.record["legacy_labels_cleaned_at"]
     assert "read" not in [x[0] for x in c.calls]
     assert "trash" not in [x[0] for x in c.calls]

@@ -15,6 +15,8 @@ from token_store import TokenStore
 LOG = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify", "https://www.googleapis.com/auth/gmail.compose"]
 
+ALLOWED_USER_LABELS = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+
 
 class GmailConnector:
     def __init__(self, credentials_file: str, token_file: str, token_store: TokenStore, service=None):
@@ -52,17 +54,17 @@ class GmailConnector:
         return email
 
     def apply_label(self, message_id: str, label_name: str) -> None:
-        self.authenticate(); label_id = self._label_id(label_name)
+        self.authenticate(); label_id = self._label_id(label_name, create=True)
         if not label_id:
-            LOG.warning("Gmail label skipped because it does not exist: %s", label_name)
+            LOG.warning("Gmail label skipped because it is not managed: %s", label_name)
             return
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body={"addLabelIds": [label_id]}))
 
     def replace_label(self, message_id: str, label_name: str, managed_labels: list[str]) -> None:
         self.authenticate()
-        target_id = self._label_id(label_name)
+        target_id = self._label_id(label_name, create=True)
         if not target_id:
-            LOG.warning("Gmail label skipped because it does not exist: %s", label_name)
+            LOG.warning("Gmail label skipped because it is not managed: %s", label_name)
             return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         label_ids_by_name = {label["name"]: label["id"] for label in labels}
@@ -78,9 +80,9 @@ class GmailConnector:
 
     def sync_label_color(self, label_name: str, preferred_color: str) -> None:
         self.authenticate()
-        label_id = self._label_id(label_name)
+        label_id = self._label_id(label_name, create=True)
         if not label_id:
-            LOG.warning("Gmail color sync skipped because label does not exist: %s", label_name)
+            LOG.warning("Gmail color sync skipped because label is not managed: %s", label_name)
             return
         color = gmail_label_color(preferred_color)
         self._execute(self.service.users().labels().patch(userId="me", id=label_id, body={"color": color}))
@@ -102,11 +104,14 @@ class GmailConnector:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         return [label.get("name", "") for label in labels if label.get("type") != "system" and str(label.get("name", "")).strip()]
 
-    def _label_id(self, name: str) -> str:
+    def _label_id(self, name: str, create: bool = False) -> str:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:
             if label["name"] == name:
                 return label["id"]
+        if create and name in ALLOWED_USER_LABELS:
+            body = {"name": name, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
+            return self._execute(self.service.users().labels().create(userId="me", body=body))["id"]
         return ""
 
     def trash(self, message_id: str) -> None:
