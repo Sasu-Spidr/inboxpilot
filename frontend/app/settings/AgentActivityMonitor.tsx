@@ -2,8 +2,8 @@
 
 import { type CSSProperties, useEffect, useState } from "react";
 
-import { ALLOWED_LABELS, canonicalLabelKey } from "@/lib/clientSettings";
 import type { ActivityEvent, DashboardActivity } from "@/lib/dashboardActivity";
+import { ALLOWED_LABELS, canonicalLabelKey } from "@/lib/labelAliases";
 
 type ActivityPayload = {
   connectedMailboxes: number;
