@@ -38,7 +38,7 @@ def main() -> None:
         checked += 1
         label = normalize_active_label(client_id, str(record.get("label") or ""))
         action = str(record.get("action") or "keep")
-        if not _should_repair(label, action):
+        if record.get("label_repaired_at") or not _should_repair(label, action):
             skipped += 1
             continue
         try:
