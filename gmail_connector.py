@@ -120,10 +120,6 @@ class GmailConnector:
         self.apply_label(message_id, target)
         self.archive(message_id)
 
-    def mark_read(self, message_id: str) -> None:
-        self.authenticate()
-        self._execute(self.service.users().messages().modify(userId="me", id=message_id, body={"removeLabelIds": ["UNREAD"]}))
-
     def create_draft(self, email: dict, text: str) -> None:
         self.authenticate()
         recipient = recipient_address(email.get("sender", ""))

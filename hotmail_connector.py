@@ -118,7 +118,6 @@ class HotmailConnector:
     def trash(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "deleteditems"})
     def archive(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "archive"})
     def move(self, message_id: str, target: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": target})
-    def mark_read(self, message_id: str) -> None: self._request("PATCH", f"/me/messages/{message_id}", json={"isRead": True})
     def create_draft(self, email: dict, text: str) -> None:
         self._request("POST", f"/me/messages/{email['id']}/createReply", json={"comment": text})
 
