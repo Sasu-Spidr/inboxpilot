@@ -67,7 +67,7 @@ def test_registered_client_is_merged(tmp_path):
     assert Path(tmp_path / "clients.yaml").exists()
 
 
-def test_sync_label_settings_prunes_non_default_labels_and_keeps_defaults(tmp_path):
+def test_sync_label_settings_syncs_defaults_without_pruning_existing_labels(tmp_path):
     gmail_token = tmp_path / "gmail.token.enc"
     hotmail_token = tmp_path / "hotmail.token.enc"
     gmail_token.write_text("token", encoding="utf-8")
@@ -116,8 +116,8 @@ def test_sync_label_settings_prunes_non_default_labels_and_keeps_defaults(tmp_pa
 
     result = server.sync_label_settings("client-a")
 
-    assert "Custom" in gmail.deleted
-    assert "Custom" in hotmail.deleted
+    assert gmail.deleted == []
+    assert hotmail.deleted == []
     assert any(name == "À répondre" for name, _ in gmail.synced)
     assert any(name == "À traiter" for name, _ in hotmail.synced)
-    assert result["deleted"] >= 2
+    assert result["deleted"] == 0
