@@ -3,7 +3,7 @@ import json
 from client_settings import action_for_client, label_color_for_client, label_name_for_client, managed_label_names_for_client, normalized_labels_for_client
 
 
-def test_client_settings_override_label_name_and_managed_labels(tmp_path, monkeypatch):
+def test_client_settings_keep_canonical_label_names_and_managed_labels(tmp_path, monkeypatch):
     monkeypatch.setenv("DATA_DIR", str(tmp_path))
     settings_dir = tmp_path / "client-settings"
     settings_dir.mkdir()
@@ -25,9 +25,9 @@ def test_client_settings_override_label_name_and_managed_labels(tmp_path, monkey
         encoding="utf-8",
     )
 
-    assert label_name_for_client("client-a", "À traiter", "À traiter") == "Factures"
+    assert label_name_for_client("client-a", "À traiter", "À traiter") == "À traiter"
     assert label_color_for_client("client-a", "À traiter") == "#0d9488"
-    assert "Factures" in managed_label_names_for_client("client-a")
+    assert "À traiter" in managed_label_names_for_client("client-a")
     assert "À lire" in managed_label_names_for_client("client-a")
     assert "Commercial" in managed_label_names_for_client("client-a")
 
@@ -50,8 +50,7 @@ def test_client_settings_override_action_priority(tmp_path, monkeypatch):
     )
 
     assert action_for_client("client-a", "Commercial", "keep") == "trash"
-    assert action_for_client("client-a", "Relance", "keep") == "draft"
-    assert action_for_client("client-a", "FYI", "mark_read") == "draft"
+    assert action_for_client("client-a", "À répondre", "keep") == "draft"
     assert action_for_client("client-a", "Notification", "mark_read") == "mark_read"
 
 
@@ -81,8 +80,8 @@ def test_client_settings_default_labels_are_added_without_overwriting_existing(t
     labels = normalized_labels_for_client("client-a")
     names = [label["name"] for label in labels]
 
-    assert "Réponses prioritaires" in names
-    assert "À répondre" not in names
+    assert "À répondre" in names
+    assert "Réponses prioritaires" not in names
     assert "À traiter" in names
     assert "Commercial" in names
     assert len(labels) == 5

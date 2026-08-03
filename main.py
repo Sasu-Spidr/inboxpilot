@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import active_label_keys_for_client, action_for_client, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
+from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -23,21 +23,6 @@ from state_store import ProcessedState
 from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
-
-LEGACY_MANAGED_LABEL_NAMES = [
-    "Relance",
-    "Commentaire",
-    "FYI",
-    "Mise à jour de réunion",
-    "Mise a jour de reunion",
-    "Newsletter",
-    "Marketing",
-    "Traité",
-    "Traite",
-    "En attente de réponse",
-    "En attente de reponse",
-]
-
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
@@ -299,7 +284,7 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id), *LEGACY_MANAGED_LABEL_NAMES]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:
@@ -366,27 +351,12 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
 
 def normalize_active_label(client_id: str, label: str) -> str:
     active_keys = active_label_keys_for_client(client_id)
-    aliases = {
-        "A répondre": "À répondre",
-        "Relance": "À répondre",
-        "A traiter": "À traiter",
-        "FYI": "À lire",
-        "Commentaire": "À lire",
-        "Newsletter": "À lire",
-        "Traité": "À lire",
-        "Traite": "À lire",
-        "En attente de réponse": "À lire",
-        "En attente de reponse": "À lire",
-        "Mise à jour de réunion": "Notification",
-        "Mise a jour de reunion": "Notification",
-        "Marketing": "Commercial",
-    }
-    mapped_label = aliases.get(label, label)
-    if not active_keys or mapped_label in active_keys:
+    mapped_label = canonical_label_key(label)
+    if mapped_label in active_keys:
         return mapped_label
     if "À lire" in active_keys:
         return "À lire"
-    return active_keys[0]
+    return active_keys[0] if active_keys else "À lire"
 
 
 def auto_delete_allowed(result: dict, email: dict) -> bool:

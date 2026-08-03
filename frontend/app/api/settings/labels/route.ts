@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { currentUser } from "@/lib/auth";
-import { getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
 
 export async function GET() {
   const user = await currentUser();
@@ -14,16 +14,14 @@ export async function POST(request: NextRequest) {
   if (!user) return redirectTo(request, "/?error=1");
 
   const form = await request.formData();
-  const count = Number(form.get("labelCount") || 0);
   const labels: LabelSetting[] = [];
   const previousSettings = getClientSettings(user.clientId);
 
-  for (let index = 0; index < count; index += 1) {
-    const key = String(form.get(`labels.${index}.key`) || "");
-    if (!key) continue;
+  for (let index = 0; index < DEFAULT_LABEL_SETTINGS.length; index += 1) {
+    const defaults = DEFAULT_LABEL_SETTINGS[index];
     labels.push({
-      key,
-      name: String(form.get(`labels.${index}.name`) || ""),
+      key: defaults.key,
+      name: defaults.name,
       description: String(form.get(`labels.${index}.description`) || ""),
       color: String(form.get(`labels.${index}.color`) || ""),
       priority: Number(form.get(`labels.${index}.priority`) || 10),

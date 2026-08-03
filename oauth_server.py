@@ -19,7 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_settings import LEGACY_LABEL_NAMES, label_color_settings_for_client
+from client_settings import DEFAULT_LABELS, label_color_settings_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
@@ -145,7 +145,8 @@ class OAuthOnboardingServer:
         skipped = 0
         errors = []
         labels = label_color_settings_for_client(client_id)
-        removed = list(dict.fromkeys([*(str(label).strip() for label in (removed_labels or []) if str(label).strip()), *LEGACY_LABEL_NAMES]))
+        default_label_names = {str(label["name"]).strip() for label in DEFAULT_LABELS if str(label["name"]).strip()}
+        removed = list(dict.fromkeys(str(label).strip() for label in (removed_labels or []) if str(label).strip()))
         for provider, accounts in (
             ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
             ("hotmail", client.get("connectors", {}).get("hotmail", {}).get("accounts", []) or []),
@@ -157,6 +158,11 @@ class OAuthOnboardingServer:
                     continue
                 try:
                     connector = self._label_sync_connector(provider, account_cfg, token_file)
+                    existing_labels = connector.list_user_labels() if provider == "gmail" else connector.list_categories()
+                    for label_name in existing_labels:
+                        if label_name and label_name not in default_label_names:
+                            if connector.delete_label(label_name):
+                                deleted += 1
                     for label_name in removed:
                         if connector.delete_label(label_name):
                             deleted += 1

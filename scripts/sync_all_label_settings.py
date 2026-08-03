@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 from client_registry import load_registered_clients
-from client_settings import LEGACY_LABEL_NAMES
 from oauth_server import OAuthOnboardingServer, load_settings
 
 
@@ -24,7 +23,7 @@ def main() -> None:
     results = {}
     for client_id in clients:
         try:
-            results[client_id] = server.sync_label_settings(client_id, LEGACY_LABEL_NAMES)
+            results[client_id] = server.sync_label_settings(client_id, [])
         except Exception as exc:
             results[client_id] = {"error": str(exc)}
         print(f"{client_id}: {results[client_id]}")

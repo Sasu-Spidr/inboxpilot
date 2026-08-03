@@ -34,15 +34,12 @@ def test_reads_unread_email():
     assert c.unread_emails(1) == [{"id":"m1","subject":"Hello","sender":"x@y.com","body":"Hi","thread_id":"t1"}]
 
 
-def test_replace_label_creates_missing_label_and_removes_old_managed_labels():
+def test_replace_label_skips_missing_label():
     calls = []
 
     class LabelOps:
         def list(self, **kwargs):
             return Execute({"labels": [{"name": "Commentaire", "id": "old-comment"}]})
-
-        def create(self, **kwargs):
-            return CaptureExecute({"id": "new-label"}, calls, "create_label", kwargs)
 
     class MessageOps:
         def modify(self, **kwargs):
@@ -62,21 +59,15 @@ def test_replace_label_creates_missing_label_and_removes_old_managed_labels():
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
     c.replace_label("msg-1", "À traiter", ["Commentaire", "Marketing", "À traiter"])
 
-    assert calls[0][0] == "create_label"
-    assert calls[0][1]["body"]["name"] == "À traiter"
-    assert calls[1][0] == "modify_message"
-    assert calls[1][1]["body"] == {"addLabelIds": ["new-label"], "removeLabelIds": ["old-comment"]}
+    assert calls == []
 
 
-def test_sync_label_color_updates_existing_gmail_label():
+def test_sync_label_color_skips_missing_gmail_label():
     calls = []
 
     class LabelOps:
         def list(self, **kwargs):
-            return Execute({"labels": [{"name": "À traiter", "id": "label-1"}]})
-
-        def patch(self, **kwargs):
-            return CaptureExecute({}, calls, "patch_label", kwargs)
+            return Execute({"labels": []})
 
     class CaptureUsers:
         def labels(self):
@@ -89,16 +80,7 @@ def test_sync_label_color_updates_existing_gmail_label():
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
     c.sync_label_color("À traiter", "#8b5a83")
 
-    assert calls == [
-        (
-            "patch_label",
-            {
-                "userId": "me",
-                "id": "label-1",
-                "body": {"color": gmail_label_color("#8b5a83")},
-            },
-        )
-    ]
+    assert calls == []
 
 
 def test_gmail_auth_without_token_does_not_open_browser(tmp_path, monkeypatch):

@@ -79,6 +79,9 @@ class HotmailConnector:
 
     def sync_label_color(self, category_name: str, preferred_color: str) -> None:
         category_id = self._category_id(category_name)
+        if not category_id:
+            LOG.warning("Outlook category sync skipped because it does not exist: %s", category_name)
+            return
         color = outlook_category_color(preferred_color)
         self._request("PATCH", f"/me/outlook/masterCategories/{quote(category_id, safe='')}", json={"color": color})
 
@@ -91,7 +94,14 @@ class HotmailConnector:
                 return True
         return False
 
+    def list_categories(self) -> list[str]:
+        data = self._request("GET", "/me/outlook/masterCategories")
+        return [str(category.get("displayName", "")).strip() for category in data.get("value", []) or [] if str(category.get("displayName", "")).strip()]
+
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
+        category_id = self._category_id(category)
+        if not category_id:
+            return
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
         managed = {normalize_category_name(item) for item in managed_categories}
@@ -117,12 +127,7 @@ class HotmailConnector:
         for category in data.get("value", []) or []:
             if category.get("displayName") == display_name:
                 return category["id"]
-        created = self._request(
-            "POST",
-            "/me/outlook/masterCategories",
-            json={"displayName": display_name, "color": "preset12"},
-        )
-        return created["id"]
+        return ""
 
 
 def outlook_category_color(preferred_color: str) -> str:

@@ -1,4 +1,6 @@
-from classifier import DEFAULT_LABEL, EmailClassifier, format_label_definitions, parse_json_object
+import pytest
+
+from classifier import DEFAULT_LABEL, EmailClassifier, LABELS, format_label_definitions, normalize_model_result, parse_json_object
 
 
 class Response:
@@ -33,8 +35,8 @@ def test_classification():
 
 
 def test_parse_json_object_from_markdown():
-    result = parse_json_object('```json\n{"label":"Commentaire","action":"keep"}\n```')
-    assert result["label"] == "Commentaire"
+    result = parse_json_object('```json\n{"label":"À lire","action":"keep"}\n```')
+    assert result["label"] == "À lire"
 
 
 def test_deterministic_gmail_examples():
@@ -138,3 +140,22 @@ def test_prompt_definitions_include_label_meaning():
         }
     )
     assert "Factures et documents" in text
+
+
+@pytest.mark.parametrize(
+    ("input_label", "expected_label"),
+    [
+        ("FYI", "À lire"),
+        ("Commentaire", "À lire"),
+        ("Newsletter", "À lire"),
+        ("Marketing", "Commercial"),
+        ("Relance", "À répondre"),
+        ("Traité", "À lire"),
+        ("En attente de réponse", "À lire"),
+        ("Mise à jour de réunion", "Notification"),
+        ("ABC123", "À lire"),
+    ],
+)
+def test_legacy_labels_and_unknown_labels_fall_back_to_allowed_labels(input_label, expected_label):
+    result = normalize_model_result({"label": input_label, "action": "keep", "priority": "medium", "confidence": 0.9}, LABELS)
+    assert result["label"] == expected_label

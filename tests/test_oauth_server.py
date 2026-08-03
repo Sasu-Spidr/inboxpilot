@@ -65,3 +65,59 @@ def test_registered_client_is_merged(tmp_path):
     merged = merge_registered_clients(cfg)
     assert merged["clients"]["demo-client"]["owner_name"] == "Jean Martin"
     assert Path(tmp_path / "clients.yaml").exists()
+
+
+def test_sync_label_settings_prunes_non_default_labels_and_keeps_defaults(tmp_path):
+    gmail_token = tmp_path / "gmail.token.enc"
+    hotmail_token = tmp_path / "hotmail.token.enc"
+    gmail_token.write_text("token", encoding="utf-8")
+    hotmail_token.write_text("token", encoding="utf-8")
+
+    settings_payload = {
+        "token_encryption_key": "Hi2vSxtb4LWWU0Anf0MkDr3eQsfcwoS1bOVsfehfe-A=",
+        "clients": {
+            "client-a": {
+                "connectors": {
+                    "gmail": {"accounts": [{"account": "main", "credentials_file": "secrets/google-oauth-client.json", "token_file": str(gmail_token)}]},
+                    "hotmail": {"accounts": [{"account": "main", "tenant_id": "consumers", "token_file": str(hotmail_token), "client_id": "id"}]},
+                }
+            }
+        },
+    }
+
+    class FakeConnector:
+        def __init__(self, existing):
+            self.existing = existing
+            self.deleted = []
+            self.synced = []
+
+        def list_user_labels(self):
+            return self.existing
+
+        def list_categories(self):
+            return self.existing
+
+        def delete_label(self, label_name):
+            self.deleted.append(label_name)
+            return True
+
+        def sync_label_color(self, label_name, color):
+            self.synced.append((label_name, color))
+
+    gmail = FakeConnector(["À répondre", "Custom"])
+    hotmail = FakeConnector(["À traiter", "Custom"])
+
+    server = OAuthOnboardingServer(settings_payload, "http://localhost:8080")
+
+    def fake_label_sync_connector(provider, account_cfg, token_file):
+        return gmail if provider == "gmail" else hotmail
+
+    server._label_sync_connector = fake_label_sync_connector  # type: ignore[method-assign]
+
+    result = server.sync_label_settings("client-a")
+
+    assert "Custom" in gmail.deleted
+    assert "Custom" in hotmail.deleted
+    assert any(name == "À répondre" for name, _ in gmail.synced)
+    assert any(name == "À traiter" for name, _ in hotmail.synced)
+    assert result["deleted"] >= 2

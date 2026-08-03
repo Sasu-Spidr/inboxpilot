@@ -53,11 +53,17 @@ class GmailConnector:
 
     def apply_label(self, message_id: str, label_name: str) -> None:
         self.authenticate(); label_id = self._label_id(label_name)
+        if not label_id:
+            LOG.warning("Gmail label skipped because it does not exist: %s", label_name)
+            return
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body={"addLabelIds": [label_id]}))
 
     def replace_label(self, message_id: str, label_name: str, managed_labels: list[str]) -> None:
         self.authenticate()
         target_id = self._label_id(label_name)
+        if not target_id:
+            LOG.warning("Gmail label skipped because it does not exist: %s", label_name)
+            return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         label_ids_by_name = {label["name"]: label["id"] for label in labels}
         remove_ids = [
@@ -73,6 +79,9 @@ class GmailConnector:
     def sync_label_color(self, label_name: str, preferred_color: str) -> None:
         self.authenticate()
         label_id = self._label_id(label_name)
+        if not label_id:
+            LOG.warning("Gmail color sync skipped because label does not exist: %s", label_name)
+            return
         color = gmail_label_color(preferred_color)
         self._execute(self.service.users().labels().patch(userId="me", id=label_id, body={"color": color}))
 
@@ -88,11 +97,17 @@ class GmailConnector:
                 return True
         return False
 
+    def list_user_labels(self) -> list[str]:
+        self.authenticate()
+        labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
+        return [label.get("name", "") for label in labels if label.get("type") != "system" and str(label.get("name", "")).strip()]
+
     def _label_id(self, name: str) -> str:
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         for label in labels:
-            if label["name"] == name: return label["id"]
-        return self._execute(self.service.users().labels().create(userId="me", body={"name": name, "labelListVisibility": "labelShow"}))["id"]
+            if label["name"] == name:
+                return label["id"]
+        return ""
 
     def trash(self, message_id: str) -> None:
         self.authenticate(); self._execute(self.service.users().messages().trash(userId="me", id=message_id))

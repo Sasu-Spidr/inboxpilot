@@ -18,11 +18,11 @@
 
 À lire:
   priority: 70
-  description: "Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe FYI, mises au courant, commentaires et mentions collaboratifs."
+  description: "Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe les mises au courant, notes et mentions collaboratives."
   action_hint: keep
   examples:
     - "Pour info"
-    - "Commentaire sur un document"
+    - "Note sur un document"
     - "Retour d'un collègue"
 
 Notification:
@@ -39,6 +39,6 @@ Commercial:
   description: "Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition ou envoi de masse. Au moindre doute, choisir Notification ou À lire."
   action_hint: keep
   examples:
-    - "Newsletter récurrente"
+    - "Lettre d'information récurrente"
     - "Promotion"
     - "Cold email commercial"

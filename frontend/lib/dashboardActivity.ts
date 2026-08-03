@@ -1,5 +1,6 @@
 import fs from "node:fs";
 
+import { ALLOWED_LABELS, canonicalLabelKey } from "./clientSettings";
 import { dataPath } from "./paths";
 
 export type ActivityEvent = {
@@ -52,14 +53,8 @@ function readActivityEvents(clientId: string): ActivityEvent[] {
 }
 
 function canonicalActivityLabel(label: string): string {
-  const normalized = String(label || "").trim().toLowerCase();
-  if (["marketing", "newsletter"].includes(normalized)) return "Commercial";
-  if (["fyi", "commentaire", "traité", "traite", "en attente de réponse", "en attente de reponse"].includes(normalized)) {
-    return "À lire";
-  }
-  if (normalized === "relance") return "À répondre";
-  if (normalized === "mise à jour de réunion" || normalized === "mise a jour de reunion") return "Notification";
-  return label;
+  const canonical = canonicalLabelKey(label);
+  return ALLOWED_LABELS.includes(canonical as (typeof ALLOWED_LABELS)[number]) ? canonical : "À lire";
 }
 
 function eventTimestamp(event: ActivityEvent): number {

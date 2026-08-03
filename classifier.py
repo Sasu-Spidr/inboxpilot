@@ -10,15 +10,11 @@ from groq import Groq
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 import yaml
 
+from client_settings import ALLOWED_LABELS, canonical_label_key
+
 LOG = logging.getLogger(__name__)
 
-LABELS = (
-    "À répondre",
-    "À traiter",
-    "À lire",
-    "Notification",
-    "Commercial",
-)
+LABELS = ALLOWED_LABELS
 ACTIONS = ("keep", "trash", "draft", "archive", "mark_read", "move")
 PRIORITIES = ("low", "medium", "high")
 MIN_CONFIDENCE = 0.75
@@ -115,7 +111,6 @@ def parse_json_object(value: str) -> dict:
 
 def normalize_model_result(result: dict, allowed_labels: tuple[str, ...]) -> dict:
     label = str(result.get("libelle") or result.get("label") or "").strip()
-    label = normalize_label_alias(label, allowed_labels)
     urgency = str(result.get("urgence") or "").strip().lower()
     raw_priority = str(result.get("priority") or "").strip().lower()
     confidence = result.get("confiance", result.get("confidence", 0))
@@ -126,7 +121,9 @@ def normalize_model_result(result: dict, allowed_labels: tuple[str, ...]) -> dic
         priority = raw_priority
     else:
         priority = "medium"
+    label = canonical_label_key(label)
     if label not in allowed_labels:
+        LOG.error("Unknown label returned by model: %s", label)
         label = default_label(allowed_labels)
         priority = "low"
     return {
@@ -138,26 +135,6 @@ def normalize_model_result(result: dict, allowed_labels: tuple[str, ...]) -> dic
         "reason": reason,
         "automatic_sender": bool(result.get("expediteur_automatique", False)),
     }
-
-
-def normalize_label_alias(label: str, allowed_labels: tuple[str, ...]) -> str:
-    aliases = {
-        "A répondre": "À répondre",
-        "Relance": "À répondre",
-        "A traiter": "À traiter",
-        "FYI": "À lire",
-        "Commentaire": "À lire",
-        "Newsletter": "À lire",
-        "Traité": "À lire",
-        "Traite": "À lire",
-        "En attente de réponse": "À lire",
-        "En attente de reponse": "À lire",
-        "Mise à jour de réunion": "Notification",
-        "Mise a jour de reunion": "Notification",
-        "Marketing": "Commercial",
-    }
-    mapped = aliases.get(label, label)
-    return mapped if mapped in allowed_labels else label
 
 
 def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:

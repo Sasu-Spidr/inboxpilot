@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useEffect, useState } from "react";
 
+import { ALLOWED_LABELS, canonicalLabelKey } from "@/lib/clientSettings";
 import type { ActivityEvent, DashboardActivity } from "@/lib/dashboardActivity";
 
 type ActivityPayload = {
@@ -226,12 +227,8 @@ function labelBadgeStyle(label: string, labelColors: Record<string, string>): CS
 }
 
 function canonicalLabel(label: string): string {
-  const normalized = label.trim().toLowerCase();
-  if (["marketing", "newsletter"].includes(normalized)) return "Commercial";
-  if (["fyi", "commentaire", "traité", "traite", "en attente de réponse", "en attente de reponse"].includes(normalized)) return "À lire";
-  if (normalized === "relance") return "À répondre";
-  if (normalized === "mise à jour de réunion" || normalized === "mise a jour de reunion") return "Notification";
-  return label;
+  const canonical = canonicalLabelKey(label);
+  return ALLOWED_LABELS.includes(canonical as (typeof ALLOWED_LABELS)[number]) ? canonical : "À lire";
 }
 
 function fallbackLabelColor(label: string): string {
@@ -242,12 +239,6 @@ function fallbackLabelColor(label: string): string {
       "À lire": "#3b82f6",
       Notification: "#22c55e",
       Commercial: "#fb7185",
-      Marketing: "#fb7185",
-      Newsletter: "#fb7185",
-      FYI: "#3b82f6",
-      Commentaire: "#3b82f6",
-      Relance: "#0d9488",
-      "Mise à jour de réunion": "#22c55e",
     }[label] || "#3589e9"
   );
 }

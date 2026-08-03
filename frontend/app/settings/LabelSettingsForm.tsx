@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import type { LabelSetting } from "@/lib/clientSettings";
 
@@ -11,34 +11,9 @@ type Props = {
 export default function LabelSettingsForm({ initialLabels }: Props) {
   const [labels, setLabels] = useState<LabelSetting[]>(initialLabels);
   const labelCount = labels.length;
-  const canDelete = useMemo(() => labels.length > 1, [labels.length]);
-
-  function addLabel() {
-    const nextNumber = labels.length + 1;
-    setLabels((current) => [
-      ...current,
-      {
-        key: `custom-${Date.now()}`,
-        name: `Nouveau libellé ${nextNumber}`,
-        description: "Décrivez précisément les emails qui doivent recevoir ce libellé.",
-        color: "#14b8a6",
-        prepareDraft: false,
-        autoReply: false,
-        autoDelete: false,
-        markAsRead: false,
-        autoDeleteUnreadAfterDays: null,
-        priority: 10,
-      },
-    ]);
-  }
 
   function updateLabel(index: number, patch: Partial<LabelSetting>) {
     setLabels((current) => current.map((label, labelIndex) => (labelIndex === index ? { ...label, ...patch } : label)));
-  }
-
-  function deleteLabel(index: number) {
-    if (!canDelete) return;
-    setLabels((current) => current.filter((_, labelIndex) => labelIndex !== index));
   }
 
   return (
@@ -47,13 +22,10 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
       <div className="settings-toolbar">
         <div>
           <p className="eyebrow">Réglages des libellés</p>
-          <strong>Personnalisez les règles de tri</strong>
-          <span>Ajoutez, modifiez ou supprimez vos libellés, puis enregistrez pour synchroniser Gmail.</span>
+          <strong>Les cinq libellés par défaut</strong>
+          <span>Les libellés sont fixes. Vous pouvez seulement ajuster leurs règles, couleurs et descriptions.</span>
         </div>
         <div className="settings-toolbar-actions">
-          <button type="button" className="secondary-settings-button" onClick={addLabel}>
-            Ajouter un libellé
-          </button>
           <button type="submit">Enregistrer les paramètres</button>
         </div>
       </div>
@@ -76,18 +48,13 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
 
             <div className="settings-row-body">
               <input type="hidden" name={`labels.${index}.key`} value={label.key} />
+              <input type="hidden" name={`labels.${index}.name`} value={label.name} />
               <input type="hidden" name={`labels.${index}.priority`} value={label.priority || 10} />
 
-              <label className="setting-field">
-                Nom affiché
-                <input
-                  name={`labels.${index}.name`}
-                  value={label.name}
-                  maxLength={64}
-                  required
-                  onChange={(event) => updateLabel(index, { name: event.target.value })}
-                />
-              </label>
+              <div className="setting-field">
+                <span>Nom affiché</span>
+                <strong>{label.name}</strong>
+              </div>
 
               <label className="setting-field color-field">
                 Couleur
@@ -161,11 +128,6 @@ export default function LabelSettingsForm({ initialLabels }: Props) {
                 </span>
               </label>
 
-              <div className="settings-row-controls">
-                <button type="button" className="delete-label-button" disabled={!canDelete} onClick={() => deleteLabel(index)}>
-                  Supprimer ce libellé
-                </button>
-              </div>
             </div>
           </details>
         ))}
