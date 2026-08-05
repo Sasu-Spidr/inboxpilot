@@ -77,6 +77,25 @@ def main() -> None:
                 )
             repaired += 1
         except Exception as exc:  # pragma: no cover - used operationally
+            if "404 Client Error" in str(exc):
+                if not args.dry_run:
+                    worker.state.complete(
+                        client_id=client_id,
+                        connector=connector_name,
+                        account=account,
+                        message_id=message_id,
+                        thread_id=record.get("thread_id"),
+                        label=label,
+                        action=action,
+                        draft_created=bool(record.get("draft_created")),
+                        received_at=record.get("received_at"),
+                        label_repaired_at=current_utc_iso(),
+                        label_repaired_version=LEGACY_LABEL_CLEANUP_VERSION,
+                        label_repair_skipped_reason="message_not_found",
+                        legacy_labels_cleanup_version=LEGACY_LABEL_CLEANUP_VERSION,
+                    )
+                skipped += 1
+                continue
             failed += 1
             print(f"FAILED client={client_id} connector={connector_name} account={account} message={message_id} label={label}: {exc}")
 
