@@ -23,6 +23,7 @@ from state_store import ProcessedState
 from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
+LEGACY_LABEL_CLEANUP_VERSION = 2
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
@@ -253,7 +254,7 @@ class MailWorker:
         return True
 
     def _cleanup_processed_legacy_labels(self, connector, client_id: str, connector_name: str, account: str, message_id: str, record: dict) -> bool:
-        if record.get("legacy_labels_cleaned_at"):
+        if int(record.get("legacy_labels_cleanup_version") or 0) >= LEGACY_LABEL_CLEANUP_VERSION:
             return False
         original_label = str(record.get("label") or "")
         label = normalize_active_label(client_id, original_label)
@@ -273,6 +274,7 @@ class MailWorker:
             draft_created=bool(record.get("draft_created")),
             received_at=record.get("received_at"),
             legacy_labels_cleaned_at=current_utc_iso(),
+            legacy_labels_cleanup_version=LEGACY_LABEL_CLEANUP_VERSION,
         )
         log_event("processed_email_legacy_labels_cleaned", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="ok")
         return True

@@ -4,7 +4,7 @@ import argparse
 import logging
 from typing import Any
 
-from main import MailWorker, current_utc_iso, load_settings, normalize_active_label
+from main import LEGACY_LABEL_CLEANUP_VERSION, MailWorker, current_utc_iso, load_settings, normalize_active_label
 
 
 def main() -> None:
@@ -38,7 +38,7 @@ def main() -> None:
         checked += 1
         label = normalize_active_label(client_id, str(record.get("label") or ""))
         action = str(record.get("action") or "keep")
-        if record.get("label_repaired_at") or not _should_repair(label, action):
+        if int(record.get("label_repaired_version") or 0) >= LEGACY_LABEL_CLEANUP_VERSION or not _should_repair(label, action):
             skipped += 1
             continue
         try:
@@ -65,6 +65,8 @@ def main() -> None:
                     draft_created=bool(record.get("draft_created")),
                     received_at=record.get("received_at"),
                     label_repaired_at=current_utc_iso(),
+                    label_repaired_version=LEGACY_LABEL_CLEANUP_VERSION,
+                    legacy_labels_cleanup_version=LEGACY_LABEL_CLEANUP_VERSION,
                 )
             repaired += 1
         except Exception as exc:  # pragma: no cover - used operationally

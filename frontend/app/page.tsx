@@ -100,9 +100,9 @@ export default async function Home() {
           </div>
           <div className="preview-activity">
             <h3>Activité récente</h3>
-            <PreviewEmail icon={<OutlookLogo />} title="Bienvenue dans votre nouveau compte Outlook.com" label="FYI" />
+            <PreviewEmail icon={<OutlookLogo />} title="Bienvenue dans votre nouveau compte Outlook.com" label="À lire" />
             <PreviewEmail icon={<GmailLogo />} title="Votre code à usage unique" label="Notification" />
-            <PreviewEmail icon={<GmailLogo />} title="RECRUTEMENT" label="FYI" />
+            <PreviewEmail icon={<GmailLogo />} title="RECRUTEMENT" label="À lire" />
             <a href="#tarifs">Voir toute l&apos;activité →</a>
           </div>
         </div>

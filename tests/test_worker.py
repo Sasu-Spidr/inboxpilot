@@ -312,8 +312,41 @@ def test_worker_cleans_legacy_labels_on_already_processed_message_once(monkeypat
     assert replace_calls[0][1][1] == "Notification"
     assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_calls[0][1][2]))
     assert state.record["legacy_labels_cleaned_at"]
+    assert state.record["legacy_labels_cleanup_version"] == 2
     assert "read" not in [x[0] for x in c.calls]
     assert "trash" not in [x[0] for x in c.calls]
+
+
+def test_worker_recleans_legacy_labels_when_previous_cleanup_has_no_version(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class CompletedState(State):
+        def __init__(self):
+            super().__init__()
+            self.record = {"label": "À lire", "thread_id": "t", "draft_created": False, "action": "keep", "legacy_labels_cleaned_at": "old"}
+
+        def is_processed(self, *args):
+            return True
+
+        def get(self, *args):
+            return self.record
+
+        def complete(self, **kwargs):
+            self.record = kwargs
+            self.completed.append(kwargs)
+
+    c = Connector()
+    state = CompletedState()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=state)
+
+    worker.run_cycle()
+
+    replace_calls = [call for call in c.calls if call[0] == "replace_label"]
+    assert len(replace_calls) == 1
+    assert replace_calls[0][1][1] == "À lire"
+    assert "FYI" in replace_calls[0][1][2]
+    assert state.record["legacy_labels_cleanup_version"] == 2
 
 
 def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
