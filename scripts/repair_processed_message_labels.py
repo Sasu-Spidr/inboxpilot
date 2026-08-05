@@ -38,7 +38,11 @@ def main() -> None:
         checked += 1
         label = normalize_active_label(client_id, str(record.get("label") or ""))
         action = str(record.get("action") or "keep")
-        if int(record.get("label_repaired_version") or 0) >= LEGACY_LABEL_CLEANUP_VERSION or not _should_repair(label, action):
+        repaired_version = max(
+            int(record.get("label_repaired_version") or 0),
+            int(record.get("legacy_labels_cleanup_version") or 0),
+        )
+        if repaired_version >= LEGACY_LABEL_CLEANUP_VERSION or not _should_repair(label, action):
             skipped += 1
             continue
         try:
