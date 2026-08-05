@@ -42,7 +42,10 @@ def main() -> None:
             skipped += 1
             continue
         try:
-            entry = worker._entry(client_id, connector_name, account)  # noqa: SLF001 - maintenance script
+            entry = _entry_or_none(worker, client_id, connector_name, account)
+            if not entry:
+                skipped += 1
+                continue
             if not args.dry_run:
                 worker._apply_label(  # noqa: SLF001 - maintenance script
                     entry["connector"],
@@ -86,6 +89,10 @@ def _record_identity(key: str, record: dict[str, Any]) -> tuple[str, str, str, s
         if len(parts) == 4:
             client_id, connector, account, message_id = parts
     return client_id, connector, account, message_id
+
+
+def _entry_or_none(worker: MailWorker, client_id: str, connector_name: str, account: str) -> dict[str, Any] | None:
+    return (worker.connectors.get(client_id) or {}).get(f"{connector_name}:{account}")
 
 
 def _should_repair(label: str, action: str) -> bool:
