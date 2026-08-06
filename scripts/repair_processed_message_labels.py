@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import logging
@@ -8,7 +8,7 @@ from main import LEGACY_LABEL_CLEANUP_VERSION, MailWorker, current_utc_iso, load
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Réapplique les libellés officiels aux emails déjà traités.")
+    parser = argparse.ArgumentParser(description="RÃ©applique les libellÃ©s officiels aux emails dÃ©jÃ  traitÃ©s.")
     parser.add_argument("--config", default="config/settings.yaml")
     parser.add_argument("--client", default="")
     parser.add_argument("--connector", choices=["gmail", "hotmail"], default=None)
@@ -36,19 +36,39 @@ def main() -> None:
         if args.account and account != args.account:
             continue
         checked += 1
-        label = normalize_active_label(client_id, str(record.get("label") or ""))
+        original_label = str(record.get("label") or "")
+        label = normalize_active_label(client_id, original_label)
         action = str(record.get("action") or "keep")
+        is_legacy_record = bool(original_label and original_label != label)
         repaired_version = max(
             int(record.get("label_repaired_version") or 0),
             int(record.get("legacy_labels_cleanup_version") or 0),
         )
-        if repaired_version >= LEGACY_LABEL_CLEANUP_VERSION or not _should_repair(label, action):
+        if repaired_version >= LEGACY_LABEL_CLEANUP_VERSION or not _should_repair(label, action, is_legacy_record):
             skipped += 1
             continue
         try:
             entry = _entry_or_none(worker, client_id, connector_name, account)
             if not entry:
                 skipped += 1
+                continue
+            if action in {"trash", "trash_unread_expired"}:
+                if not args.dry_run:
+                    worker.state.complete(
+                        client_id=client_id,
+                        connector=connector_name,
+                        account=account,
+                        message_id=message_id,
+                        thread_id=record.get("thread_id"),
+                        label=label,
+                        action=action,
+                        draft_created=bool(record.get("draft_created")),
+                        received_at=record.get("received_at"),
+                        label_repaired_at=current_utc_iso(),
+                        label_repaired_version=LEGACY_LABEL_CLEANUP_VERSION,
+                        legacy_labels_cleanup_version=LEGACY_LABEL_CLEANUP_VERSION,
+                    )
+                repaired += 1
                 continue
             if not args.dry_run:
                 worker._apply_label(  # noqa: SLF001 - maintenance script
@@ -118,13 +138,14 @@ def _entry_or_none(worker: MailWorker, client_id: str, connector_name: str, acco
     return (worker.connectors.get(client_id) or {}).get(f"{connector_name}:{account}")
 
 
-def _should_repair(label: str, action: str) -> bool:
+def _should_repair(label: str, action: str, is_legacy_record: bool = False) -> bool:
     if not label or label == "pre_activation":
         return False
     if action in {"trash", "trash_unread_expired"}:
-        return False
-    return label in {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+        return is_legacy_record
+    return label in {"Ã€ rÃ©pondre", "Ã€ traiter", "Ã€ lire", "Notification", "Commercial"}
 
 
 if __name__ == "__main__":
     main()
+
