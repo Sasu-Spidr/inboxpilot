@@ -367,33 +367,88 @@ def account_specific_classification_override(client_id: str, connector_name: str
     if client_id != "ilyesseeladaoui2-gmail-com" or connector_name != "gmail" or account != "gmail-2":
         return None
     text = normalize_override_text(f"{email.get('subject', '')}\n{email.get('sender', '')}\n{email.get('body', '')[:2000]}")
+
+    if has_override_any(text, "facture", "invoice", "paiement", "payment", "contrat", "signature", "document a signer", "devis signe", "mode de paiement"):
+        return override_decision("À traiter", "high", "Facture, paiement, document ou opération manuelle à traiter pour cette boîte.")
+
+    if has_override_any(text, "code a usage unique", "code de connexion", "verification code", "confirmation", "recu", "receipt", "no-reply", "noreply", "donotreply", "notifications@"):
+        if not has_override_any(text, "offre", "promotion", "reduction", "desabonner", "newsletter", "se desabonner"):
+            return override_decision("Notification", "low", "Notification automatique ou message transactionnel pour cette boîte.", automatic_sender=True)
+
+    reply_terms = (
+        "est ce que tu peux",
+        "peux tu",
+        "pouvez vous",
+        "peux-tu",
+        "pouvez-vous",
+        "tu peux me dire",
+        "j'aimerais avoir ton retour",
+        "j aimerais avoir ton retour",
+        "tu peux me repondre",
+        "peux tu me repondre",
+        "quand tu as un moment",
+        "as tu eu le temps",
+        "avez vous eu le temps",
+        "question sur",
+    )
+    if not has_override_any(text, "no-reply", "noreply", "donotreply", "notifications@") and any(term in text for term in reply_terms):
+        return override_decision("À répondre", "high", "Demande directe qui attend une réponse écrite de ta part.")
+
     job_alert_terms = (
         "alertes linkedin",
         "linkedin jobs",
+        "alertes linkedin jo",
         "indeed",
+        "figaro emploi",
+        "meteo job",
+        "meteojob",
+        "alerte emploi",
+        "emploi",
+        "job",
+        "recrute",
+        "recrutement",
         "recherche un/e",
         "recherche une",
         "recherche un",
         "nouvelles offres",
+        "nouvelles offres d'emploi",
         "offres de stage",
         "offres d alternance",
         "offres d'emploi",
         "offres emploi",
         "job alert",
         "h/f",
+        "f/h",
         "stage a paris",
         "alternance",
     )
-    if any(term in text for term in job_alert_terms):
-        return {
-            "label": "Commercial",
-            "action": "keep",
-            "priority": "low",
-            "urgency": "normale",
-            "confidence": 0.99,
-            "reason": "Alerte emploi automatique ou offre récurrente, classée en Commercial pour cette boîte.",
-            "automatic_sender": True,
-        }
+    commercial_terms = (
+        "livraison gratuite",
+        "se desabonner",
+        "desabonner",
+        "unsubscribe",
+        "newsletter",
+        "promo",
+        "promotion",
+        "reduction",
+        "% de reduction",
+        "offre speciale",
+        "offres speciales",
+        "economisez",
+        "jusqu a",
+        "louer ton logiciel",
+        "arrete de louer",
+        "a vous de jouer",
+        "boohooman",
+        "publicite",
+        "acquisition",
+        "cold email",
+        "argumentaire de vente",
+        "acheter",
+        "remise",
+    )
+    if any(term in text for term in (*job_alert_terms, *commercial_terms)):
+        return override_decision("Commercial", "low", "Alerte, newsletter, promotion ou envoi commercial classé en Commercial pour cette boîte.", automatic_sender=True)
     return None
 
 
@@ -402,6 +457,22 @@ def normalize_override_text(value: str) -> str:
 
     lowered = value.lower()
     return "".join(char for char in unicodedata.normalize("NFKD", lowered) if not unicodedata.combining(char))
+
+
+def has_override_any(text: str, *needles: str) -> bool:
+    return any(normalize_override_text(needle) in text for needle in needles)
+
+
+def override_decision(label: str, priority: str, reason: str, automatic_sender: bool = False) -> dict:
+    return {
+        "label": label,
+        "action": "draft" if label == "À répondre" else "keep",
+        "priority": priority,
+        "urgency": "haute" if priority == "high" else "normale",
+        "confidence": 0.99,
+        "reason": reason,
+        "automatic_sender": automatic_sender,
+    }
 
 
 def auto_delete_allowed(result: dict, email: dict) -> bool:

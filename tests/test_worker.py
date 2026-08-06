@@ -132,6 +132,75 @@ def test_worker_classifies_personal_job_alerts_as_commercial(monkeypatch):
     assert c.calls[0][1][1] == "Commercial"
 
 
+def test_worker_classifies_personal_obvious_commercial_signals(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    samples = [
+        ("boohooMAN", "À vous de jouer", "Livraison gratuite dès 10€ Se désabonner"),
+        ("Emergent", "Arrête de louer ton logiciel", "Jusqu’à 95% de réduction sur Standard."),
+        ("Figaro Emploi", "Retraite d'un professeur", "Métier à 2 500 € par mois avec un bac+2."),
+    ]
+
+    class WrongClassifier:
+        def safe_classify(self, *args, **kwargs):
+            return {"label": "À lire", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Wrong default"}
+
+    for index, (sender, subject, body) in enumerate(samples, start=1):
+        class CommercialConnector(Connector):
+            def unread_emails(self, limit, sender=sender, subject=subject, body=body, index=index):
+                return [{"id": f"commercial-{index}", "subject": subject, "sender": sender, "body": body, "thread_id": "t"}]
+
+        c = CommercialConnector()
+        settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+        worker = MailWorker(
+            settings,
+            connectors={"ilyesseeladaoui2-gmail-com": {"gmail:gmail-2": {"name": "gmail", "account": "gmail-2", "connector": c}}},
+            classifier=WrongClassifier(),
+            drafts=Drafts(),
+            state=State(),
+        )
+        worker.run_cycle()
+        assert c.calls[0][0] == "replace_label"
+        assert c.calls[0][1][1] == "Commercial"
+
+
+def test_worker_classifies_personal_invoice_and_reply_before_llm(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class WrongClassifier:
+        def safe_classify(self, *args, **kwargs):
+            return {"label": "À lire", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Wrong default"}
+
+    cases = [
+        (
+            {"id": "invoice-1", "subject": "Facture juillet à régler", "sender": "Service facturation", "body": "Merci de procéder au paiement avant vendredi.", "thread_id": "t"},
+            "À traiter",
+        ),
+        (
+            {"id": "reply-1", "subject": "Question sur InboxPilot", "sender": "Ilyesse El Adaoui", "body": "Est-ce que tu peux me dire si tu as eu le temps de regarder les derniers tests ?", "thread_id": "t"},
+            "À répondre",
+        ),
+    ]
+
+    for email, expected_label in cases:
+        class PersonalConnector(Connector):
+            def unread_emails(self, limit, email=email):
+                return [email]
+
+        c = PersonalConnector()
+        settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+        worker = MailWorker(
+            settings,
+            connectors={"ilyesseeladaoui2-gmail-com": {"gmail:gmail-2": {"name": "gmail", "account": "gmail-2", "connector": c}}},
+            classifier=WrongClassifier(),
+            drafts=Drafts(),
+            state=State(),
+        )
+        worker.run_cycle()
+        assert c.calls[0][0] == "replace_label"
+        assert c.calls[0][1][1] == expected_label
+
+
 def test_worker_passes_sender_name_to_draft(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 
