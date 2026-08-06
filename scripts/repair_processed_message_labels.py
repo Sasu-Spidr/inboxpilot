@@ -159,8 +159,10 @@ def _entry_or_none(worker: MailWorker, client_id: str, connector_name: str, acco
 def _should_repair(label: str, action: str, is_legacy_record: bool = False) -> bool:
     if not label or label == "pre_activation":
         return False
+    if not is_legacy_record:
+        return False
     if action in {"trash", "trash_unread_expired"}:
-        return is_legacy_record
+        return True
     return label in {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
 
 
