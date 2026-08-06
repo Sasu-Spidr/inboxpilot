@@ -312,7 +312,7 @@ def test_worker_cleans_legacy_labels_on_already_processed_message_once(monkeypat
     assert replace_calls[0][1][1] == "Notification"
     assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_calls[0][1][2]))
     assert state.record["legacy_labels_cleaned_at"]
-    assert state.record["legacy_labels_cleanup_version"] == 2
+    assert state.record["legacy_labels_cleanup_version"] == 3
     assert "read" not in [x[0] for x in c.calls]
     assert "trash" not in [x[0] for x in c.calls]
 
@@ -346,7 +346,7 @@ def test_worker_recleans_legacy_labels_when_previous_cleanup_has_no_version(monk
     assert len(replace_calls) == 1
     assert replace_calls[0][1][1] == "À lire"
     assert "FYI" in replace_calls[0][1][2]
-    assert state.record["legacy_labels_cleanup_version"] == 2
+    assert state.record["legacy_labels_cleanup_version"] == 3
 
 
 def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):

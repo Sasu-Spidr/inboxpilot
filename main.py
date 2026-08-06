@@ -23,7 +23,7 @@ from state_store import ProcessedState
 from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
-LEGACY_LABEL_CLEANUP_VERSION = 2
+LEGACY_LABEL_CLEANUP_VERSION = 3
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")

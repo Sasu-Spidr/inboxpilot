@@ -95,6 +95,7 @@ class GmailConnector:
             if label.get("type") == "system":
                 continue
             if normalize_label_name(label.get("name", "")) == target:
+                self._remove_label_from_all_messages(label["id"])
                 self._execute(self.service.users().labels().delete(userId="me", id=label["id"]))
                 return True
         return False
@@ -113,6 +114,29 @@ class GmailConnector:
             body = {"name": name, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
             return self._execute(self.service.users().labels().create(userId="me", body=body))["id"]
         return ""
+
+    def _remove_label_from_all_messages(self, label_id: str) -> None:
+        page_token = None
+        while True:
+            request = self.service.users().messages().list(
+                userId="me",
+                labelIds=[label_id],
+                includeSpamTrash=True,
+                maxResults=500,
+                pageToken=page_token,
+            )
+            response = self._execute(request)
+            message_ids = [message["id"] for message in response.get("messages", []) if message.get("id")]
+            if message_ids:
+                self._execute(
+                    self.service.users().messages().batchModify(
+                        userId="me",
+                        body={"ids": message_ids, "removeLabelIds": [label_id]},
+                    )
+                )
+            page_token = response.get("nextPageToken")
+            if not page_token:
+                break
 
     def trash(self, message_id: str) -> None:
         self.authenticate(); self._execute(self.service.users().messages().trash(userId="me", id=message_id))
