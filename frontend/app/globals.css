@@ -4126,10 +4126,27 @@ input {
     display: flex;
     justify-content: space-between;
     min-height: 70px;
+    gap: 0.8rem;
   }
 
   .marketing-link {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 0.95rem;
+    border: 1px solid var(--m-border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .marketing-link:hover {
+    border-color: var(--m-border-strong);
+    background: #ffffff;
+    transform: translateY(-1px);
   }
 
   .marketing-nav-actions .marketing-button {
