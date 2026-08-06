@@ -176,7 +176,9 @@ class MailWorker:
                 log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
                 return False
             client_label_settings = label_settings_for_classifier(client_id)
-            result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"], client_label_settings or None)
+            result = account_specific_classification_override(client_id, connector_name, account, email)
+            if not result:
+                result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"], client_label_settings or None)
             original_label = result["label"]
             label = normalize_active_label(client_id, original_label)
             if label != original_label:
@@ -359,6 +361,47 @@ def normalize_active_label(client_id: str, label: str) -> str:
     if "À lire" in active_keys:
         return "À lire"
     return active_keys[0] if active_keys else "À lire"
+
+
+def account_specific_classification_override(client_id: str, connector_name: str, account: str, email: dict) -> dict | None:
+    if client_id != "ilyesseeladaoui2-gmail-com" or connector_name != "gmail" or account != "gmail-2":
+        return None
+    text = normalize_override_text(f"{email.get('subject', '')}\n{email.get('sender', '')}\n{email.get('body', '')[:2000]}")
+    job_alert_terms = (
+        "alertes linkedin",
+        "linkedin jobs",
+        "indeed",
+        "recherche un/e",
+        "recherche une",
+        "recherche un",
+        "nouvelles offres",
+        "offres de stage",
+        "offres d alternance",
+        "offres d'emploi",
+        "offres emploi",
+        "job alert",
+        "h/f",
+        "stage a paris",
+        "alternance",
+    )
+    if any(term in text for term in job_alert_terms):
+        return {
+            "label": "Commercial",
+            "action": "keep",
+            "priority": "low",
+            "urgency": "normale",
+            "confidence": 0.99,
+            "reason": "Alerte emploi automatique ou offre récurrente, classée en Commercial pour cette boîte.",
+            "automatic_sender": True,
+        }
+    return None
+
+
+def normalize_override_text(value: str) -> str:
+    import unicodedata
+
+    lowered = value.lower()
+    return "".join(char for char in unicodedata.normalize("NFKD", lowered) if not unicodedata.combining(char))
 
 
 def auto_delete_allowed(result: dict, email: dict) -> bool:

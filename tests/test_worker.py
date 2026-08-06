@@ -99,6 +99,39 @@ def test_worker_replaces_managed_labels(monkeypatch):
     assert "Commercial" in call[1][2]
 
 
+def test_worker_classifies_personal_job_alerts_as_commercial(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class JobConnector(Connector):
+        def unread_emails(self, limit):
+            return [
+                {
+                    "id": "job-1",
+                    "subject": "Indeed - QUALIBAT recherche un/e Développeur Data & IA + 9 nouvelles offres",
+                    "sender": "Indeed <alert@indeed.com>",
+                    "body": "Offres de stage et alternance à Paris.",
+                    "thread_id": "t",
+                }
+            ]
+
+    class WrongClassifier:
+        def safe_classify(self, *args, **kwargs):
+            return {"label": "À lire", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Wrong default"}
+
+    c = JobConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(
+        settings,
+        connectors={"ilyesseeladaoui2-gmail-com": {"gmail:gmail-2": {"name": "gmail", "account": "gmail-2", "connector": c}}},
+        classifier=WrongClassifier(),
+        drafts=Drafts(),
+        state=State(),
+    )
+    worker.run_cycle()
+    assert c.calls[0][0] == "replace_label"
+    assert c.calls[0][1][1] == "Commercial"
+
+
 def test_worker_passes_sender_name_to_draft(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 
