@@ -130,10 +130,12 @@ class MailWorker:
         except Exception as exc:
             log_event("polling_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, status="failed", error=str(exc), exc_info=True)
             return
+        seen_ids = set()
         for email in emails:
+            seen_ids.add(email["id"])
             self.process_email(client_id, connector_name, account, email["id"], email=email)
         for message_id in recent_ids:
-            if self.state.is_processed(client_id, connector_name, account, message_id):
+            if message_id in seen_ids:
                 continue
             self.process_email(client_id, connector_name, account, message_id)
 
