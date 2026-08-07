@@ -343,6 +343,30 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
     assert ("color", ("Commercial", "#fb7185")) in c.calls
 
 
+def test_worker_prunes_legacy_gmail_labels_even_without_new_email(tmp_path, monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    settings_dir.mkdir()
+
+    class EmptyColorConnector(Connector):
+        def unread_emails(self, limit):
+            return []
+
+        def sync_label_color(self, *args):
+            self.calls.append(("color", args))
+
+        def delete_label(self, *args):
+            self.calls.append(("delete_label", args))
+            return True
+
+    c = EmptyColorConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert ("delete_label", ("Marketing",)) in c.calls
+
+
 def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
     monkeypatch.setenv("DATA_DIR", str(tmp_path))

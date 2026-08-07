@@ -16,8 +16,8 @@ from client_settings import active_label_keys_for_client, action_for_client, can
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
-from gmail_connector import GmailConnector
-from hotmail_connector import HotmailConnector
+from gmail_connector import GmailConnector, LEGACY_USER_LABELS
+from hotmail_connector import HotmailConnector, LEGACY_CATEGORIES
 from json_logging import configure_logging
 from rules_engine import RulesEngine
 from state_store import ProcessedState
@@ -131,6 +131,20 @@ class MailWorker:
     def _sync_account_settings(self, client_id: str, connector_name: str, account: str, connector) -> None:
         if connector_name not in {"gmail", "hotmail"} or not hasattr(connector, "sync_label_color"):
             return
+        if hasattr(connector, "delete_label"):
+            legacy_labels = LEGACY_USER_LABELS if connector_name == "gmail" else LEGACY_CATEGORIES
+            for legacy_label in legacy_labels:
+                try:
+                    connector.delete_label(legacy_label)
+                except Exception as exc:
+                    LOG.warning(
+                        "Legacy label cleanup failed: client=%s connector=%s account=%s label=%s error=%s",
+                        client_id,
+                        connector_name,
+                        account,
+                        legacy_label,
+                        exc,
+                    )
         connector_labels = self.labels.get(connector_name, {})
         for setting in label_color_settings_for_client(client_id):
             label_name = setting["name"] or connector_labels.get(setting["key"], setting["key"])
