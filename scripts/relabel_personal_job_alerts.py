@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import logging
 
-from main import MailWorker, account_specific_classification_override, load_settings
+from classifier import deterministic_classify
+from main import MailWorker, load_settings
 
 
 CLIENT_ID = "ilyesseeladaoui2-gmail-com"
@@ -28,7 +29,7 @@ def main() -> None:
     checked = relabeled = skipped = 0
     for email in connector.unread_emails(args.limit):
         checked += 1
-        decision = account_specific_classification_override(CLIENT_ID, CONNECTOR, ACCOUNT, email)
+        decision = deterministic_classify(email.get("subject", ""), email.get("sender", ""), email.get("body", ""))
         if not decision:
             skipped += 1
             continue

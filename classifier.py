@@ -142,8 +142,18 @@ def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
     text = normalize_text(f"{subject}\n{sender}\n{body[:2000]}")
     automatic_sender = is_automatic_sender(sender)
 
+    if has_any(text, "facture", "factures", "invoice", "invoicing", "billing", "bill", "paiement", "payment", "payment received", "contrat", "contract", "devis signe", "document a traiter", "document à traiter", "documents a traiter", "documents à traiter", "document a signer", "document à signer", "documents a signer", "documents à signer", "invite a signer", "invité à signer", "signature de document", "mode de paiement", "numero de facture", "numéro de facture"):
+        return decision("À traiter", "keep", "high", 0.99, "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.")
+
+    if has_any(text, "code a usage unique", "code à usage unique", "code de connexion", "verification code", "code de verification", "code de vérification", "votre compte a ete mis a jour", "votre compte a été mis à jour", "verifiez votre adresse", "vérifiez votre adresse", "nouvelle application autorisee", "nouvelle application autorisée", "confirmation", "recu", "reçu", "receipt", "welcome to your azure free account", "informations de securite", "informations de sécurité"):
+        if not has_any(text, "offre", "offres", "promotion", "promo", "reduction", "réduction", "desabonner", "désabonner", "unsubscribe", "newsletter"):
+            return decision("Notification", "keep", "low", 0.98, "Le message est une notification automatique ou transactionnelle.")
+
     if not automatic_sender and has_any(text, "demande de reponse", "demande d information", "demande d'informations", "pouvez vous me rappeler", "pouvez-vous me rappeler", "devis", "interesse par vos services", "intéressé par vos services", "can we talk"):
         return decision("À répondre", "draft", "high", 0.98, "Le message demande clairement une réponse.")
+
+    if not automatic_sender and has_any(text, "est ce que tu peux", "peux tu", "pouvez vous", "peux-tu", "pouvez-vous", "tu peux me dire", "j'aimerais avoir ton retour", "j aimerais avoir ton retour", "tu peux me repondre", "tu peux me répondre", "peux tu me repondre", "peux tu me répondre", "quand tu as un moment", "as tu eu le temps", "avez vous eu le temps", "question sur"):
+        return decision("À répondre", "draft", "high", 0.98, "Le message demande clairement une réponse écrite.")
 
     if has_any(text, "a commente", "a commenté", "commentaire", "mentioned you", "vous a mentionne", "vous a mentionné", "tagged you", "a reagi", "a réagi"):
         return decision("À lire", "keep", "medium", 0.97, "Le message signale une mention ou une interaction à lire.")
@@ -151,20 +161,20 @@ def deterministic_classify(subject: str, sender: str, body: str) -> dict | None:
     if not automatic_sender and has_any(text, "relance", "follow up", "following up", "rappel de suivi"):
         return decision("À répondre", "draft", "high", 0.96, "Le message ressemble à une relance ou demande de suivi.")
 
-    if has_any(text, "newsletter", "unsubscribe", "desabonner", "désabonner", "product hunt daily", "daily newsletter", "weekly digest", "digest", "bulletin", "agent hub security", "paper-heavy window", "model-release-heavy window", "practical lessons", "high learning rate", "25 ans aupres", "25 ans auprès", "ce qu'une legende", "ce qu'une légende", "appris", "decouvrez nos nouveautes", "découvrez nos nouveautés", "nouveautes de la semaine", "votre actualite du mois", "votre actualité du mois"):
+    if has_any(text, "newsletter", "unsubscribe", "desabonner", "désabonner", "se desabonner", "se désabonner", "product hunt daily", "daily newsletter", "weekly digest", "digest", "bulletin", "agent hub security", "paper-heavy window", "model-release-heavy window", "practical lessons", "high learning rate", "25 ans aupres", "25 ans auprès", "ce qu'une legende", "ce qu'une légende", "appris", "decouvrez nos nouveautes", "découvrez nos nouveautés", "nouveautes de la semaine", "votre actualite du mois", "votre actualité du mois"):
         return decision("Commercial", "keep", "low", 0.98, "Le message est clairement une newsletter ou un envoi de masse.")
 
-    if has_any(text, "notification", "welcome to your azure free account", "informations de securite", "informations de sécurité", "code a usage unique", "code à usage unique", "votre compte a ete mis a jour", "votre compte a été mis à jour", "verifiez votre adresse", "vérifiez votre adresse", "code de verification", "nouvelle application autorisee", "nouvelle application autorisée"):
+    if has_any(text, "notification"):
         return decision("Notification", "keep", "low", 0.97, "Le message est une notification automatique.")
 
-    if has_any(text, "marketing", "promotion", "promo", "offre", "offres", "offre speciale", "offre spéciale", "economisez", "économisez", "lancement produit", "product launch", "invite a friend", "invitez un proche", "obtenez", "cadeau ideal", "cadeau idéal", "delicieuses offres", "délicieuses offres", "plats favoris", "uber eats", "decouvrez", "découvrez", "essayez", "profitez", "nouveaux profils disponibles", "commence ici", "tournois", "stages", "academy"):
+    if has_any(text, "marketing", "publicite", "publicité", "acquisition", "cold email", "argumentaire de vente", "acheter", "remise", "promotion", "promo", "offre", "offres", "offre speciale", "offre spéciale", "offres speciales", "offres spéciales", "economisez", "économisez", "reduction", "réduction", "% de reduction", "% de réduction", "jusqu a", "jusqu'à", "livraison gratuite", "lancement produit", "product launch", "invite a friend", "invitez un proche", "obtenez", "cadeau ideal", "cadeau idéal", "delicieuses offres", "délicieuses offres", "plats favoris", "uber eats", "decouvrez", "découvrez", "essayez", "profitez", "nouveaux profils disponibles", "commence ici", "tournois", "stages", "academy", "boohooman", "a vous de jouer", "à vous de jouer", "arrete de louer", "arrête de louer", "louer ton logiciel"):
         return decision("Commercial", "keep", "low", 0.94, "Le message ressemble à du contenu commercial.")
+
+    if has_any(text, "alertes linkedin", "linkedin jobs", "alertes linkedin jo", "indeed", "figaro emploi", "meteo job", "meteojob", "alerte emploi", "job alert", "recrute", "recrutement", "recherche un/e", "recherche une", "recherche un", "nouvelles offres", "nouvelles offres d'emploi", "offres d'emploi", "offres emploi", "offres de stage", "offres d alternance", "h/f", "f/h", "stage a paris", "alternance"):
+        return decision("Commercial", "keep", "low", 0.98, "Le message est une alerte emploi ou un envoi de masse.")
 
     if has_any(text, "reunion", "réunion", "meeting", "calendar", "invitation"):
         return decision("Notification", "keep", "medium", 0.94, "Le message concerne une réunion ou une invitation automatique.")
-
-    if has_any(text, "facture", "factures", "invoice", "invoicing", "billing", "bill", "paiement", "payment", "payment received", "recu", "reçu", "receipt", "abonnement", "subscription", "contrat", "contract", "devis signe", "document a traiter", "document à traiter", "documents a traiter", "documents à traiter", "document a signer", "document à signer", "documents a signer", "documents à signer", "invite a signer", "invité à signer", "signature de document", "mode de paiement", "numero de facture", "numéro de facture"):
-        return decision("À traiter", "keep", "high", 0.99, "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.")
 
     return None
 

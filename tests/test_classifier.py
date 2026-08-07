@@ -88,6 +88,23 @@ def test_deterministic_gmail_examples():
     assert reply["action"] == "draft"
 
 
+    job_alert = classifier.classify("QUALIBAT recherche un/e D\u00e9veloppeur Data & IA H/F + 8 nouvelles offres", "Indeed", "")
+    assert job_alert["label"] == "Commercial"
+
+    linkedin_job = classifier.classify("Alternance - Data Engineer chez Numberly", "Alertes LinkedIn Jobs", "")
+    assert linkedin_job["label"] == "Commercial"
+
+    free_shipping = classifier.classify("\u00c0 vous de jouer", "boohooMAN", "Livraison gratuite d\u00e8s 10 EUR. Se d\u00e9sabonner")
+    assert free_shipping["label"] == "Commercial"
+
+    software_discount = classifier.classify("Arr\u00eate de louer ton logiciel", "Emergent", "Jusqu\u0027\u00e0 95% de r\u00e9duction sur Standard.")
+    assert software_discount["label"] == "Commercial"
+
+    personal_question = classifier.classify("Question sur InboxPilot", "Ilyesse El Adaoui", "Est-ce que tu peux me dire si tu as eu le temps de regarder les derniers tests ?")
+    assert personal_question["label"] == "\u00c0 r\u00e9pondre"
+    assert personal_question["action"] == "draft"
+
+
 def test_low_confidence_goes_to_manual_review():
     class LowResponse:
         class Choice:
