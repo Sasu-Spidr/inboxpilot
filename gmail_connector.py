@@ -16,6 +16,19 @@ LOG = logging.getLogger(__name__)
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify", "https://www.googleapis.com/auth/gmail.compose"]
 
 ALLOWED_USER_LABELS = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+LEGACY_USER_LABELS = {
+    "FYI",
+    "Marketing",
+    "Newsletter",
+    "Relance",
+    "Commentaire",
+    "Traité",
+    "Traite",
+    "En attente de réponse",
+    "En attente de reponse",
+    "Mise à jour de réunion",
+    "Mise a jour de reunion",
+}
 
 
 class GmailConnector:
@@ -68,14 +81,24 @@ class GmailConnector:
             return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         label_ids_by_name = {label["name"]: label["id"] for label in labels}
+        labels_to_remove = [*managed_labels, *LEGACY_USER_LABELS]
         remove_ids = [
             label_ids_by_name[name]
-            for name in managed_labels
+            for name in labels_to_remove
             if name != label_name and name in label_ids_by_name
         ]
         body = {"addLabelIds": [target_id]}
         if remove_ids:
             body["removeLabelIds"] = remove_ids
+        thread_id = ""
+        try:
+            message = self._execute(self.service.users().messages().get(userId="me", id=message_id, format="minimal"))
+            thread_id = message.get("threadId", "")
+        except AttributeError:
+            thread_id = ""
+        if thread_id:
+            self._execute(self.service.users().threads().modify(userId="me", id=thread_id, body=body))
+            return
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body=body))
 
     def sync_label_color(self, label_name: str, preferred_color: str) -> None:

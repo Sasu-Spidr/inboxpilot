@@ -31,6 +31,19 @@ OUTLOOK_CATEGORY_COLORS = {
 }
 
 ALLOWED_CATEGORIES = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
+LEGACY_CATEGORIES = {
+    "FYI",
+    "Marketing",
+    "Newsletter",
+    "Relance",
+    "Commentaire",
+    "Traité",
+    "Traite",
+    "En attente de réponse",
+    "En attente de reponse",
+    "Mise à jour de réunion",
+    "Mise a jour de reunion",
+}
 
 
 class HotmailConnector:
@@ -107,7 +120,7 @@ class HotmailConnector:
             return
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
         existing = data.get("categories", []) or []
-        managed = {normalize_category_name(item) for item in managed_categories}
+        managed = {normalize_category_name(item) for item in [*managed_categories, *LEGACY_CATEGORIES]}
         target = normalize_category_name(category)
         categories = [
             item
