@@ -34,12 +34,12 @@ def test_reads_unread_email():
     assert c.unread_emails(1) == [{"id":"m1","subject":"Hello","sender":"x@y.com","body":"Hi","thread_id":"t1"}]
 
 
-def test_replace_label_creates_missing_managed_label_and_removes_legacy_label():
+def test_replace_label_creates_missing_managed_label_and_removes_previous_managed_label():
     calls = []
 
     class LabelOps:
         def list(self, **kwargs):
-            return Execute({"labels": [{"name": "Commentaire", "id": "old-comment"}]})
+            return Execute({"labels": [{"name": "À lire", "id": "old-read"}]})
 
         def create(self, **kwargs):
             return CaptureExecute({"id": "new-label"}, calls, "create_label", kwargs)
@@ -60,11 +60,11 @@ def test_replace_label_creates_missing_managed_label_and_removes_legacy_label():
             return CaptureUsers()
 
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
-    c.replace_label("msg-1", "À traiter", ["Commentaire", "Marketing", "À traiter"])
+    c.replace_label("msg-1", "À traiter", ["À lire", "À traiter"])
 
     assert calls == [
         ("create_label", {"userId": "me", "body": {"name": "À traiter", "labelListVisibility": "labelShow", "messageListVisibility": "show"}}),
-        ("modify_message", {"userId": "me", "id": "msg-1", "body": {"addLabelIds": ["new-label"], "removeLabelIds": ["old-comment"]}}),
+        ("modify_message", {"userId": "me", "id": "msg-1", "body": {"addLabelIds": ["new-label"], "removeLabelIds": ["old-read"]}}),
     ]
 
 
@@ -122,7 +122,7 @@ def test_replace_label_does_not_create_unmanaged_label():
             return CaptureUsers()
 
     c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
-    c.replace_label("msg-1", "FYI", ["FYI"])
+    c.replace_label("msg-1", "Label non autorisé", ["Label non autorisé"])
 
     assert calls == []
 

@@ -51,9 +51,9 @@ class KeepUnreadClassifier:
         return {"label": "À lire", "action": "mark_read", "priority": "low", "confidence": 0.9, "reason": "Information only"}
 
 
-class CommercialClassifier:
+class CommercialOnlyClassifier:
     def safe_classify(self, *args):
-        return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Commercial email"}
+        return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Commercial message"}
 
 
 class State:
@@ -155,7 +155,7 @@ def test_worker_never_marks_message_as_read_even_when_label_setting_allows_it(tm
     )
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "read" not in [x[0] for x in c.calls]
 
@@ -195,13 +195,13 @@ def test_worker_guards_commercial_auto_delete_without_mass_signal(tmp_path, monk
         encoding="utf-8",
     )
 
-    class MarketingClassifier:
+    class CommercialClassifier:
         def safe_classify(self, *args):
-            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
+            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Commercial message"}
 
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=MarketingClassifier(), drafts=Drafts(), state=State())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "trash" not in [x[0] for x in c.calls]
 
@@ -220,13 +220,13 @@ def test_worker_deletes_old_unread_commercial_after_delay(tmp_path, monkeypatch)
         def unread_emails(self, limit):
             return [{"id": "1", "subject": "Promo", "sender": "shop@example.com", "body": "Hello", "thread_id": "t", "received_at": "2026-01-01T00:00:00Z"}]
 
-    class MarketingClassifier:
+    class CommercialClassifier:
         def safe_classify(self, *args):
-            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Marketing email"}
+            return {"label": "Commercial", "action": "keep", "priority": "low", "confidence": 0.95, "reason": "Commercial message"}
 
     c = OldUnreadConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=MarketingClassifier(), drafts=Drafts(), state=State())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "trash" in [x[0] for x in c.calls]
 
@@ -254,12 +254,12 @@ def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, m
 
     c = OldUnreadConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=CompletedState())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=CompletedState())
     worker.run_cycle()
     assert c.calls == [("trash", ("1",))]
 
 
-def test_worker_reconciles_processed_unread_label_without_marking_read(monkeypatch):
+def test_worker_reconciles_processed_unread_invalid_label_without_marking_read(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 
     class CompletedState(State):
@@ -267,86 +267,18 @@ def test_worker_reconciles_processed_unread_label_without_marking_read(monkeypat
             return True
 
         def get(self, *args):
-            return {"label": "À lire", "thread_id": "t", "draft_created": False, "action": "keep"}
+            return {"label": "Label non autorisé", "thread_id": "t", "draft_created": False, "action": "keep"}
 
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=CompletedState())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=CompletedState())
     worker.run_cycle()
     replace_call = c.calls[0]
     assert replace_call[0] == "replace_label"
     assert replace_call[1][1] == "À lire"
-    assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_call[1][2]))
+    assert set(replace_call[1][2]) == {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
     assert "read" not in [x[0] for x in c.calls]
     assert "draft" not in [x[0] for x in c.calls]
-
-
-def test_worker_cleans_legacy_labels_on_already_processed_message_once(monkeypatch):
-    monkeypatch.chdir(Path(__file__).parents[1])
-
-    class CompletedState(State):
-        def __init__(self):
-            super().__init__()
-            self.record = {"label": "Notification", "thread_id": "t", "draft_created": False, "action": "keep"}
-
-        def is_processed(self, *args):
-            return True
-
-        def get(self, *args):
-            return self.record
-
-        def complete(self, **kwargs):
-            self.record = kwargs
-            self.completed.append(kwargs)
-
-    c = Connector()
-    state = CompletedState()
-    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"hotmail:main": {"name": "hotmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=state)
-
-    worker.run_cycle()
-    worker.run_cycle()
-
-    replace_calls = [call for call in c.calls if call[0] == "replace_label"]
-    assert len(replace_calls) == 1
-    assert replace_calls[0][1][1] == "Notification"
-    assert {"À répondre", "À traiter", "À lire", "Notification", "Commercial", "FYI", "Marketing"}.issubset(set(replace_calls[0][1][2]))
-    assert state.record["legacy_labels_cleaned_at"]
-    assert state.record["legacy_labels_cleanup_version"] == 3
-    assert "read" not in [x[0] for x in c.calls]
-    assert "trash" not in [x[0] for x in c.calls]
-
-
-def test_worker_recleans_legacy_labels_when_previous_cleanup_has_no_version(monkeypatch):
-    monkeypatch.chdir(Path(__file__).parents[1])
-
-    class CompletedState(State):
-        def __init__(self):
-            super().__init__()
-            self.record = {"label": "À lire", "thread_id": "t", "draft_created": False, "action": "keep", "legacy_labels_cleaned_at": "old"}
-
-        def is_processed(self, *args):
-            return True
-
-        def get(self, *args):
-            return self.record
-
-        def complete(self, **kwargs):
-            self.record = kwargs
-            self.completed.append(kwargs)
-
-    c = Connector()
-    state = CompletedState()
-    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=state)
-
-    worker.run_cycle()
-
-    replace_calls = [call for call in c.calls if call[0] == "replace_label"]
-    assert len(replace_calls) == 1
-    assert replace_calls[0][1][1] == "À lire"
-    assert "FYI" in replace_calls[0][1][2]
-    assert state.record["legacy_labels_cleanup_version"] == 3
 
 
 def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
@@ -360,7 +292,7 @@ def test_worker_guards_auto_delete_without_mass_signal(tmp_path, monkeypatch):
     )
     c = Connector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
-    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialClassifier(), drafts=Drafts(), state=State())
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=CommercialOnlyClassifier(), drafts=Drafts(), state=State())
     worker.run_cycle()
     assert "trash" not in [x[0] for x in c.calls]
 

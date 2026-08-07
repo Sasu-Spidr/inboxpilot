@@ -106,7 +106,7 @@ def test_replace_label_creates_missing_managed_category():
         def _request(self, method, path, **kwargs):
             calls.append((method, path, kwargs))
             if method == "GET" and path == "/me/messages/message-id":
-                return {"categories": ["Mise à jour de réunion", "Client"]}
+                return {"categories": ["À lire", "Client"]}
             if method == "GET" and path == "/me/outlook/masterCategories":
                 return {"value": []}
             if method == "POST":
@@ -119,7 +119,7 @@ def test_replace_label_creates_missing_managed_category():
         "unused",
         TokenStore(TokenStore.generate_key()),
     )
-    connector.replace_label("message-id", "Notification", ["Notification", "Mise à jour de réunion"])
+    connector.replace_label("message-id", "Notification", ["Notification", "À lire"])
 
     assert calls == [
         ("GET", "/me/outlook/masterCategories", {}),

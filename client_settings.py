@@ -49,22 +49,6 @@ DEFAULT_LABELS: list[dict[str, Any]] = [
 
 CANONICAL_LABEL_KEYS = set(ALLOWED_LABELS)
 
-LEGACY_LABEL_NAMES = (
-    "A r\u00e9pondre",
-    "Relance",
-    "A traiter",
-    "FYI",
-    "Commentaire",
-    "Newsletter",
-    "Trait\u00e9",
-    "Traite",
-    "En attente de r\u00e9ponse",
-    "En attente de reponse",
-    "Mise \u00e0 jour de r\u00e9union",
-    "Mise a jour de reunion",
-    "Marketing",
-)
-
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
     safe_client_id = re.sub(r"[^a-zA-Z0-9._-]", "-", client_id)

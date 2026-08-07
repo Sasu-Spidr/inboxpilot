@@ -61,9 +61,9 @@ def test_deterministic_gmail_examples():
     security = classifier.classify("Des informations de sécurité du compte Microsoft ont été ajoutées", "account@microsoft.com", "Compte Microsoft")
     assert security["label"] == "Notification"
 
-    newsletter = classifier.classify("Newsletter", "me@example.com", "Découvrez nos nouveautés de la semaine.")
-    assert newsletter["label"] == "Commercial"
-    assert newsletter["action"] == "keep"
+    commercial_update = classifier.classify("Offre commerciale", "me@example.com", "Découvrez nos nouveautés de la semaine.")
+    assert commercial_update["label"] == "Commercial"
+    assert commercial_update["action"] == "keep"
 
     digest = classifier.classify("Agent Hub Security + Evals - 2026-06-30", "news@example.com", "A paper-heavy window")
     assert digest["label"] == "Commercial"
@@ -159,20 +159,6 @@ def test_prompt_definitions_include_label_meaning():
     assert "Factures et documents" in text
 
 
-@pytest.mark.parametrize(
-    "input_label",
-    [
-        "FYI",
-        "Commentaire",
-        "Newsletter",
-        "Marketing",
-        "Relance",
-        "Traité",
-        "En attente de réponse",
-        "Mise à jour de réunion",
-        "ABC123",
-    ],
-)
-def test_legacy_labels_and_unknown_labels_fall_back_to_default_label(input_label):
-    result = normalize_model_result({"label": input_label, "action": "keep", "priority": "medium", "confidence": 0.9}, LABELS)
+def test_unknown_label_falls_back_to_default_label():
+    result = normalize_model_result({"label": "Label non autorisé", "action": "keep", "priority": "medium", "confidence": 0.9}, LABELS)
     assert result["label"] == DEFAULT_LABEL

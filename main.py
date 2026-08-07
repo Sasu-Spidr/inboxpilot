@@ -11,7 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
-from client_settings import LEGACY_LABEL_NAMES, active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
+from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
@@ -23,7 +23,6 @@ from state_store import ProcessedState
 from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
-LEGACY_LABEL_CLEANUP_VERSION = 3
 
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
@@ -154,8 +153,6 @@ class MailWorker:
                 return True
             if self._reconcile_processed_label(connector, client_id, connector_name, account, message_id, record):
                 return False
-            if self._cleanup_processed_legacy_labels(connector, client_id, connector_name, account, message_id, record):
-                return False
             log_event("email_already_processed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
             return False
         try:
@@ -248,35 +245,8 @@ class MailWorker:
             action=action,
             draft_created=bool(record.get("draft_created")),
             received_at=record.get("received_at"),
-            legacy_labels_cleaned_at=current_utc_iso(),
         )
         log_event("processed_email_label_reconciled", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="ok")
-        return True
-
-    def _cleanup_processed_legacy_labels(self, connector, client_id: str, connector_name: str, account: str, message_id: str, record: dict) -> bool:
-        if int(record.get("legacy_labels_cleanup_version") or 0) >= LEGACY_LABEL_CLEANUP_VERSION:
-            return False
-        original_label = str(record.get("label") or "")
-        label = normalize_active_label(client_id, original_label)
-        if not label or label == "pre_activation":
-            return False
-        action = str(record.get("action") or "keep")
-        priority = str(record.get("priority") or "medium")
-        self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
-        self.state.complete(
-            client_id=client_id,
-            connector=connector_name,
-            account=account,
-            message_id=message_id,
-            thread_id=record.get("thread_id"),
-            label=label,
-            action=action,
-            draft_created=bool(record.get("draft_created")),
-            received_at=record.get("received_at"),
-            legacy_labels_cleaned_at=current_utc_iso(),
-            legacy_labels_cleanup_version=LEGACY_LABEL_CLEANUP_VERSION,
-        )
-        log_event("processed_email_legacy_labels_cleaned", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="ok")
         return True
 
     def _entry(self, client_id: str, connector_name: str, account: str) -> dict:
@@ -286,7 +256,7 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id), *LEGACY_LABEL_NAMES]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:
