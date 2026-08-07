@@ -80,12 +80,15 @@ class GmailConnector:
             LOG.warning("Gmail label skipped because it is not managed: %s", label_name)
             return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
-        label_ids_by_name = {label["name"]: label["id"] for label in labels}
-        labels_to_remove = [*managed_labels, *LEGACY_USER_LABELS]
+        target_name = normalize_label_name(label_name)
+        managed_names = {normalize_label_name(name) for name in managed_labels}
+        legacy_names = {normalize_label_name(name) for name in LEGACY_USER_LABELS}
         remove_ids = [
-            label_ids_by_name[name]
-            for name in labels_to_remove
-            if name != label_name and name in label_ids_by_name
+            str(label.get("id", ""))
+            for label in labels
+            if str(label.get("id", "")).strip()
+            and normalize_label_name(label.get("name", "")) != target_name
+            and normalize_label_name(label.get("name", "")) in (managed_names | legacy_names)
         ]
         body = {"addLabelIds": [target_id]}
         if remove_ids:
