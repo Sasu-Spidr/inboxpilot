@@ -81,14 +81,12 @@ class GmailConnector:
             return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
         target_name = normalize_label_name(label_name)
-        managed_names = {normalize_label_name(name) for name in managed_labels}
-        legacy_names = {normalize_label_name(name) for name in LEGACY_USER_LABELS}
         remove_ids = [
             str(label.get("id", ""))
             for label in labels
             if str(label.get("id", "")).strip()
             and normalize_label_name(label.get("name", "")) != target_name
-            and normalize_label_name(label.get("name", "")) in (managed_names | legacy_names)
+            and str(label.get("type", "user")) != "system"
         ]
         body = {"addLabelIds": [target_id]}
         if remove_ids:

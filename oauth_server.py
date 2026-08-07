@@ -28,6 +28,10 @@ from token_store import TokenStore
 LOG = logging.getLogger("spidr_oauth")
 
 
+def _normalized_name(value: str) -> str:
+  return " ".join(str(value or "").strip().casefold().split())
+
+
 class OAuthOnboardingServer:
     def __init__(self, settings: dict, base_url: str):
         self.settings = settings
@@ -146,6 +150,7 @@ class OAuthOnboardingServer:
         errors = []
         labels = label_color_settings_for_client(client_id)
         managed_names = set(managed_label_names_for_client(client_id))
+        allowed_normalized_names = {_normalized_name(label["name"]) for label in labels}
         removed = list(dict.fromkeys(str(label).strip() for label in (removed_labels or []) if str(label).strip()))
         for provider, accounts in (
             ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
@@ -160,7 +165,17 @@ class OAuthOnboardingServer:
                     connector = self._label_sync_connector(provider, account_cfg, token_file)
                     account_name = account_cfg.get("account") or account_cfg.get("id") or "main"
                     stale_processed_labels = self._stale_processed_label_names(client_id, provider, account_name, managed_names)
-                    for label_name in list(dict.fromkeys([*removed, *stale_processed_labels])):
+                    existing_labels = []
+                    if provider == "gmail" and hasattr(connector, "list_user_labels"):
+                        existing_labels = connector.list_user_labels()
+                    elif provider == "hotmail" and hasattr(connector, "list_categories"):
+                        existing_labels = connector.list_categories()
+                    disallowed_existing_labels = [
+                        label_name
+                        for label_name in existing_labels
+                        if _normalized_name(label_name) not in allowed_normalized_names
+                    ]
+                    for label_name in list(dict.fromkeys([*removed, *stale_processed_labels, *disallowed_existing_labels])):
                         if connector.delete_label(label_name):
                             deleted += 1
                     for label in labels:

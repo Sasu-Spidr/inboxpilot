@@ -116,8 +116,8 @@ def test_sync_label_settings_syncs_defaults_without_pruning_existing_labels(tmp_
 
     result = server.sync_label_settings("client-a")
 
-    assert gmail.deleted == []
-    assert hotmail.deleted == []
+    assert gmail.deleted == ["Custom"]
+    assert hotmail.deleted == ["Custom"]
     assert any(name == "À répondre" for name, _ in gmail.synced)
     assert any(name == "À traiter" for name, _ in hotmail.synced)
-    assert result["deleted"] == 0
+    assert result["deleted"] == 2

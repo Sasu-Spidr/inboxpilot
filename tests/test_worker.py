@@ -332,8 +332,15 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
         def unread_emails(self, limit):
             return []
 
+        def list_user_labels(self):
+            return ["À traiter", "Commercial", "Marketing"]
+
         def sync_label_color(self, *args):
             self.calls.append(("color", args))
+
+        def delete_label(self, *args):
+            self.calls.append(("delete_label", args))
+            return True
 
     c = EmptyColorConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
@@ -341,6 +348,7 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
     worker.run_cycle()
     assert ("color", ("À traiter", "#856082")) in c.calls
     assert ("color", ("Commercial", "#fb7185")) in c.calls
+    assert ("delete_label", ("Marketing",)) in c.calls
 
 
 def test_worker_prunes_legacy_gmail_labels_even_without_new_email(tmp_path, monkeypatch):
@@ -352,6 +360,9 @@ def test_worker_prunes_legacy_gmail_labels_even_without_new_email(tmp_path, monk
     class EmptyColorConnector(Connector):
         def unread_emails(self, limit):
             return []
+
+        def list_user_labels(self):
+            return ["Marketing"]
 
         def sync_label_color(self, *args):
             self.calls.append(("color", args))
@@ -381,8 +392,15 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
         def unread_emails(self, limit):
             return []
 
+        def list_categories(self):
+            return ["À traiter", "Commercial", "Marketing"]
+
         def sync_label_color(self, *args):
             self.calls.append(("color", args))
+
+        def delete_label(self, *args):
+            self.calls.append(("delete_label", args))
+            return True
 
     c = EmptyColorConnector()
     settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
@@ -390,6 +408,7 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
     worker.run_cycle()
     assert ("color", ("À traiter", "#0a6cff")) in c.calls
     assert ("color", ("Commercial", "#fb7185")) in c.calls
+    assert ("delete_label", ("Marketing",)) in c.calls
 
 
 def test_error_on_one_email_does_not_block_next(monkeypatch):

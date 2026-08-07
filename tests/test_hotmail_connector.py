@@ -124,8 +124,7 @@ def test_replace_label_creates_missing_managed_category():
     assert calls == [
         ("GET", "/me/outlook/masterCategories", {}),
         ("POST", "/me/outlook/masterCategories", {"json": {"displayName": "Notification", "color": "preset12"}}),
-        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
-        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client", "Notification"]}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Notification"]}}),
     ]
 
 

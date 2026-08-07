@@ -25,6 +25,10 @@ from token_store import TokenStore
 
 LOG = logging.getLogger("spidr_mail")
 
+
+def _normalized_name(value: str) -> str:
+    return " ".join(str(value or "").strip().casefold().split())
+
 def load_settings(path: str = "config/settings.yaml") -> dict:
     raw = Path(path).read_text(encoding="utf-8")
     return merge_registered_clients(yaml.safe_load(os.path.expandvars(raw)))
@@ -131,21 +135,40 @@ class MailWorker:
     def _sync_account_settings(self, client_id: str, connector_name: str, account: str, connector) -> None:
         if connector_name not in {"gmail", "hotmail"} or not hasattr(connector, "sync_label_color"):
             return
+        connector_labels = self.labels.get(connector_name, {})
+        allowed_label_names = {
+            _normalized_name(setting["name"] or connector_labels.get(setting["key"], setting["key"]))
+            for setting in label_color_settings_for_client(client_id)
+        }
         if hasattr(connector, "delete_label"):
-            legacy_labels = LEGACY_USER_LABELS if connector_name == "gmail" else LEGACY_CATEGORIES
-            for legacy_label in legacy_labels:
+            existing_labels = []
+            try:
+                if connector_name == "gmail" and hasattr(connector, "list_user_labels"):
+                    existing_labels = connector.list_user_labels()
+                elif connector_name == "hotmail" and hasattr(connector, "list_categories"):
+                    existing_labels = connector.list_categories()
+            except Exception as exc:
+                LOG.warning(
+                    "Mailbox label listing failed: client=%s connector=%s account=%s error=%s",
+                    client_id,
+                    connector_name,
+                    account,
+                    exc,
+                )
+            for existing_label in existing_labels:
+                if _normalized_name(existing_label) in allowed_label_names:
+                    continue
                 try:
-                    connector.delete_label(legacy_label)
+                    connector.delete_label(existing_label)
                 except Exception as exc:
                     LOG.warning(
-                        "Legacy label cleanup failed: client=%s connector=%s account=%s label=%s error=%s",
+                        "Mailbox label cleanup failed: client=%s connector=%s account=%s label=%s error=%s",
                         client_id,
                         connector_name,
                         account,
-                        legacy_label,
+                        existing_label,
                         exc,
                     )
-        connector_labels = self.labels.get(connector_name, {})
         for setting in label_color_settings_for_client(client_id):
             label_name = setting["name"] or connector_labels.get(setting["key"], setting["key"])
             try:

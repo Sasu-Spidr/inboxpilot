@@ -118,18 +118,7 @@ class HotmailConnector:
         if not category_id:
             LOG.warning("Outlook category skipped because it is not managed: %s", category)
             return
-        data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
-        existing = data.get("categories", []) or []
-        managed = {normalize_category_name(item) for item in [*managed_categories, *LEGACY_CATEGORIES]}
-        target = normalize_category_name(category)
-        categories = [
-            item
-            for item in existing
-            if normalize_category_name(item) not in managed and normalize_category_name(item) != target
-        ]
-        if category not in categories:
-            categories.append(category)
-        self._request("PATCH", f"/me/messages/{message_id}", json={"categories": categories})
+        self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})
 
     def trash(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "deleteditems"})
     def archive(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "archive"})
