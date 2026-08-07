@@ -18,7 +18,8 @@ LABELS = ALLOWED_LABELS
 ACTIONS = ("keep", "trash", "draft", "archive", "mark_read", "move")
 PRIORITIES = ("low", "medium", "high")
 MIN_CONFIDENCE = 0.75
-DEFAULT_LABEL = "À lire"
+LABEL_REPLY, LABEL_TODO, LABEL_READ, LABEL_NOTIFICATION, LABEL_COMMERCIAL = ALLOWED_LABELS
+DEFAULT_LABEL = LABEL_READ
 
 
 class EmailClassifier:
@@ -207,7 +208,7 @@ def default_label(allowed_labels: tuple[str, ...]) -> str:
 
 
 def default_action_for_label(label: str) -> str:
-    return "draft" if label == "À répondre" else "keep"
+    return "draft" if canonical_label_key(label) == LABEL_REPLY else "keep"
 
 
 def is_automatic_sender(sender: str) -> bool:
@@ -264,12 +265,12 @@ def priority_for_label(label: str, definitions: dict | None = None) -> int:
         except (TypeError, ValueError):
             pass
     return {
-        "À répondre": 100,
-        "À traiter": 90,
-        "À lire": 70,
-        "Notification": 50,
-        "Commercial": 30,
-    }.get(label, 10)
+        LABEL_REPLY: 100,
+        LABEL_TODO: 90,
+        LABEL_READ: 70,
+        LABEL_NOTIFICATION: 50,
+        LABEL_COMMERCIAL: 30,
+    }.get(canonical_label_key(label), 10)
 
 
 def safe_int(value, default: int) -> int:
