@@ -63,6 +63,7 @@ LEGACY_LABEL_KEYS = {
     "Newsletter": "Commercial",
     "Marketing": "Commercial",
 }
+LEGACY_DESCRIPTION_TERMS = ("FYI", "Newsletter", "Marketing")
 
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
@@ -188,11 +189,11 @@ def _sanitize_label(label: dict[str, Any], fallback: dict[str, Any]) -> dict[str
     key = fallback["key"]
     name = fallback["name"]
     color = str(label.get("color", "")).strip()
-    description = str(label.get("description", "")).strip()
+    description = clean_description(str(label.get("description", "")).strip(), fallback["description"])
     return {
         "key": key,
         "name": name,
-        "description": description if description and len(description) > 80 else fallback["description"],
+        "description": description,
         "color": color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else fallback["color"],
         "priority": _int_setting(label.get("priority"), fallback["priority"]),
         "prepareDraft": bool(label.get("prepareDraft")),
@@ -208,6 +209,14 @@ def _sanitize_unread_days(value: Any) -> int | None:
     if days <= 0:
         return None
     return min(365, max(1, days))
+
+
+def clean_description(description: str, fallback: str) -> str:
+    if len(description) <= 80:
+        return fallback
+    if any(term in description for term in LEGACY_DESCRIPTION_TERMS):
+        return fallback
+    return description
 
 
 def _int_setting(value: Any, default: int) -> int:

@@ -58,6 +58,7 @@ export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
 ];
 
 const CANONICAL_LABEL_KEYS = new Set<string>(ALLOWED_LABELS);
+const LEGACY_DESCRIPTION_TERMS = ["FYI", "Newsletter", "Marketing"];
 
 export function getClientSettings(clientId: string): ClientSettings {
   const saved = readSettingsFile(clientId);
@@ -122,12 +123,12 @@ function settingsFile(clientId: string): string {
 function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSetting {
   const key = fallback.key;
   const name = fallback.name;
-  const description = String(label.description || "").trim().slice(0, 2000);
+  const description = cleanDescription(String(label.description || "").trim().slice(0, 2000), fallback.description);
   const color = /^#[0-9a-fA-F]{6}$/.test(String(label.color || "")) ? label.color : fallback.color || "#14b8a6";
   return {
     key,
     name,
-    description: description.length > 80 ? description : fallback.description,
+    description,
     color,
     prepareDraft: Boolean(label.prepareDraft),
     autoReply: Boolean(label.autoReply),
@@ -142,4 +143,10 @@ function sanitizeUnreadDeleteDays(value: unknown): number | null {
   const days = Number(value);
   if (!Number.isFinite(days) || days <= 0) return null;
   return Math.min(365, Math.max(1, Math.floor(days)));
+}
+
+function cleanDescription(description: string, fallback: string): string {
+  if (description.length <= 80) return fallback;
+  if (LEGACY_DESCRIPTION_TERMS.some((term) => description.includes(term))) return fallback;
+  return description;
 }
