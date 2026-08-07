@@ -189,6 +189,8 @@ class MailWorker:
             email = email or connector.get_email(message_id)
             if self._delete_processed_unread_if_expired(connector, client_id, connector_name, account, message_id, email, record):
                 return True
+            if self._enforce_processed_label(connector, client_id, connector_name, account, message_id, record, email):
+                return False
             if self._reconcile_processed_label(connector, client_id, connector_name, account, message_id, record):
                 return False
             log_event("email_already_processed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
@@ -285,6 +287,19 @@ class MailWorker:
             received_at=record.get("received_at"),
         )
         log_event("processed_email_label_reconciled", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="ok")
+        return True
+
+    def _enforce_processed_label(self, connector, client_id: str, connector_name: str, account: str, message_id: str, record: dict, email: dict | None) -> bool:
+        original_label = str(record.get("label") or "")
+        label = normalize_active_label(client_id, original_label)
+        if not label or label == "pre_activation":
+            return False
+        action = str(record.get("action") or "keep")
+        if action in {"trash", "trash_unread_expired"}:
+            return False
+        priority = str(record.get("priority") or "medium")
+        self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority, email=email)
+        log_event("processed_email_label_reconciled", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="enforced")
         return True
 
     def _entry(self, client_id: str, connector_name: str, account: str) -> dict:

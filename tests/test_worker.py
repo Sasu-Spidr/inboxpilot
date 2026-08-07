@@ -259,6 +259,23 @@ def test_worker_deletes_already_processed_unread_message_after_delay(tmp_path, m
     assert c.calls == [("trash", ("1",))]
 
 
+def test_worker_reenforces_label_on_already_processed_message(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class CompletedState(State):
+        def is_processed(self, *args):
+            return True
+
+        def get(self, *args):
+            return {"label": "À lire", "action": "keep", "priority": "medium", "thread_id": "t", "draft_created": False}
+
+    c = Connector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=CompletedState())
+    worker.run_cycle()
+    assert c.calls == [("replace_label", ("1", "À lire", ["À répondre", "À traiter", "À lire", "Notification", "Commercial"]))]
+
+
 def test_worker_reconciles_processed_unread_invalid_label_without_marking_read(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 
