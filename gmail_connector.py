@@ -91,15 +91,6 @@ class GmailConnector:
         body = {"addLabelIds": [target_id]}
         if remove_ids:
             body["removeLabelIds"] = remove_ids
-        thread_id = ""
-        try:
-            message = self._execute(self.service.users().messages().get(userId="me", id=message_id, format="minimal"))
-            thread_id = message.get("threadId", "")
-        except AttributeError:
-            thread_id = ""
-        if thread_id:
-            self._execute(self.service.users().threads().modify(userId="me", id=thread_id, body=body))
-            return
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body=body))
 
     def sync_label_color(self, label_name: str, preferred_color: str) -> None:

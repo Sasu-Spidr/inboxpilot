@@ -171,6 +171,53 @@ def test_replace_label_removes_legacy_label_with_case_variation():
     ]
 
 
+def test_replace_label_stays_message_scoped_even_when_thread_exists():
+    calls = []
+
+    class LabelOps:
+        def list(self, **kwargs):
+            return Execute({"labels": [{"name": "Commercial", "id": "commercial"}, {"name": "Marketing", "id": "legacy-marketing"}]})
+
+    class MessageOps:
+        def get(self, **kwargs):
+            return CaptureExecute({"threadId": "thread-1"}, calls, "get_message", kwargs)
+
+        def modify(self, **kwargs):
+            return CaptureExecute({}, calls, "modify_message", kwargs)
+
+    class ThreadOps:
+        def modify(self, **kwargs):
+            return CaptureExecute({}, calls, "modify_thread", kwargs)
+
+    class CaptureUsers:
+        def labels(self):
+            return LabelOps()
+
+        def messages(self):
+            return MessageOps()
+
+        def threads(self):
+            return ThreadOps()
+
+    class CaptureService:
+        def users(self):
+            return CaptureUsers()
+
+    c = GmailConnector("unused", "unused", TokenStore(TokenStore.generate_key()), service=CaptureService())
+    c.replace_label("msg-1", "Commercial", ["Commercial"])
+
+    assert calls == [
+        (
+            "modify_message",
+            {
+                "userId": "me",
+                "id": "msg-1",
+                "body": {"addLabelIds": ["commercial"], "removeLabelIds": ["legacy-marketing"]},
+            },
+        )
+    ]
+
+
 def test_gmail_auth_without_token_does_not_open_browser(tmp_path, monkeypatch):
     monkeypatch.delenv("GMAIL_INTERACTIVE_AUTH", raising=False)
     c = GmailConnector(str(tmp_path / "missing-client.json"), str(tmp_path / "missing-token.enc"), TokenStore(TokenStore.generate_key()))
