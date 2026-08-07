@@ -11,6 +11,7 @@ from typing import Any
 import yaml
 
 from activity_store import record_email_activity
+from agent_flow_store import record_agent_flow
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
@@ -157,7 +158,7 @@ class MailWorker:
             return False
         try:
             email = email or connector.get_email(message_id)
-            log_event("email_detected", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="started")
+            log_event("email_detected", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), status="started")
             if is_before_activation(email, entry.get("connected_at")):
                 self.state.complete(
                     client_id=client_id,
@@ -190,10 +191,10 @@ class MailWorker:
                     action = "keep"
             priority = result.get("priority", "medium")
             target = self.rules.target_for(label)
-            log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
 
             self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False, received_at=email.get("received_at"))
-            self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority)
+            self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority, email=email)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
             if action != "trash" and mark_as_read_for_client(client_id, label):
                 log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="guarded")
@@ -253,7 +254,7 @@ class MailWorker:
         key = f"{connector_name}:{account}"
         return self.connectors[client_id][key]
 
-    def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str) -> None:
+    def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str, email: dict | None = None) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
         managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
@@ -268,31 +269,31 @@ class MailWorker:
                     connector.sync_label_color(label_name, label_color)
                 except Exception as exc:
                     log_event("label_color_sync_failed", logging.WARNING, client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, status="warning", error=str(exc))
-        log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+        log_event("label_applied", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=(email or {}).get("subject"), sender=(email or {}).get("sender"), label=label, action=action, priority=priority, status="ok")
 
     def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:
         message_id = email["id"]
         if action == "trash":
             connector.trash(message_id)
-            log_event("email_trashed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_trashed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
         elif action == "draft":
             if hasattr(self.drafts, "safe_generate"):
                 draft = self.drafts.safe_generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
             else:
                 draft = self.drafts.generate(email["subject"], email["sender"], email["body"], signature_name=sender_name)
             connector.create_draft(email, draft)
-            log_event("draft_created", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("draft_created", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
             return True
         elif action == "archive":
             connector.archive(message_id)
-            log_event("email_archived", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_archived", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
         elif action == "mark_read":
-            log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
         elif action == "move":
             if not target:
                 raise ValueError(f"Rule for label {label} uses move but has no target")
             connector.move(message_id, target)
-            log_event("email_moved", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="ok")
+            log_event("email_moved", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
         return False
 
     def authenticate(self) -> None:
@@ -370,6 +371,7 @@ def unread_delete_due(client_id: str, label: str, email: dict, now: datetime | N
 
 def log_event(event: str, level: int = logging.INFO, **fields) -> None:
     exc_info = fields.pop("exc_info", None)
+    record_agent_flow(event, fields)
     LOG.log(level, event, extra={"event": event, **fields}, exc_info=exc_info)
 
 

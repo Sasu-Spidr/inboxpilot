@@ -45,7 +45,10 @@ export default async function AdminPage() {
           <p className="eyebrow">Administration InboxPilot</p>
           <h1>Monitoring plateforme</h1>
         </div>
-        <a href="/dashboard">Retour espace client</a>
+        <div className="admin-topbar-actions">
+          <a href="/logs">Logs agent</a>
+          <a href="/dashboard">Retour espace client</a>
+        </div>
       </nav>
 
       <section className="admin-hero">
