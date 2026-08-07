@@ -30,6 +30,10 @@ LEGACY_USER_LABELS = {
     "Mise a jour de reunion",
 }
 
+REMOVABLE_SYSTEM_LABEL_IDS = {
+    "CATEGORY_PROMOTIONS",
+}
+
 
 class GmailConnector:
     def __init__(self, credentials_file: str, token_file: str, token_store: TokenStore, service=None):
@@ -92,8 +96,16 @@ class GmailConnector:
             str(label.get("id", ""))
             for label in labels
             if str(label.get("id", "")).strip()
-            and normalize_label_name(label.get("name", "")) != target_name
-            and str(label.get("type", "user")) != "system"
+            and (
+                (
+                    str(label.get("type", "user")) != "system"
+                    and normalize_label_name(label.get("name", "")) != target_name
+                )
+                or (
+                    str(label.get("type", "user")) == "system"
+                    and str(label.get("id", "")) in REMOVABLE_SYSTEM_LABEL_IDS
+                )
+            )
         ]
         body = {"addLabelIds": [target_id]}
         if remove_ids:
