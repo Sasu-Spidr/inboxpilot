@@ -16,24 +16,24 @@ ALLOWED_LABELS = (
 
 CEO_LABEL_DESCRIPTIONS = {
     "À répondre": """Définition. Un humain identifiable attend une réponse écrite de ma part.
-Une réponse textuelle réglerait le mail. Inclut les relances (quelqu'un réclame un retour promis). Signaux. Question directe, demande d'info ou de devis, sollicitation commerciale d'un prospect réel, message personnel appelant un retour, rappel dirigé vers moi (« avez-vous eu le temps de… »). Ne pas confondre :
+Une réponse textuelle réglerait le mail. Signaux. Question directe, demande d'info ou de devis, sollicitation commerciale d'un prospect réel, message personnel appelant un retour, rappel dirigé vers moi (« avez-vous eu le temps de… »). Ne pas confondre :
 • Facture/contrat/accès où répondre par texte ne suffit pas → À traiter.
 • Expéditeur automatique (no-reply) même avec un « confirmez » → Notification.
 • Compliment ou mise au courant sans réponse réellement attendue → À lire.
-Métadonnée urgence : mets haute si le mail est une relance, mentionne une échéance proche, ou emploie un ton pressant ; sinon normale.""",
+Métadonnée urgence : mets haute si le mail mentionne une échéance proche ou emploie un ton pressant ; sinon normale.""",
     "À traiter": """Définition. Le mail exige une action manuelle qui n'est pas une simple réponse : payer, signer, valider un document, gérer un accès ou un compte, effectuer une opération. Signaux. Facture à régler, contrat à signer, document à valider, demande d'accès légitime, alerte de sécurité exigeant une action réelle. Ne pas confondre :
 • Simple question sur un document (« quel est le montant ? ») → À répondre.
 • Reçu / confirmation d'une opération déjà faite → Notification.
 • Promo urgente déguisée (« dernière chance -50 % ») → Commercial.""",
-    "À lire": """Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe les mises au courant, commentaires et mentions collaboratifs. Signaux. Transfert « pour info », note interne, mention dans un fil, commentaire sur un document, retour d'un collègue, document partagé sans demande. Ne pas confondre :
+    "À lire": """Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe les mises au courant et mentions collaboratives. Signaux. Note interne, mention dans un fil, retour d'un collègue, document partagé sans demande. Ne pas confondre :
 • Le message attend un retour de ma part → À répondre.
 • Message généré par un système/application → Notification.
 • Contenu éditorial d'abonnement ou promotion → Commercial.""",
-    "Notification": """Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, événement calendaire. Aucune action manuelle requise. Signaux. Expéditeur no-reply / notifications@, code de connexion, alerte système, reçu, invitation ou modification de réunion (fichier .ics), rappel automatique d'événement. Ne pas confondre :
+    "Notification": """Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, événement calendaire. Aucune action manuelle requise. Signaux. Expéditeur no-reply / notifications@, code de connexion, alerte système, reçu, invitation calendaire (fichier .ics), rappel automatique d'événement. Ne pas confondre :
 • L'alerte exige une action manuelle réelle (« connexion suspecte, sécurisez votre compte ») → À traiter.
 • Message écrit par un humain pour être lu → À lire.
 • Promotion ou prospection → Commercial.""",
-    "Commercial": """Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition. Signaux. Lettre d'information récurrente, cold email, promo/remise, argumentaire de vente, lien de désabonnement, envoi de masse. Ne pas confondre :
+    "Commercial": """Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition. Signaux. Cold email, promo/remise, argumentaire de vente, lien de désabonnement, envoi de masse. Ne pas confondre :
 • Mail transactionnel légitime d'un service que j'utilise (reçu, confirmation) → Notification.
 • Message personnel ou professionnel individuel → À répondre ou À lire.
 • ⚠ Ce libellé peut déclencher une suppression (si l'utilisateur l'a activée). Au moindre doute sur le caractère de masse/commercial, ne choisis pas Commercial → Notification ou À lire.""",

@@ -126,7 +126,7 @@ function RecentActivity({ events, labelColors }: { events: ActivityEvent[]; labe
       <div className="section-heading">
         <div>
           <p className="eyebrow">Activité récente</p>
-          <h2>Ce que l'agent a traité</h2>
+          <h2>Activité de l'agent</h2>
         </div>
       </div>
 
@@ -153,7 +153,7 @@ function RecentActivity({ events, labelColors }: { events: ActivityEvent[]; labe
       ) : (
         <div className="activity-empty">
           <strong>Aucune activité pour le moment.</strong>
-          <p>Dès que de nouveaux emails non lus seront traités, ils apparaîtront ici avec le libellé et l'action appliquée.</p>
+          <p>Dès que de nouveaux emails non lus seront analysés, ils apparaîtront ici avec le libellé et l'action appliquée.</p>
         </div>
       )}
     </section>

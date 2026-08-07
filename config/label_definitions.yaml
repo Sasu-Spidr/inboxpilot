@@ -1,11 +1,10 @@
 À répondre:
   priority: 100
-  description: "Définition. Un humain identifiable attend une réponse écrite de ma part. Une réponse textuelle réglerait le mail. Inclut les relances, demandes d'information, devis, sollicitations personnelles ou commerciales individuelles."
+  description: "Définition. Un humain identifiable attend une réponse écrite de ma part. Une réponse textuelle réglerait le mail. Inclut les demandes d'information, devis, sollicitations personnelles ou commerciales individuelles."
   action_hint: draft
   examples:
     - "Pouvez-vous me confirmer le devis ?"
     - "Avez-vous eu le temps de regarder ?"
-    - "Je me permets de vous relancer"
 
 À traiter:
   priority: 90
@@ -21,13 +20,12 @@
   description: "Définition. Information destinée à un humain, à lire ou conserver, sans action attendue. Regroupe les mises au courant, notes et mentions collaboratives."
   action_hint: keep
   examples:
-    - "Pour info"
     - "Note sur un document"
     - "Retour d'un collègue"
 
 Notification:
   priority: 50
-  description: "Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, reçu, invitation ou modification de réunion, rappel automatique d'événement."
+  description: "Définition. Message généré par une machine : alerte, code, confirmation transactionnelle, reçu, invitation calendaire, rappel automatique d'événement."
   action_hint: keep
   examples:
     - "Code à usage unique"
@@ -39,6 +37,5 @@ Commercial:
   description: "Définition. Contenu d'abonnement éditorial, promotion, prospection, publicité, offre commerciale, acquisition ou envoi de masse. Au moindre doute, choisir Notification ou À lire."
   action_hint: keep
   examples:
-    - "Lettre d'information récurrente"
     - "Promotion"
     - "Cold email commercial"

@@ -7,10 +7,10 @@ export default async function Home() {
   const connectionHref = user ? "/dashboard" : "/connexion";
 
   return (
-    <main className="marketing-shell">
-      <header className="marketing-nav">
-        <a className="marketing-brand" href="#top" aria-label="InboxPilot">
-          <span className="marketing-logo" aria-hidden="true">
+    <main className="landing-shell">
+      <header className="landing-nav">
+        <a className="landing-brand" href="#top" aria-label="InboxPilot">
+          <span className="landing-logo" aria-hidden="true">
             <InboxPilotLogo />
           </span>
           <span>InboxPilot</span>
@@ -20,16 +20,16 @@ export default async function Home() {
           <a href="#preview">Fonctionnement</a>
           <a href="#tarifs">Tarifs</a>
         </nav>
-        <div className="marketing-nav-actions">
-          <a className="marketing-link" href={connectionHref}>Connexion</a>
-          <a className="marketing-button primary" href="#tarifs">
+        <div className="landing-nav-actions">
+          <a className="landing-link" href={connectionHref}>Connexion</a>
+          <a className="landing-button primary" href="#tarifs">
             Voir les offres
           </a>
         </div>
       </header>
 
-      <section id="top" className="marketing-hero">
-        <div className="marketing-hero-copy">
+      <section id="top" className="landing-hero">
+        <div className="landing-hero-copy">
           <h1>
             Votre boîte mail.
             <br />
@@ -38,17 +38,17 @@ export default async function Home() {
             <span>Sous contrôle.</span>
           </h1>
           <p>
-            InboxPilot est un agent IA qui analyse, classe, labellise et traite automatiquement vos emails
+            InboxPilot est un agent IA qui analyse, classe, labellise et gère automatiquement vos emails
             pour ne garder que l&apos;essentiel. Gagnez du temps chaque jour.
           </p>
-          <div className="marketing-hero-actions">
-            <a className="marketing-button primary large" href="#tarifs">
+          <div className="landing-hero-actions">
+            <a className="landing-button primary large" href="#tarifs">
               Démarrer mon abonnement
             </a>
           </div>
         </div>
 
-        <div className="marketing-hero-visual" aria-hidden="true">
+        <div className="landing-hero-visual" aria-hidden="true">
           <div className="orbit-rings" />
           <div className="floating-card gmail-card">
             <GmailLogo />
@@ -128,10 +128,10 @@ export default async function Home() {
 
       <PricingSection />
 
-      <footer id="ressources" className="marketing-footer">
+      <footer id="ressources" className="landing-footer">
         <div>
-          <a className="marketing-brand" href="#top">
-            <span className="marketing-logo" aria-hidden="true"><InboxPilotLogo /></span>
+          <a className="landing-brand" href="#top">
+            <span className="landing-logo" aria-hidden="true"><InboxPilotLogo /></span>
             <span>InboxPilot</span>
           </a>
           <p>Votre agent email IA pour classer, prioriser et garder le contrôle.</p>

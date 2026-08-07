@@ -345,8 +345,6 @@ def auto_delete_allowed(result: dict, email: dict) -> bool:
             "unsubscribe",
             "désabonner",
             "desabonner",
-            "newsletter",
-            "marketing",
             "promotion",
             "offre commerciale",
             "se désinscrire",
