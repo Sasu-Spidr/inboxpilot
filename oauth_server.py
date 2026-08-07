@@ -19,7 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_settings import label_color_settings_for_client
+from client_settings import label_color_settings_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
@@ -145,6 +145,7 @@ class OAuthOnboardingServer:
         skipped = 0
         errors = []
         labels = label_color_settings_for_client(client_id)
+        managed_names = set(managed_label_names_for_client(client_id))
         removed = list(dict.fromkeys(str(label).strip() for label in (removed_labels or []) if str(label).strip()))
         for provider, accounts in (
             ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
@@ -157,7 +158,9 @@ class OAuthOnboardingServer:
                     continue
                 try:
                     connector = self._label_sync_connector(provider, account_cfg, token_file)
-                    for label_name in removed:
+                    account_name = account_cfg.get("account") or account_cfg.get("id") or "main"
+                    stale_processed_labels = self._stale_processed_label_names(client_id, provider, account_name, managed_names)
+                    for label_name in list(dict.fromkeys([*removed, *stale_processed_labels])):
                         if connector.delete_label(label_name):
                             deleted += 1
                     for label in labels:
@@ -176,6 +179,22 @@ class OAuthOnboardingServer:
             len(errors),
         )
         return result
+
+    def _stale_processed_label_names(self, client_id: str, provider: str, account: str, managed_names: set[str]) -> list[str]:
+        state_file = self.settings.get("state_file", "./data/state/processed_messages.enc")
+        data = self.store.load(state_file)
+        records = data.get("records", {}) if data else {}
+        stale: list[str] = []
+        prefix = f"{client_id}:{provider}:{account}:"
+        for key, record in records.items():
+            if not str(key).startswith(prefix):
+                continue
+            label = str(record.get("label") or "").strip()
+            if not label or label == "pre_activation" or label in managed_names:
+                continue
+            if label not in stale:
+                stale.append(label)
+        return stale
 
     def _label_sync_connector(self, provider: str, account_cfg: dict, token_file: str):
         if provider == "gmail":
