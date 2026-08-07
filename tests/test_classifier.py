@@ -160,19 +160,19 @@ def test_prompt_definitions_include_label_meaning():
 
 
 @pytest.mark.parametrize(
-    ("input_label", "expected_label"),
+    "input_label",
     [
-        ("FYI", "À lire"),
-        ("Commentaire", "À lire"),
-        ("Newsletter", "À lire"),
-        ("Marketing", "Commercial"),
-        ("Relance", "À répondre"),
-        ("Traité", "À lire"),
-        ("En attente de réponse", "À lire"),
-        ("Mise à jour de réunion", "Notification"),
-        ("ABC123", "À lire"),
+        "FYI",
+        "Commentaire",
+        "Newsletter",
+        "Marketing",
+        "Relance",
+        "Traité",
+        "En attente de réponse",
+        "Mise à jour de réunion",
+        "ABC123",
     ],
 )
-def test_legacy_labels_and_unknown_labels_fall_back_to_allowed_labels(input_label, expected_label):
+def test_legacy_labels_and_unknown_labels_fall_back_to_default_label(input_label):
     result = normalize_model_result({"label": input_label, "action": "keep", "priority": "medium", "confidence": 0.9}, LABELS)
-    assert result["label"] == expected_label
+    assert result["label"] == DEFAULT_LABEL

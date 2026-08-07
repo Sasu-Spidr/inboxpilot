@@ -49,23 +49,21 @@ DEFAULT_LABELS: list[dict[str, Any]] = [
 
 CANONICAL_LABEL_KEYS = set(ALLOWED_LABELS)
 
-LEGACY_LABEL_ALIASES = {
-    "A répondre": "À répondre",
-    "Relance": "À répondre",
-    "A traiter": "À traiter",
-    "FYI": "À lire",
-    "Commentaire": "À lire",
-    "Newsletter": "À lire",
-    "Traité": "À lire",
-    "Traite": "À lire",
-    "En attente de réponse": "À lire",
-    "En attente de reponse": "À lire",
-    "Mise à jour de réunion": "Notification",
-    "Mise a jour de reunion": "Notification",
-    "Marketing": "Commercial",
-}
-
-LEGACY_LABEL_NAMES = tuple(LEGACY_LABEL_ALIASES.keys())
+LEGACY_LABEL_NAMES = (
+    "A r\u00e9pondre",
+    "Relance",
+    "A traiter",
+    "FYI",
+    "Commentaire",
+    "Newsletter",
+    "Trait\u00e9",
+    "Traite",
+    "En attente de r\u00e9ponse",
+    "En attente de reponse",
+    "Mise \u00e0 jour de r\u00e9union",
+    "Mise a jour de reunion",
+    "Marketing",
+)
 
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
@@ -153,8 +151,7 @@ def unread_delete_after_days_for_client(client_id: str, label: str) -> int | Non
 
 
 def canonical_label_key(label: str) -> str:
-    value = str(label or "").strip()
-    return LEGACY_LABEL_ALIASES.get(value, value)
+    return str(label or "").strip()
 
 
 def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:
