@@ -11,6 +11,9 @@ class Connector:
     def unread_emails(self, limit):
         return [{"id": "1", "subject": "Need help", "sender": "a@b.com", "body": "Hello", "thread_id": "t"}]
 
+    def recent_inbox_message_ids(self, limit):
+        return []
+
     def get_email(self, message_id):
         return {"id": message_id, "subject": "Need help", "sender": "a@b.com", "body": "Hello", "thread_id": "t"}
 
@@ -274,6 +277,27 @@ def test_worker_reenforces_label_on_already_processed_message(monkeypatch):
     worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=CompletedState())
     worker.run_cycle()
     assert c.calls == [("replace_label", ("1", "À lire", ["À répondre", "À traiter", "À lire", "Notification", "Commercial"]))]
+
+
+def test_worker_processes_recent_read_unprocessed_message(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class RecentConnector(Connector):
+        def unread_emails(self, limit):
+            return []
+
+        def recent_inbox_message_ids(self, limit):
+            return ["2"]
+
+        def get_email(self, message_id):
+            return {"id": message_id, "subject": "Need help", "sender": "a@b.com", "body": "Hello", "thread_id": "t"}
+
+    c = RecentConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(settings, connectors={"exuvie": {"gmail:main": {"name": "gmail", "account": "main", "connector": c}}}, classifier=Classifier(), drafts=Drafts(), state=State())
+    worker.run_cycle()
+    assert [x[0] for x in c.calls] == ["replace_label", "draft"]
+    assert c.calls[0][1][0] == "2"
 
 
 def test_worker_reconciles_processed_unread_invalid_label_without_marking_read(monkeypatch):

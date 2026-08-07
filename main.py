@@ -126,11 +126,16 @@ class MailWorker:
         try:
             self._sync_account_settings(client_id, connector_name, account, connector)
             emails = connector.unread_emails(self.settings["max_emails_per_cycle"])
+            recent_ids = connector.recent_inbox_message_ids(self.settings["max_emails_per_cycle"]) if hasattr(connector, "recent_inbox_message_ids") else []
         except Exception as exc:
             log_event("polling_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, status="failed", error=str(exc), exc_info=True)
             return
         for email in emails:
             self.process_email(client_id, connector_name, account, email["id"], email=email)
+        for message_id in recent_ids:
+            if self.state.is_processed(client_id, connector_name, account, message_id):
+                continue
+            self.process_email(client_id, connector_name, account, message_id)
 
     def _sync_account_settings(self, client_id: str, connector_name: str, account: str, connector) -> None:
         if connector_name not in {"gmail", "hotmail"} or not hasattr(connector, "sync_label_color"):

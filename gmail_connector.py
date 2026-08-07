@@ -56,6 +56,13 @@ class GmailConnector:
         rows = self._execute(self.service.users().messages().list(userId="me", q="is:unread in:inbox", maxResults=limit)).get("messages", [])
         return [self.get_email(row["id"]) for row in rows]
 
+    def recent_inbox_message_ids(self, limit: int) -> list[str]:
+        self.authenticate()
+        rows = self._execute(
+            self.service.users().messages().list(userId="me", q="in:inbox newer_than:2d", maxResults=limit)
+        ).get("messages", [])
+        return [str(row.get("id", "")).strip() for row in rows if str(row.get("id", "")).strip()]
+
     def get_email(self, message_id: str) -> dict:
         self.authenticate()
         msg = self._execute(self.service.users().messages().get(userId="me", id=message_id, format="full"))

@@ -82,6 +82,14 @@ class HotmailConnector:
         data = self._request("GET", "/me/mailFolders/inbox/messages", params={"$filter": "isRead eq false", "$top": limit, "$select": "id,subject,from,body,conversationId,receivedDateTime"})
         return [self._email_from_graph(x) for x in data.get("value", [])]
 
+    def recent_inbox_message_ids(self, limit: int) -> list[str]:
+        data = self._request(
+            "GET",
+            "/me/mailFolders/inbox/messages",
+            params={"$top": limit, "$select": "id", "$orderby": "receivedDateTime desc"},
+        )
+        return [str(item.get("id", "")).strip() for item in data.get("value", []) if str(item.get("id", "")).strip()]
+
     def get_email(self, message_id: str) -> dict:
         data = self._request("GET", f"/me/messages/{message_id}", params={"$select": "id,subject,from,body,conversationId,receivedDateTime"})
         return self._email_from_graph(data)
