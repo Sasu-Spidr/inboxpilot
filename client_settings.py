@@ -72,7 +72,24 @@ def settings_path(client_id: str) -> Path:
     return data_dir / "client-settings" / f"{safe_client_id}.json"
 
 
-def load_client_settings(client_id: str) -> dict[str, Any]:
+def scoped_settings_path(client_id: str, connector: str | None, account: str | None) -> Path:
+    data_dir = Path(os.getenv("DATA_DIR", "./data"))
+    safe_client_id = re.sub(r"[^a-zA-Z0-9._-]", "-", client_id)
+    safe_connector = re.sub(r"[^a-zA-Z0-9._-]", "-", connector or "")
+    safe_account = re.sub(r"[^a-zA-Z0-9._-]", "-", account or "")
+    if not safe_connector or not safe_account:
+        return settings_path(client_id)
+    return data_dir / "client-settings" / safe_client_id / f"{safe_connector}--{safe_account}.json"
+
+
+def load_client_settings(client_id: str, connector: str | None = None, account: str | None = None) -> dict[str, Any]:
+    if connector and account:
+        try:
+            scoped = json.loads(scoped_settings_path(client_id, connector, account).read_text(encoding="utf-8"))
+            if scoped.get("labels"):
+                return scoped
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
     try:
         return json.loads(settings_path(client_id).read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
@@ -84,15 +101,15 @@ def label_name_for_client(client_id: str, label: str, default_name: str) -> str:
     return default_name
 
 
-def label_color_for_client(client_id: str, label: str) -> str | None:
-    setting = _label_setting(client_id, label)
+def label_color_for_client(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str | None:
+    setting = _label_setting(client_id, label, connector, account)
     color = str(setting.get("color", "")).strip() if setting else ""
     return color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else None
 
 
-def label_color_settings_for_client(client_id: str) -> list[dict[str, str]]:
+def label_color_settings_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[dict[str, str]]:
     settings: list[dict[str, str]] = []
-    for setting in normalized_labels_for_client(client_id):
+    for setting in normalized_labels_for_client(client_id, connector, account):
         key = str(setting.get("key", "")).strip()
         name = str(setting.get("name", "")).strip()
         color = str(setting.get("color", "")).strip()
@@ -101,9 +118,9 @@ def label_color_settings_for_client(client_id: str) -> list[dict[str, str]]:
     return settings
 
 
-def label_settings_for_classifier(client_id: str) -> list[dict[str, str]]:
+def label_settings_for_classifier(client_id: str, connector: str | None = None, account: str | None = None) -> list[dict[str, str]]:
     labels: list[dict[str, str]] = []
-    for setting in normalized_labels_for_client(client_id):
+    for setting in normalized_labels_for_client(client_id, connector, account):
         key = str(setting.get("key", "")).strip()
         name = str(setting.get("name", "")).strip()
         description = str(setting.get("description", "")).strip()
@@ -113,21 +130,21 @@ def label_settings_for_classifier(client_id: str) -> list[dict[str, str]]:
     return labels
 
 
-def active_label_keys_for_client(client_id: str) -> list[str]:
-    return [str(setting["key"]) for setting in normalized_labels_for_client(client_id)]
+def active_label_keys_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[str]:
+    return [str(setting["key"]) for setting in normalized_labels_for_client(client_id, connector, account)]
 
 
-def managed_label_names_for_client(client_id: str) -> list[str]:
+def managed_label_names_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[str]:
     names: list[str] = []
-    for setting in normalized_labels_for_client(client_id):
+    for setting in normalized_labels_for_client(client_id, connector, account):
         name = str(setting.get("name", "")).strip()
         if name and name not in names:
             names.append(name)
     return names
 
 
-def action_for_client(client_id: str, label: str, default_action: str) -> str:
-    setting = _label_setting(client_id, label)
+def action_for_client(client_id: str, label: str, default_action: str, connector: str | None = None, account: str | None = None) -> str:
+    setting = _label_setting(client_id, label, connector, account)
     if not setting:
         return default_action
     if setting.get("autoDelete"):
@@ -137,12 +154,13 @@ def action_for_client(client_id: str, label: str, default_action: str) -> str:
     return default_action
 
 
-def mark_as_read_for_client(client_id: str, label: str) -> bool:
+def mark_as_read_for_client(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> bool:
+    _ = client_id, label, connector, account
     return False
 
 
-def unread_delete_after_days_for_client(client_id: str, label: str) -> int | None:
-    setting = _label_setting(client_id, label)
+def unread_delete_after_days_for_client(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> int | None:
+    setting = _label_setting(client_id, label, connector, account)
     if not setting:
         return None
     if not setting.get("autoDelete"):
@@ -156,16 +174,16 @@ def canonical_label_key(label: str) -> str:
     return LEGACY_LABEL_KEYS.get(value, value)
 
 
-def _label_setting(client_id: str, label: str) -> dict[str, Any] | None:
+def _label_setting(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> dict[str, Any] | None:
     canonical = canonical_label_key(label)
-    for setting in normalized_labels_for_client(client_id):
+    for setting in normalized_labels_for_client(client_id, connector, account):
         if setting.get("key") == canonical or setting.get("name") == canonical:
             return setting
     return None
 
 
-def normalized_labels_for_client(client_id: str) -> list[dict[str, Any]]:
-    labels = load_client_settings(client_id).get("labels", [])
+def normalized_labels_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[dict[str, Any]]:
+    labels = load_client_settings(client_id, connector, account).get("labels", [])
     if not labels:
         return [dict(label) for label in DEFAULT_LABELS]
     return _with_canonical_defaults(labels)

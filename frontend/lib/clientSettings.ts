@@ -73,8 +73,8 @@ const LEGACY_LABEL_KEYS = new Set<string>([
   "Mise a jour de reunion",
 ]);
 
-export function getClientSettings(clientId: string): ClientSettings {
-  const saved = readSettingsFile(clientId);
+export function getClientSettings(clientId: string, provider?: string, account?: string): ClientSettings {
+  const saved = readSettingsFile(clientId, provider, account);
   if (saved && Array.isArray(saved.labels) && saved.labels.length > 0) {
     return {
       labels: sanitizeLabels(saved.labels),
@@ -87,13 +87,14 @@ export function getClientSettings(clientId: string): ClientSettings {
   };
 }
 
-export function saveClientSettings(clientId: string, labels: LabelSetting[]): ClientSettings {
+export function saveClientSettings(clientId: string, labels: LabelSetting[], provider?: string, account?: string): ClientSettings {
   const settings: ClientSettings = {
     labels: sanitizeLabels(labels),
     updatedAt: new Date().toISOString(),
   };
-  fs.mkdirSync(path.dirname(settingsFile(clientId)), { recursive: true });
-  fs.writeFileSync(settingsFile(clientId), JSON.stringify(settings, null, 2), "utf-8");
+  const file = settingsFile(clientId, provider, account);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2), "utf-8");
   return settings;
 }
 
@@ -131,7 +132,15 @@ function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
   return [...DEFAULT_LABEL_SETTINGS.map((label) => grouped.get(label.key) || sanitizeLabel(label, label)), ...custom];
 }
 
-function readSettingsFile(clientId: string): ClientSettings | null {
+function readSettingsFile(clientId: string, provider?: string, account?: string): ClientSettings | null {
+  if (provider && account) {
+    try {
+      const scoped = JSON.parse(fs.readFileSync(settingsFile(clientId, provider, account), "utf-8")) as ClientSettings;
+      if (Array.isArray(scoped.labels) && scoped.labels.length > 0) return scoped;
+    } catch {
+      // Fall back to the historical client-wide settings until the mailbox has its own settings.
+    }
+  }
   try {
     return JSON.parse(fs.readFileSync(settingsFile(clientId), "utf-8")) as ClientSettings;
   } catch {
@@ -139,8 +148,13 @@ function readSettingsFile(clientId: string): ClientSettings | null {
   }
 }
 
-function settingsFile(clientId: string): string {
+function settingsFile(clientId: string, provider?: string, account?: string): string {
   const safeClientId = clientId.replace(/[^a-zA-Z0-9._-]/g, "-");
+  if (provider && account) {
+    const safeProvider = provider.replace(/[^a-zA-Z0-9._-]/g, "-");
+    const safeAccount = account.replace(/[^a-zA-Z0-9._-]/g, "-");
+    return dataPath("client-settings", safeClientId, `${safeProvider}--${safeAccount}.json`);
+  }
   return dataPath("client-settings", `${safeClientId}.json`);
 }
 

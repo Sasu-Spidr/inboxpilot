@@ -85,3 +85,34 @@ def test_client_settings_default_labels_are_added_without_overwriting_existing(t
     assert "À traiter" in names
     assert "Commercial" in names
     assert len(labels) == 5
+
+
+def test_client_settings_can_be_scoped_per_mailbox(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    scoped_dir = settings_dir / "client-a"
+    settings_dir.mkdir()
+    scoped_dir.mkdir()
+    (settings_dir / "client-a.json").write_text(
+        json.dumps(
+            {
+                "labels": [
+                    {"key": "Commercial", "name": "Commercial", "color": "#fb7185", "prepareDraft": False, "autoReply": False, "autoDelete": False},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (scoped_dir / "gmail--gmail-2.json").write_text(
+        json.dumps(
+            {
+                "labels": [
+                    {"key": "Courses", "name": "Courses", "description": "Emails liés aux courses.", "color": "#14b8a6", "prepareDraft": False, "autoReply": False, "autoDelete": False},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert "Courses" not in managed_label_names_for_client("client-a", "gmail", "main")
+    assert "Courses" in managed_label_names_for_client("client-a", "gmail", "gmail-2")

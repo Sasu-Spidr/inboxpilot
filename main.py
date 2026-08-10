@@ -145,7 +145,7 @@ class MailWorker:
         connector_labels = self.labels.get(connector_name, {})
         allowed_label_names = {
             _normalized_name(setting["name"] or connector_labels.get(setting["key"], setting["key"]))
-            for setting in label_color_settings_for_client(client_id)
+            for setting in label_color_settings_for_client(client_id, connector_name, account)
         }
         if hasattr(connector, "delete_label"):
             existing_labels = []
@@ -176,7 +176,7 @@ class MailWorker:
                         existing_label,
                         exc,
                     )
-        for setting in label_color_settings_for_client(client_id):
+        for setting in label_color_settings_for_client(client_id, connector_name, account):
             label_name = setting["name"] or connector_labels.get(setting["key"], setting["key"])
             try:
                 connector.sync_label_color(label_name, setting["color"])
@@ -219,18 +219,18 @@ class MailWorker:
                 )
                 log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
                 return False
-            client_label_settings = label_settings_for_classifier(client_id)
+            client_label_settings = label_settings_for_classifier(client_id, connector_name, account)
             result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"], client_label_settings or None)
             original_label = result["label"]
-            label = normalize_active_label(client_id, original_label)
+            label = normalize_active_label(client_id, original_label, connector_name, account)
             if label != original_label:
                 result["action"] = "keep"
             action = self.rules.action_for(label, result["action"])
-            action = action_for_client(client_id, label, action)
-            if action != "trash" and unread_delete_due(client_id, label, email):
+            action = action_for_client(client_id, label, action, connector_name, account)
+            if action != "trash" and unread_delete_due(client_id, label, email, connector_name, account):
                 action = "trash"
             if action == "trash" and not auto_delete_allowed(result, email):
-                if unread_delete_due(client_id, label, email):
+                if unread_delete_due(client_id, label, email, connector_name, account):
                     log_event("unread_expired_delete_allowed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash", status="ok")
                 else:
                     log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
@@ -242,7 +242,7 @@ class MailWorker:
             self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False, received_at=email.get("received_at"))
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority, email=email)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
-            if action != "trash" and mark_as_read_for_client(client_id, label):
+            if action != "trash" and mark_as_read_for_client(client_id, label, connector_name, account):
                 log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="guarded")
             self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created, received_at=email.get("received_at"))
             record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action=action, draft_created=draft_created)
@@ -254,7 +254,7 @@ class MailWorker:
 
     def _delete_processed_unread_if_expired(self, connector, client_id: str, connector_name: str, account: str, message_id: str, email: dict, record: dict) -> bool:
         label = str(record.get("label") or "")
-        if not label or not unread_delete_due(client_id, label, email):
+        if not label or not unread_delete_due(client_id, label, email, connector_name, account):
             return False
         connector.trash(message_id)
         self.state.complete(
@@ -274,7 +274,7 @@ class MailWorker:
 
     def _reconcile_processed_label(self, connector, client_id: str, connector_name: str, account: str, message_id: str, record: dict) -> bool:
         original_label = str(record.get("label") or "")
-        label = normalize_active_label(client_id, original_label)
+        label = normalize_active_label(client_id, original_label, connector_name, account)
         if not label or label == "pre_activation":
             return False
         if label == original_label:
@@ -298,7 +298,7 @@ class MailWorker:
 
     def _enforce_processed_label(self, connector, client_id: str, connector_name: str, account: str, message_id: str, record: dict, email: dict | None) -> bool:
         original_label = str(record.get("label") or "")
-        label = normalize_active_label(client_id, original_label)
+        label = normalize_active_label(client_id, original_label, connector_name, account)
         if not label or label == "pre_activation":
             return False
         action = str(record.get("action") or "keep")
@@ -316,13 +316,13 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str, email: dict | None = None) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id)]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account)]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)
         else:
             connector.apply_label(message_id, label_name)
         if connector_name in {"gmail", "hotmail"} and hasattr(connector, "sync_label_color"):
-            label_color = label_color_for_client(client_id, label)
+            label_color = label_color_for_client(client_id, label, connector_name, account)
             if label_color:
                 try:
                     connector.sync_label_color(label_name, label_color)
@@ -381,8 +381,8 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
     return [account_cfg]
 
 
-def normalize_active_label(client_id: str, label: str) -> str:
-    active_keys = active_label_keys_for_client(client_id)
+def normalize_active_label(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str:
+    active_keys = active_label_keys_for_client(client_id, connector, account)
     mapped_label = canonical_label_key(label)
     if mapped_label in active_keys:
         return mapped_label
@@ -413,8 +413,8 @@ def auto_delete_allowed(result: dict, email: dict) -> bool:
     )
 
 
-def unread_delete_due(client_id: str, label: str, email: dict, now: datetime | None = None) -> bool:
-    days = unread_delete_after_days_for_client(client_id, label)
+def unread_delete_due(client_id: str, label: str, email: dict, connector: str | None = None, account: str | None = None, now: datetime | None = None) -> bool:
+    days = unread_delete_after_days_for_client(client_id, label, connector, account)
     if not days:
         return False
     received_at = email.get("received_at")

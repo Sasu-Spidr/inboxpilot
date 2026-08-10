@@ -83,6 +83,8 @@ class OAuthOnboardingServer:
                         result = server.sync_label_settings(
                             one({"client": [payload.get("client", "")]}, "client"),
                             payload.get("removed_labels", []),
+                            payload.get("provider"),
+                            payload.get("account"),
                         )
                         self._json(200, result)
                         return
@@ -138,7 +140,7 @@ class OAuthOnboardingServer:
 
         return Handler
 
-    def sync_label_settings(self, client_id: str, removed_labels: list[str] | None = None) -> dict:
+    def sync_label_settings(self, client_id: str, removed_labels: list[str] | None = None, provider: str | None = None, account: str | None = None) -> dict:
         self.settings = merge_registered_clients(self.settings)
         client = self.settings.get("clients", {}).get(client_id)
         if not client:
@@ -148,27 +150,31 @@ class OAuthOnboardingServer:
         deleted = 0
         skipped = 0
         errors = []
-        labels = label_color_settings_for_client(client_id)
-        managed_names = set(managed_label_names_for_client(client_id))
-        allowed_normalized_names = {_normalized_name(label["name"]) for label in labels}
         removed = list(dict.fromkeys(str(label).strip() for label in (removed_labels or []) if str(label).strip()))
-        for provider, accounts in (
+        for current_provider, accounts in (
             ("gmail", client.get("connectors", {}).get("gmail", {}).get("accounts", []) or []),
             ("hotmail", client.get("connectors", {}).get("hotmail", {}).get("accounts", []) or []),
         ):
+            if provider and current_provider != provider:
+                continue
             for account_cfg in accounts:
+                account_name = account_cfg.get("account") or account_cfg.get("id") or "main"
+                if account and account_name != account:
+                    continue
                 token_file = account_cfg.get("token_file", "")
                 if not token_file or not Path(token_file).exists():
                     skipped += 1
                     continue
                 try:
-                    connector = self._label_sync_connector(provider, account_cfg, token_file)
-                    account_name = account_cfg.get("account") or account_cfg.get("id") or "main"
-                    stale_processed_labels = self._stale_processed_label_names(client_id, provider, account_name, managed_names)
+                    labels = label_color_settings_for_client(client_id, current_provider, account_name)
+                    managed_names = set(managed_label_names_for_client(client_id, current_provider, account_name))
+                    allowed_normalized_names = {_normalized_name(label["name"]) for label in labels}
+                    connector = self._label_sync_connector(current_provider, account_cfg, token_file)
+                    stale_processed_labels = self._stale_processed_label_names(client_id, current_provider, account_name, managed_names)
                     existing_labels = []
-                    if provider == "gmail" and hasattr(connector, "list_user_labels"):
+                    if current_provider == "gmail" and hasattr(connector, "list_user_labels"):
                         existing_labels = connector.list_user_labels()
-                    elif provider == "hotmail" and hasattr(connector, "list_categories"):
+                    elif current_provider == "hotmail" and hasattr(connector, "list_categories"):
                         existing_labels = connector.list_categories()
                     disallowed_existing_labels = [
                         label_name
@@ -182,7 +188,7 @@ class OAuthOnboardingServer:
                         connector.sync_label_color(label["name"], label["color"])
                         synced += 1
                 except Exception as exc:
-                    errors.append({"provider": provider, "account": account_cfg.get("account", "main"), "error": str(exc)})
+                    errors.append({"provider": current_provider, "account": account_cfg.get("account", "main"), "error": str(exc)})
         result = {"synced": synced, "deleted": deleted, "removed_requested": len(removed), "skipped": skipped, "errors": errors}
         LOG.info(
             "Gmail label settings synced client=%s synced=%s deleted=%s removed_requested=%s skipped=%s errors=%s",
@@ -245,7 +251,7 @@ class OAuthOnboardingServer:
         email = gmail_profile_email(flow.credentials)
         update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
-        self.sync_label_settings(state["client"])
+        self.sync_label_settings(state["client"], provider="gmail", account=state["account"])
         return success_page("Gmail", state["client"], state["account"], email)
 
     def start_hotmail(self, query: str) -> str:
@@ -278,7 +284,7 @@ class OAuthOnboardingServer:
         email = microsoft_profile_email(result["access_token"])
         update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email, "connected_at": now_iso()})
         self.settings = merge_registered_clients(self.settings)
-        self.sync_label_settings(state["client"])
+        self.sync_label_settings(state["client"], provider="hotmail", account=state["account"])
         return success_page("Hotmail / Outlook", state["client"], state["account"], email)
 
     def _account(self, query: str, connector: str) -> tuple[str, str, dict]:

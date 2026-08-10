@@ -14,8 +14,10 @@ export async function POST(request: NextRequest) {
   if (!user) return redirectTo(request, "/?error=1");
 
   const form = await request.formData();
+  const provider = normalizeProvider(form.get("provider"));
+  const account = String(form.get("account") || "").trim();
   const labels: LabelSetting[] = [];
-  const previousSettings = getClientSettings(user.clientId);
+  const previousSettings = getClientSettings(user.clientId, provider, account || undefined);
 
   const labelCount = Math.max(DEFAULT_LABEL_SETTINGS.length, Math.min(50, Number(form.get("labelCount") || DEFAULT_LABEL_SETTINGS.length)));
   for (let index = 0; index < labelCount; index += 1) {
@@ -37,9 +39,10 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const savedSettings = saveClientSettings(user.clientId, labels);
-  await syncGmailLabelSettings(user.clientId, removedLabelNames(previousSettings.labels, savedSettings.labels));
-  return redirectTo(request, "/settings?saved=1");
+  const savedSettings = saveClientSettings(user.clientId, labels, provider, account || undefined);
+  await syncGmailLabelSettings(user.clientId, removedLabelNames(previousSettings.labels, savedSettings.labels), provider, account || undefined);
+  const target = provider && account ? `/settings?provider=${encodeURIComponent(provider)}&account=${encodeURIComponent(account)}&saved=1` : "/settings?saved=1";
+  return redirectTo(request, target);
 }
 
 function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSetting[]): string[] {
@@ -57,7 +60,7 @@ function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSett
   return [...removed];
 }
 
-async function syncGmailLabelSettings(clientId: string, removedLabels: string[]): Promise<void> {
+async function syncGmailLabelSettings(clientId: string, removedLabels: string[], provider?: string, account?: string): Promise<void> {
   const internalUrl = process.env.OAUTH_INTERNAL_URL;
   const syncKey = process.env.TOKEN_ENCRYPTION_KEY;
   if (!internalUrl || !syncKey) return;
@@ -69,7 +72,7 @@ async function syncGmailLabelSettings(clientId: string, removedLabels: string[])
         "Content-Type": "application/json",
         "X-Internal-Sync-Key": syncKey,
       },
-      body: JSON.stringify({ client: clientId, removed_labels: removedLabels }),
+      body: JSON.stringify({ client: clientId, removed_labels: removedLabels, provider, account }),
       cache: "no-store",
     });
     if (!response.ok) {
@@ -78,6 +81,11 @@ async function syncGmailLabelSettings(clientId: string, removedLabels: string[])
   } catch (error) {
     console.warn("Gmail label settings sync failed", error);
   }
+}
+
+function normalizeProvider(value: FormDataEntryValue | null): "gmail" | "hotmail" | undefined {
+  const provider = String(value || "").trim();
+  return provider === "gmail" || provider === "hotmail" ? provider : undefined;
 }
 
 function redirectTo(request: NextRequest, path: string): NextResponse {

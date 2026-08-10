@@ -4,22 +4,37 @@ import { redirect } from "next/navigation";
 import AgentActivityMonitor from "./AgentActivityMonitor";
 import LabelSettingsForm from "./LabelSettingsForm";
 import { currentUser, isAdmin } from "@/lib/auth";
-import { getClientMailAccounts } from "@/lib/clientRegistry";
+import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
 import { tokenFileExists } from "@/lib/paths";
 
-export default async function SettingsPage({ searchParams }: { searchParams?: Promise<{ saved?: string }> }) {
+type SettingsSearchParams = {
+  saved?: string;
+  provider?: string;
+  account?: string;
+};
+
+export default async function SettingsPage({ searchParams }: { searchParams?: Promise<SettingsSearchParams> }) {
   const user = await currentUser();
   if (!user) redirect("/");
 
-  const settings = getClientSettings(user.clientId);
+  const params = await searchParams;
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
-  const accounts = [...gmailAccounts, ...hotmailAccounts];
-  const connectedMailboxes = accounts.filter((account) => tokenFileExists(account.token_file)).length;
+  const accounts = [
+    ...gmailAccounts.map((account) => ({ ...account, provider: "gmail" as const })),
+    ...hotmailAccounts.map((account) => ({ ...account, provider: "hotmail" as const })),
+  ];
+  const connectedMailboxes = accounts.filter((mailbox) => tokenFileExists(mailbox.token_file)).length;
+  const selectedMailbox =
+    accounts.find((mailbox) => mailbox.provider === params?.provider && mailbox.account === params?.account) ||
+    accounts.find((mailbox) => tokenFileExists(mailbox.token_file)) ||
+    accounts[0] ||
+    null;
+  const settings = getClientSettings(user.clientId, selectedMailbox?.provider, selectedMailbox?.account);
   const activity = getDashboardActivity(user.clientId);
-  const saved = (await searchParams)?.saved === "1";
+  const saved = params?.saved === "1";
 
   return (
     <main className="dashboard-shell settings-shell">
@@ -61,7 +76,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         </div>
       </section>
 
-      {saved && <div className="success-banner">Paramètres enregistrés. Les libellés Gmail sont synchronisés.</div>}
+      {saved && <div className="success-banner">Paramètres enregistrés. La boîte sélectionnée est synchronisée.</div>}
 
       <AgentActivityMonitor
         initialActivity={activity}
@@ -69,9 +84,46 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
       />
 
-      <LabelSettingsForm initialLabels={settings.labels} />
+      <section className="mailbox-settings-card">
+        <div className="mailbox-settings-heading">
+          <p className="eyebrow">BoÃ®te Ã  configurer</p>
+          <h2>Choisissez l'adresse concernÃ©e</h2>
+          <p>Chaque boÃ®te Gmail ou Outlook peut avoir ses propres libellÃ©s, couleurs et actions.</p>
+        </div>
+        <div className="mailbox-settings-list">
+          {accounts.map((mailbox) => {
+            const isActive = selectedMailbox?.provider === mailbox.provider && selectedMailbox.account === mailbox.account;
+            const isConnected = tokenFileExists(mailbox.token_file);
+            return (
+              <Link
+                key={`${mailbox.provider}:${mailbox.account}`}
+                className={`mailbox-settings-option${isActive ? " active" : ""}`}
+                href={`/settings?provider=${mailbox.provider}&account=${encodeURIComponent(mailbox.account)}`}
+              >
+                <ProviderIcon provider={mailbox.provider} />
+                <span>
+                  <strong>{mailbox.email_address || mailboxLabel(mailbox.provider, mailbox.account)}</strong>
+                  <small>{mailboxLabel(mailbox.provider, mailbox.account)} Â· {isConnected ? "ConnectÃ©e" : "Connexion Ã  finaliser"}</small>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <LabelSettingsForm
+        initialLabels={settings.labels}
+        selectedProvider={selectedMailbox?.provider}
+        selectedAccount={selectedMailbox?.account}
+        selectedMailboxLabel={selectedMailbox ? selectedMailbox.email_address || mailboxLabel(selectedMailbox.provider, selectedMailbox.account) : "Configuration globale"}
+      />
     </main>
   );
+}
+
+function mailboxLabel(provider: Provider, account: string) {
+  if (account === "main") return provider === "gmail" ? "Gmail 1" : "Outlook 1";
+  return account.replace(/^gmail-/, "Gmail ").replace(/^hotmail-/, "Outlook ");
 }
 
 function ProviderIcon({ provider }: { provider: "gmail" | "hotmail" }) {
