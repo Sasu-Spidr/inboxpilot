@@ -99,6 +99,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
                 key={`${mailbox.provider}:${mailbox.account}`}
                 className={`mailbox-settings-option${isActive ? " active" : ""}`}
                 href={`/settings?provider=${mailbox.provider}&account=${encodeURIComponent(mailbox.account)}`}
+                scroll={false}
               >
                 <ProviderIcon provider={mailbox.provider} />
                 <span>
@@ -112,6 +113,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
       </section>
 
       <LabelSettingsForm
+        key={`${selectedMailbox?.provider || "global"}:${selectedMailbox?.account || "global"}`}
         initialLabels={settings.labels}
         selectedProvider={selectedMailbox?.provider}
         selectedAccount={selectedMailbox?.account}
