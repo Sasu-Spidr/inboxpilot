@@ -144,7 +144,7 @@ class GmailConnector:
         for label in labels:
             if label["name"] == name:
                 return label["id"]
-        if create and name in ALLOWED_USER_LABELS:
+        if create and name and normalize_label_name(name) not in {normalize_label_name(label) for label in LEGACY_USER_LABELS}:
             body = {"name": name, "labelListVisibility": "labelShow", "messageListVisibility": "show"}
             return self._execute(self.service.users().labels().create(userId="me", body=body))["id"]
         return ""

@@ -17,14 +17,18 @@ export async function POST(request: NextRequest) {
   const labels: LabelSetting[] = [];
   const previousSettings = getClientSettings(user.clientId);
 
-  for (let index = 0; index < DEFAULT_LABEL_SETTINGS.length; index += 1) {
+  const labelCount = Math.max(DEFAULT_LABEL_SETTINGS.length, Math.min(50, Number(form.get("labelCount") || DEFAULT_LABEL_SETTINGS.length)));
+  for (let index = 0; index < labelCount; index += 1) {
     const defaults = DEFAULT_LABEL_SETTINGS[index];
+    const key = String(form.get(`labels.${index}.key`) || defaults?.key || "").trim();
+    const name = String(form.get(`labels.${index}.name`) || defaults?.name || key).trim();
+    if (!key || !name) continue;
     labels.push({
-      key: defaults.key,
-      name: defaults.name,
+      key,
+      name,
       description: String(form.get(`labels.${index}.description`) || ""),
       color: String(form.get(`labels.${index}.color`) || ""),
-      priority: Number(form.get(`labels.${index}.priority`) || 10),
+      priority: Number(form.get(`labels.${index}.priority`) || defaults?.priority || 10),
       prepareDraft: form.get(`labels.${index}.prepareDraft`) === "on",
       autoReply: form.get(`labels.${index}.autoReply`) === "on",
       autoDelete: form.get(`labels.${index}.autoDelete`) === "on",

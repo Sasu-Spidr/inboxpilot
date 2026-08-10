@@ -59,6 +59,19 @@ export const DEFAULT_LABEL_SETTINGS: LabelSetting[] = [
 
 const CANONICAL_LABEL_KEYS = new Set<string>(ALLOWED_LABELS);
 const LEGACY_DESCRIPTION_TERMS = ["FYI", "Newsletter", "Marketing"];
+const LEGACY_LABEL_KEYS = new Set<string>([
+  "FYI",
+  "Marketing",
+  "Newsletter",
+  "Relance",
+  "Commentaire",
+  "Traité",
+  "Traite",
+  "En attente de réponse",
+  "En attente de reponse",
+  "Mise à jour de réunion",
+  "Mise a jour de reunion",
+]);
 
 export function getClientSettings(clientId: string): ClientSettings {
   const saved = readSettingsFile(clientId);
@@ -95,16 +108,27 @@ export function deleteClientSettings(clientId: string): void {
 function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
   const fallbackByKey = new Map(DEFAULT_LABEL_SETTINGS.map((label) => [label.key, label]));
   const grouped = new Map<string, LabelSetting>();
+  const custom: LabelSetting[] = [];
+  const customKeys = new Set<string>();
 
   for (const raw of labels) {
-    const key = canonicalLabelKey(raw.key || raw.name);
-    if (!CANONICAL_LABEL_KEYS.has(key) || grouped.has(key)) continue;
-    const fallback = fallbackByKey.get(key);
-    if (!fallback) continue;
-    grouped.set(key, sanitizeLabel(raw, fallback));
+    const rawKey = String(raw.key || raw.name || "").trim();
+    const key = canonicalLabelKey(rawKey);
+    if (!key) continue;
+    if (CANONICAL_LABEL_KEYS.has(key)) {
+      if (grouped.has(key)) continue;
+      const fallback = fallbackByKey.get(key);
+      if (!fallback) continue;
+      grouped.set(key, sanitizeLabel(raw, fallback));
+      continue;
+    }
+    if (LEGACY_LABEL_KEYS.has(rawKey) || LEGACY_LABEL_KEYS.has(key) || customKeys.has(key)) continue;
+    const sanitized = sanitizeLabel(raw, customLabelFallback(raw, key));
+    custom.push(sanitized);
+    customKeys.add(sanitized.key);
   }
 
-  return DEFAULT_LABEL_SETTINGS.map((label) => grouped.get(label.key) || sanitizeLabel(label, label));
+  return [...DEFAULT_LABEL_SETTINGS.map((label) => grouped.get(label.key) || sanitizeLabel(label, label)), ...custom];
 }
 
 function readSettingsFile(clientId: string): ClientSettings | null {
@@ -136,6 +160,24 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
     markAsRead: false,
     autoDeleteUnreadAfterDays: sanitizeUnreadDeleteDays(label.autoDeleteUnreadAfterDays),
     priority: Number.isFinite(Number(label.priority)) ? Number(label.priority) : fallback.priority,
+  };
+}
+
+function customLabelFallback(label: LabelSetting, key: string): LabelSetting {
+  const safeKey = key.slice(0, 80);
+  const safeName = String(label.name || safeKey).trim().slice(0, 80) || safeKey;
+  const description = String(label.description || "").trim();
+  return {
+    key: safeKey,
+    name: safeName,
+    description: description.length > 80 ? description : "Décrivez précisément les emails qui doivent recevoir ce libellé.",
+    color: "#14b8a6",
+    priority: 20,
+    prepareDraft: false,
+    autoReply: false,
+    autoDelete: false,
+    markAsRead: false,
+    autoDeleteUnreadAfterDays: null,
   };
 }
 

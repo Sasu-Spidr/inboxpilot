@@ -139,7 +139,7 @@ class HotmailConnector:
         for category in data.get("value", []) or []:
             if category.get("displayName") == display_name:
                 return category["id"]
-        if create_color and display_name in ALLOWED_CATEGORIES:
+        if create_color and display_name and normalize_category_name(display_name) not in {normalize_category_name(category) for category in LEGACY_CATEGORIES}:
             created = self._request("POST", "/me/outlook/masterCategories", json={"displayName": display_name, "color": create_color})
             return created.get("id", "")
         return ""

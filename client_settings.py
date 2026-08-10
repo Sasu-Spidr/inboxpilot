@@ -48,6 +48,7 @@ DEFAULT_LABELS: list[dict[str, Any]] = [
 ]
 
 CANONICAL_LABEL_KEYS = set(ALLOWED_LABELS)
+DEFAULT_LABEL_KEYS = {label["key"] for label in DEFAULT_LABELS}
 LEGACY_LABEL_KEYS = {
     "A répondre": "À répondre",
     "Relance": "À répondre",
@@ -173,16 +174,41 @@ def normalized_labels_for_client(client_id: str) -> list[dict[str, Any]]:
 def _with_canonical_defaults(labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
     fallback_by_key = {label["key"]: label for label in DEFAULT_LABELS}
     grouped: dict[str, dict[str, Any]] = {}
+    custom: list[dict[str, Any]] = []
+    custom_keys: set[str] = set()
 
     for raw in labels:
-        key = canonical_label_key(str(raw.get("key") or raw.get("name") or "").strip())
-        if key not in CANONICAL_LABEL_KEYS:
+        raw_key = str(raw.get("key") or raw.get("name") or "").strip()
+        key = canonical_label_key(raw_key)
+        if not key:
             continue
-        fallback = fallback_by_key[key]
-        if key not in grouped:
-            grouped[key] = _sanitize_label(raw, fallback)
+        if key in CANONICAL_LABEL_KEYS:
+            fallback = fallback_by_key[key]
+            if key not in grouped:
+                grouped[key] = _sanitize_label(raw, fallback)
+            continue
+        if raw_key in LEGACY_LABEL_KEYS or key in LEGACY_LABEL_KEYS:
+            continue
+        if key in custom_keys:
+            continue
+        custom_label = _sanitize_label(raw, _custom_label_fallback(raw, key))
+        custom.append(custom_label)
+        custom_keys.add(custom_label["key"])
 
-    return [grouped.get(label["key"], dict(label)) for label in DEFAULT_LABELS]
+    return [grouped.get(label["key"], dict(label)) for label in DEFAULT_LABELS] + custom
+
+
+def _custom_label_fallback(label: dict[str, Any], key: str) -> dict[str, Any]:
+    safe_key = key[:80]
+    safe_name = str(label.get("name") or safe_key).strip()[:80] or safe_key
+    description = str(label.get("description") or "").strip()
+    return {
+        "key": safe_key,
+        "name": safe_name,
+        "description": description if len(description) > 80 else "Décrivez précisément les emails qui doivent recevoir ce libellé.",
+        "color": "#14b8a6",
+        "priority": 20,
+    }
 
 
 def _sanitize_label(label: dict[str, Any], fallback: dict[str, Any]) -> dict[str, Any]:
