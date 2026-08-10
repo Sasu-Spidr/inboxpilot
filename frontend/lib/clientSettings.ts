@@ -113,7 +113,7 @@ function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {
   const customKeys = new Set<string>();
 
   for (const raw of labels) {
-    const rawKey = String(raw.key || raw.name || "").trim();
+    const rawKey = repairMojibake(String(raw.key || raw.name || "").trim());
     const key = canonicalLabelKey(rawKey);
     if (!key) continue;
     if (CANONICAL_LABEL_KEYS.has(key)) {
@@ -161,7 +161,7 @@ function settingsFile(clientId: string, provider?: string, account?: string): st
 function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSetting {
   const key = fallback.key;
   const name = fallback.name;
-  const description = cleanDescription(String(label.description || "").trim().slice(0, 2000), fallback.description);
+  const description = cleanDescription(repairMojibake(String(label.description || "").trim()).slice(0, 2000), fallback.description);
   const color = /^#[0-9a-fA-F]{6}$/.test(String(label.color || "")) ? label.color : fallback.color || "#14b8a6";
   return {
     key,
@@ -179,8 +179,8 @@ function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSettin
 
 function customLabelFallback(label: LabelSetting, key: string): LabelSetting {
   const safeKey = key.slice(0, 80);
-  const safeName = String(label.name || safeKey).trim().slice(0, 80) || safeKey;
-  const description = String(label.description || "").trim();
+  const safeName = repairMojibake(String(label.name || safeKey).trim()).slice(0, 80) || safeKey;
+  const description = repairMojibake(String(label.description || "").trim());
   return {
     key: safeKey,
     name: safeName,
@@ -202,7 +202,47 @@ function sanitizeUnreadDeleteDays(value: unknown): number | null {
 }
 
 function cleanDescription(description: string, fallback: string): string {
+  description = repairMojibake(description);
   if (description.length <= 80) return fallback;
   if (LEGACY_DESCRIPTION_TERMS.some((term) => description.includes(term))) return fallback;
   return description;
+}
+
+function repairMojibake(value: string): string {
+  let text = String(value || "");
+  const replacements: Array<[string, string]> = [
+    ["Ã€", "À"],
+    ["Ã©", "é"],
+    ["Ã¨", "è"],
+    ["Ãª", "ê"],
+    ["Ã«", "ë"],
+    ["Ã ", "à"],
+    ["Ã¢", "â"],
+    ["Ã®", "î"],
+    ["Ã¯", "ï"],
+    ["Ã´", "ô"],
+    ["Ã»", "û"],
+    ["Ã¹", "ù"],
+    ["Ã§", "ç"],
+    ["Ã‰", "É"],
+    ["Â«", "«"],
+    ["Â»", "»"],
+    ["Â·", "·"],
+    ["â€¢", "•"],
+    ["â†’", "→"],
+    ["â€¦", "…"],
+    ["âš ", "⚠"],
+    ["âœ¦", "✦"],
+    ["âœ“", "✓"],
+    ["â‚¬", "€"],
+  ];
+  for (let pass = 0; pass < 2; pass += 1) {
+    let next = text;
+    for (const [bad, good] of replacements) {
+      next = next.split(bad).join(good);
+    }
+    if (next === text) break;
+    text = next;
+  }
+  return text;
 }

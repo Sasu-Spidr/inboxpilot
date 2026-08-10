@@ -66,6 +66,53 @@ LEGACY_LABEL_KEYS = {
 }
 LEGACY_DESCRIPTION_TERMS = ("FYI", "Newsletter", "Marketing")
 
+
+def is_legacy_label_name(label: str) -> bool:
+    return repair_mojibake(str(label or "").strip()) in LEGACY_LABEL_KEYS
+
+
+def repair_mojibake(value: str) -> str:
+    text = str(value or "")
+    replacements = {
+        "Ã€": "À",
+        "Ã©": "é",
+        "Ã¨": "è",
+        "Ãª": "ê",
+        "Ã«": "ë",
+        "Ã ": "à",
+        "Ã¢": "â",
+        "Ã®": "î",
+        "Ã¯": "ï",
+        "Ã´": "ô",
+        "Ã»": "û",
+        "Ã¹": "ù",
+        "Ã§": "ç",
+        "Ã‰": "É",
+        "Â«": "«",
+        "Â»": "»",
+        "Â·": "·",
+        "â€¢": "•",
+        "â†’": "→",
+        "â€¦": "…",
+        "âš ": "⚠",
+        "âœ¦": "✦",
+        "âœ“": "✓",
+        "â‚¬": "€",
+    }
+    for _ in range(2):
+        if not any(marker in text for marker in ("Ã", "Â", "â")):
+            break
+        try:
+            candidate = text.encode("cp1252").decode("utf-8")
+        except UnicodeError:
+            candidate = text
+            for bad, good in replacements.items():
+                candidate = candidate.replace(bad, good)
+        if candidate == text:
+            break
+        text = candidate
+    return text
+
 def settings_path(client_id: str) -> Path:
     data_dir = Path(os.getenv("DATA_DIR", "./data"))
     safe_client_id = re.sub(r"[^a-zA-Z0-9._-]", "-", client_id)
@@ -170,7 +217,7 @@ def unread_delete_after_days_for_client(client_id: str, label: str, connector: s
 
 
 def canonical_label_key(label: str) -> str:
-    value = str(label or "").strip()
+    value = repair_mojibake(str(label or "").strip())
     return LEGACY_LABEL_KEYS.get(value, value)
 
 
@@ -196,7 +243,7 @@ def _with_canonical_defaults(labels: list[dict[str, Any]]) -> list[dict[str, Any
     custom_keys: set[str] = set()
 
     for raw in labels:
-        raw_key = str(raw.get("key") or raw.get("name") or "").strip()
+        raw_key = repair_mojibake(str(raw.get("key") or raw.get("name") or "").strip())
         key = canonical_label_key(raw_key)
         if not key:
             continue
@@ -218,8 +265,8 @@ def _with_canonical_defaults(labels: list[dict[str, Any]]) -> list[dict[str, Any
 
 def _custom_label_fallback(label: dict[str, Any], key: str) -> dict[str, Any]:
     safe_key = key[:80]
-    safe_name = str(label.get("name") or safe_key).strip()[:80] or safe_key
-    description = str(label.get("description") or "").strip()
+    safe_name = repair_mojibake(str(label.get("name") or safe_key).strip())[:80] or safe_key
+    description = repair_mojibake(str(label.get("description") or "").strip())
     return {
         "key": safe_key,
         "name": safe_name,
@@ -233,7 +280,7 @@ def _sanitize_label(label: dict[str, Any], fallback: dict[str, Any]) -> dict[str
     key = fallback["key"]
     name = fallback["name"]
     color = str(label.get("color", "")).strip()
-    description = clean_description(str(label.get("description", "")).strip(), fallback["description"])
+    description = clean_description(repair_mojibake(str(label.get("description", "")).strip()), fallback["description"])
     return {
         "key": key,
         "name": name,
@@ -256,6 +303,7 @@ def _sanitize_unread_days(value: Any) -> int | None:
 
 
 def clean_description(description: str, fallback: str) -> str:
+    description = repair_mojibake(description)
     if len(description) <= 80:
         return fallback
     if any(term in description for term in LEGACY_DESCRIPTION_TERMS):

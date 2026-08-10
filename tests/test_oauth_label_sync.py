@@ -91,7 +91,7 @@ def test_sync_label_settings_deletes_stale_processed_labels(tmp_path):
     assert result["deleted"] == 1
 
 
-def test_sync_label_settings_deletes_disallowed_existing_mailbox_labels(tmp_path):
+def test_sync_label_settings_deletes_legacy_existing_mailbox_labels_only(tmp_path):
     gmail_token = tmp_path / "gmail.token.enc"
     gmail_token.write_text("token", encoding="utf-8")
     settings_payload = {
@@ -126,5 +126,5 @@ def test_sync_label_settings_deletes_disallowed_existing_mailbox_labels(tmp_path
 
     result = server.sync_label_settings("client-a", [])
 
-    assert gmail.deleted == ["Marketing", "Perso"]
-    assert result["deleted"] == 2
+    assert gmail.deleted == ["Marketing"]
+    assert result["deleted"] == 1

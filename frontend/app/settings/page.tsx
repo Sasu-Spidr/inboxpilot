@@ -86,9 +86,9 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       <section className="mailbox-settings-card">
         <div className="mailbox-settings-heading">
-          <p className="eyebrow">BoÃ®te Ã  configurer</p>
-          <h2>Choisissez l'adresse concernÃ©e</h2>
-          <p>Chaque boÃ®te Gmail ou Outlook peut avoir ses propres libellÃ©s, couleurs et actions.</p>
+          <p className="eyebrow">Boîte à configurer</p>
+          <h2>Choisissez l'adresse concernée</h2>
+          <p>Chaque boîte Gmail ou Outlook peut avoir ses propres libellés, couleurs et actions.</p>
         </div>
         <div className="mailbox-settings-list">
           {accounts.map((mailbox) => {
@@ -103,7 +103,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
                 <ProviderIcon provider={mailbox.provider} />
                 <span>
                   <strong>{mailbox.email_address || mailboxLabel(mailbox.provider, mailbox.account)}</strong>
-                  <small>{mailboxLabel(mailbox.provider, mailbox.account)} Â· {isConnected ? "ConnectÃ©e" : "Connexion Ã  finaliser"}</small>
+                  <small>{mailboxLabel(mailbox.provider, mailbox.account)} · {isConnected ? "Connectée" : "Connexion à finaliser"}</small>
                 </span>
               </Link>
             );

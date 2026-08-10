@@ -401,7 +401,7 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
             return []
 
         def list_user_labels(self):
-            return ["À traiter", "Commercial", "Marketing"]
+            return ["À traiter", "Commercial", "Marketing", "Perso"]
 
         def sync_label_color(self, *args):
             self.calls.append(("color", args))
@@ -417,6 +417,7 @@ def test_worker_syncs_gmail_label_color_even_without_new_email(tmp_path, monkeyp
     assert ("color", ("À traiter", "#856082")) in c.calls
     assert ("color", ("Commercial", "#fb7185")) in c.calls
     assert ("delete_label", ("Marketing",)) in c.calls
+    assert ("delete_label", ("Perso",)) not in c.calls
 
 
 def test_worker_prunes_legacy_gmail_labels_even_without_new_email(tmp_path, monkeypatch):
@@ -461,7 +462,7 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
             return []
 
         def list_categories(self):
-            return ["À traiter", "Commercial", "Marketing"]
+            return ["À traiter", "Commercial", "Marketing", "Perso"]
 
         def sync_label_color(self, *args):
             self.calls.append(("color", args))
@@ -477,6 +478,7 @@ def test_worker_syncs_hotmail_label_color_even_without_new_email(tmp_path, monke
     assert ("color", ("À traiter", "#0a6cff")) in c.calls
     assert ("color", ("Commercial", "#fb7185")) in c.calls
     assert ("delete_label", ("Marketing",)) in c.calls
+    assert ("delete_label", ("Perso",)) not in c.calls
 
 
 def test_error_on_one_email_does_not_block_next(monkeypatch):

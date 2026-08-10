@@ -19,7 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_settings import label_color_settings_for_client, managed_label_names_for_client
+from client_settings import is_legacy_label_name, label_color_settings_for_client, managed_label_names_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
@@ -168,7 +168,6 @@ class OAuthOnboardingServer:
                 try:
                     labels = label_color_settings_for_client(client_id, current_provider, account_name)
                     managed_names = set(managed_label_names_for_client(client_id, current_provider, account_name))
-                    allowed_normalized_names = {_normalized_name(label["name"]) for label in labels}
                     connector = self._label_sync_connector(current_provider, account_cfg, token_file)
                     stale_processed_labels = self._stale_processed_label_names(client_id, current_provider, account_name, managed_names)
                     existing_labels = []
@@ -176,12 +175,12 @@ class OAuthOnboardingServer:
                         existing_labels = connector.list_user_labels()
                     elif current_provider == "hotmail" and hasattr(connector, "list_categories"):
                         existing_labels = connector.list_categories()
-                    disallowed_existing_labels = [
+                    legacy_existing_labels = [
                         label_name
                         for label_name in existing_labels
-                        if _normalized_name(label_name) not in allowed_normalized_names
+                        if is_legacy_label_name(label_name)
                     ]
-                    for label_name in list(dict.fromkeys([*removed, *stale_processed_labels, *disallowed_existing_labels])):
+                    for label_name in list(dict.fromkeys([*removed, *stale_processed_labels, *legacy_existing_labels])):
                         if connector.delete_label(label_name):
                             deleted += 1
                     for label in labels:
