@@ -428,6 +428,141 @@ input {
   text-underline-offset: 3px;
 }
 
+.mfa-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background:
+    radial-gradient(760px 420px at 80% 4%, rgba(20, 184, 166, 0.12), transparent 62%),
+    #fcfcfb;
+  font-family: "Geist", sans-serif;
+}
+
+.mfa-card {
+  width: min(100%, 560px);
+  padding: clamp(2rem, 5vw, 3.2rem);
+  border: 1px solid #e8ecef;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+}
+
+.mfa-card h1 {
+  margin: 0.5rem 0 0.8rem;
+  color: #111827;
+  font-size: clamp(2.2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.mfa-card p:not(.eyebrow) {
+  margin: 0 0 1.5rem;
+  color: #6b7280;
+  line-height: 1.75;
+}
+
+.mfa-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 1.4rem;
+}
+
+.mfa-form label,
+.mfa-manual span {
+  color: #374151;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mfa-form input {
+  height: 56px;
+  padding: 0 18px;
+  border: 1px solid #dfe5ea;
+  border-radius: 16px;
+  background: #fcfcfb;
+  color: #111827;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.mfa-form input:focus-visible {
+  border-color: #14b8a6;
+  outline: 4px solid rgba(20, 184, 166, 0.14);
+}
+
+.mfa-form button {
+  min-height: 54px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #18c1ac, #0f9d8a);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 16px 34px rgba(15, 157, 138, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.mfa-form button:hover {
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 20px 42px rgba(15, 157, 138, 0.28);
+}
+
+.mfa-card .error {
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(220, 76, 76, 0.2);
+  border-radius: 16px;
+  background: rgba(220, 76, 76, 0.08);
+  color: #b42323;
+  font-weight: 600;
+}
+
+.mfa-setup-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  align-items: stretch;
+  margin: 1.5rem 0;
+}
+
+.mfa-qr,
+.mfa-manual {
+  display: grid;
+  place-items: center;
+  border: 1px solid #e8ecef;
+  border-radius: 22px;
+  background: #fcfcfb;
+}
+
+.mfa-qr img {
+  display: block;
+  width: 220px;
+  height: 220px;
+}
+
+.mfa-manual {
+  justify-items: start;
+  align-content: center;
+  gap: 10px;
+  padding: 20px;
+}
+
+.mfa-manual code {
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
 /* Dashboard */
 
 .dashboard-shell {
@@ -1817,6 +1952,72 @@ input {
   font-weight: 600;
 }
 
+.settings-shell .error-banner {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(220, 76, 76, 0.22);
+  border-radius: 18px;
+  background: rgba(220, 76, 76, 0.08);
+  color: #b42323;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.security-settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.security-settings-card h2 {
+  margin: 0.2rem 0 0.45rem;
+  color: var(--text);
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.security-settings-card p:not(.eyebrow) {
+  max-width: 64ch;
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.security-link {
+  width: fit-content;
+  white-space: nowrap;
+}
+
+.mfa-disable-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mfa-disable-form input {
+  width: 140px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.mfa-disable-form .danger {
+  color: #dc4c4c;
+}
+
 .settings-shell .agent-live-panel {
   display: grid;
   gap: 24px;
@@ -2359,6 +2560,11 @@ input {
     grid-template-columns: 1fr;
   }
 
+  .security-settings-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .settings-shell .settings-hero-visual {
     min-height: 180px;
   }
@@ -2368,6 +2574,7 @@ input {
   .settings-shell .settings-hero,
   .settings-shell .settings-panel,
   .settings-shell .mailbox-settings-card,
+  .security-settings-card,
   .settings-shell .agent-status-card,
   .settings-shell .activity-panel {
     padding: 22px;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { setSession, toUser, verifyPassword } from "@/lib/auth";
+import { setMfaPending, setSession, toUser, verifyPassword } from "@/lib/auth";
 import { findUserByEmail } from "@/lib/db";
 
 export async function POST(request: Request) {
@@ -12,6 +12,11 @@ export async function POST(request: Request) {
 
   if (!user || !verifyPassword(password, user)) {
     return redirectTo(request, "/?error=login");
+  }
+
+  if (user.mfaEnabled) {
+    await setMfaPending(user.clientId);
+    return redirectTo(request, "/mfa");
   }
 
   await setSession(user.clientId);

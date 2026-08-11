@@ -10,6 +10,8 @@ export type DbUser = {
   role: "customer" | "admin";
   password_hash: string;
   password_salt: string;
+  mfa_enabled: boolean;
+  mfa_secret: string | null;
   created_at: Date;
 };
 
@@ -38,6 +40,8 @@ export async function ensureSchema(): Promise<void> {
     )
   `);
   await getPool().query("alter table users add column if not exists role text not null default 'customer'");
+  await getPool().query("alter table users add column if not exists mfa_enabled boolean not null default false");
+  await getPool().query("alter table users add column if not exists mfa_secret text");
   await getPool().query("create index if not exists users_role_idx on users(role)");
   initialized = true;
 }
@@ -63,6 +67,18 @@ export async function listUsers(): Promise<DbUser[]> {
 export async function deleteUserByClientId(clientId: string): Promise<void> {
   await ensureSchema();
   await getPool().query("delete from users where client_id = $1", [clientId]);
+}
+
+export async function updateUserMfa(
+  clientId: string,
+  input: { enabled: boolean; secret: string | null },
+): Promise<void> {
+  await ensureSchema();
+  await getPool().query("update users set mfa_enabled = $2, mfa_secret = $3 where client_id = $1", [
+    clientId,
+    input.enabled,
+    input.secret,
+  ]);
 }
 
 export async function createUser(input: {

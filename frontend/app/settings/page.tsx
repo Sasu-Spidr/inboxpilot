@@ -11,6 +11,7 @@ import { tokenFileExists } from "@/lib/paths";
 
 type SettingsSearchParams = {
   saved?: string;
+  mfa?: string;
   provider?: string;
   account?: string;
 };
@@ -78,11 +79,17 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       {saved && <div className="success-banner">Paramètres enregistrés. La boîte sélectionnée est synchronisée.</div>}
 
+      {params?.mfa === "enabled" && <div className="success-banner">Double authentification activ&eacute;e.</div>}
+      {params?.mfa === "disabled" && <div className="success-banner">Double authentification d&eacute;sactiv&eacute;e.</div>}
+      {params?.mfa === "disable-error" && <div className="error-banner">Code MFA invalide. La double authentification reste active.</div>}
+
       <AgentActivityMonitor
         initialActivity={activity}
         initialConnectedMailboxes={connectedMailboxes}
         labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
       />
+
+      <MfaSecurityCard enabled={user.mfaEnabled} />
 
       <section className="mailbox-settings-card">
         <div className="mailbox-settings-heading">
@@ -120,6 +127,29 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         selectedMailboxLabel={selectedMailbox ? selectedMailbox.email_address || mailboxLabel(selectedMailbox.provider, selectedMailbox.account) : "Configuration globale"}
       />
     </main>
+  );
+}
+
+function MfaSecurityCard({ enabled }: { enabled: boolean }) {
+  return (
+    <section className="security-settings-card">
+      <div>
+        <p className="eyebrow">S&eacute;curit&eacute;</p>
+        <h2>Double authentification</h2>
+        <p>Ajoutez un code &agrave; 6 chiffres apr&egrave;s le mot de passe pour prot&eacute;ger l'acc&egrave;s &agrave; votre espace.</p>
+      </div>
+      {enabled ? (
+        <form action="/api/auth/mfa/disable" method="post" className="mfa-disable-form">
+          <span className="status connected">Activ&eacute;e</span>
+          <input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="Code MFA" required />
+          <button className="ghost-button danger" type="submit">D&eacute;sactiver</button>
+        </form>
+      ) : (
+        <a className="primary-link security-link" href="/mfa/setup">
+          Activer la double authentification
+        </a>
+      )}
+    </section>
   );
 }
 
