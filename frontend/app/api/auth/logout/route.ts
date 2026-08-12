@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { clearSession } from "@/lib/auth";
+import { publicEntryPath } from "@/lib/features";
 
 export async function POST(request: Request) {
   await clearSession();
-  return redirectTo(request, "/");
+  return redirectTo(request, publicEntryPath());
 }
 
 function redirectTo(request: Request, path: string): NextResponse {

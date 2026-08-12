@@ -122,11 +122,24 @@ class HotmailConnector:
         return [str(category.get("displayName", "")).strip() for category in data.get("value", []) or [] if str(category.get("displayName", "")).strip()]
 
     def replace_label(self, message_id: str, category: str, managed_categories: list[str]) -> None:
+        managed = {normalize_category_name(item) for item in managed_categories if str(item or "").strip()}
+        if normalize_category_name(category) not in managed:
+            LOG.warning("Outlook category skipped because it is not managed: %s", category)
+            return
         category_id = self._category_id(category, create_color="preset12")
         if not category_id:
             LOG.warning("Outlook category skipped because it is not managed: %s", category)
             return
-        self._request("PATCH", f"/me/messages/{message_id}", json={"categories": [category]})
+        message = self._request("GET", f"/me/messages/{message_id}", params={"$select": "categories"})
+        current_categories = [str(item).strip() for item in message.get("categories", []) or [] if str(item).strip()]
+        legacy = {normalize_category_name(item) for item in LEGACY_CATEGORIES}
+        next_categories = [
+            item
+            for item in current_categories
+            if normalize_category_name(item) not in managed and normalize_category_name(item) not in legacy
+        ]
+        next_categories.append(category)
+        self._request("PATCH", f"/me/messages/{message_id}", json={"categories": list(dict.fromkeys(next_categories))})
 
     def trash(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "deleteditems"})
     def archive(self, message_id: str) -> None: self._request("POST", f"/me/messages/{message_id}/move", json={"destinationId": "archive"})

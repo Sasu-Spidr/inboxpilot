@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { currentMfaPendingUser, setSession, verifyTotp } from "@/lib/auth";
+import { mfaFeatureEnabled } from "@/lib/features";
 
 export async function POST(request: Request) {
+  if (!mfaFeatureEnabled()) return redirectTo(request, "/connexion");
   const user = await currentMfaPendingUser();
   if (!user || !user.mfaEnabled || !user.mfaSecret) {
     return redirectTo(request, "/connexion");

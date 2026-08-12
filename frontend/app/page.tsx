@@ -1,9 +1,13 @@
+import { redirect } from "next/navigation";
+
 import { currentUser } from "@/lib/auth";
+import { landingEnabled } from "@/lib/features";
 import { PricingSection } from "./PricingSection";
 import type { ReactNode } from "react";
 
 export default async function Home() {
   const user = await currentUser();
+  if (!landingEnabled()) redirect(user ? "/dashboard" : "/connexion");
   const connectionHref = user ? "/dashboard" : "/connexion";
 
   return (

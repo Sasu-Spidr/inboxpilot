@@ -124,11 +124,12 @@ def test_replace_label_creates_missing_managed_category():
     assert calls == [
         ("GET", "/me/outlook/masterCategories", {}),
         ("POST", "/me/outlook/masterCategories", {"json": {"displayName": "Notification", "color": "preset12"}}),
-        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Notification"]}}),
+        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client", "Notification"]}}),
     ]
 
 
-def test_replace_label_does_not_create_custom_outlook_category():
+def test_replace_label_creates_configured_custom_outlook_category():
     calls = []
 
     class CaptureHotmailConnector(HotmailConnector):
@@ -141,6 +142,8 @@ def test_replace_label_does_not_create_custom_outlook_category():
                 return {"categories": ["Client"]}
             if method == "GET" and path == "/me/outlook/masterCategories":
                 return {"value": []}
+            if method == "POST":
+                return {"id": "custom-id"}
             return {}
 
     connector = CaptureHotmailConnector(
@@ -151,4 +154,39 @@ def test_replace_label_does_not_create_custom_outlook_category():
     )
     connector.replace_label("message-id", "Custom", ["Custom"])
 
-    assert calls == [("GET", "/me/outlook/masterCategories", {})]
+    assert calls == [
+        ("GET", "/me/outlook/masterCategories", {}),
+        ("POST", "/me/outlook/masterCategories", {"json": {"displayName": "Custom", "color": "preset12"}}),
+        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client", "Custom"]}}),
+    ]
+
+
+def test_replace_label_removes_existing_managed_and_legacy_categories():
+    calls = []
+
+    class CaptureHotmailConnector(HotmailConnector):
+        def authenticate(self):
+            return None
+
+        def _request(self, method, path, **kwargs):
+            calls.append((method, path, kwargs))
+            if method == "GET" and path == "/me/outlook/masterCategories":
+                return {"value": [{"id": "cat-id", "displayName": "Commercial"}]}
+            if method == "GET" and path == "/me/messages/message-id":
+                return {"categories": ["À lire", "FYI", "Client perso"]}
+            return {}
+
+    connector = CaptureHotmailConnector(
+        "client-id",
+        "consumers",
+        "unused",
+        TokenStore(TokenStore.generate_key()),
+    )
+    connector.replace_label("message-id", "Commercial", ["À lire", "Commercial"])
+
+    assert calls == [
+        ("GET", "/me/outlook/masterCategories", {}),
+        ("GET", "/me/messages/message-id", {"params": {"$select": "categories"}}),
+        ("PATCH", "/me/messages/message-id", {"json": {"categories": ["Client perso", "Commercial"]}}),
+    ]

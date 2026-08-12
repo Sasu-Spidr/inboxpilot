@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { clientIdFromEmail, createPasswordHash, setSession } from "@/lib/auth";
 import { ensureClientRegistry } from "@/lib/clientRegistry";
 import { createUser, findUserByEmail } from "@/lib/db";
+import { publicEntryPath } from "@/lib/features";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -12,11 +13,11 @@ export async function POST(request: Request) {
   const clientId = clientIdFromEmail(email);
 
   if (!ownerName || !email || !password || password.length < 8) {
-    return redirectTo(request, "/?error=register");
+    return redirectTo(request, `${publicEntryPath()}?error=register`);
   }
 
   if (await findUserByEmail(email)) {
-    return redirectTo(request, "/?error=exists");
+    return redirectTo(request, `${publicEntryPath()}?error=exists`);
   }
 
   const { hash, salt } = createPasswordHash(password);

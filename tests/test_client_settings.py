@@ -116,3 +116,24 @@ def test_client_settings_can_be_scoped_per_mailbox(tmp_path, monkeypatch):
 
     assert "Courses" not in managed_label_names_for_client("client-a", "gmail", "main")
     assert "Courses" in managed_label_names_for_client("client-a", "gmail", "gmail-2")
+
+
+def test_label_name_uses_mailbox_scoped_custom_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+    settings_dir = tmp_path / "client-settings"
+    scoped_dir = settings_dir / "client-a"
+    settings_dir.mkdir()
+    scoped_dir.mkdir()
+    (scoped_dir / "hotmail--main.json").write_text(
+        json.dumps(
+            {
+                "labels": [
+                    {"key": "Courses", "name": "Courses perso", "description": "Emails liés aux courses et achats du foyer.", "color": "#3b82f6", "prepareDraft": False, "autoReply": False, "autoDelete": False},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert label_name_for_client("client-a", "Courses", "Courses", "hotmail", "main") == "Courses perso"
+    assert label_name_for_client("client-a", "Courses", "Courses", "gmail", "main") == "Courses"

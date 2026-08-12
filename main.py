@@ -315,7 +315,7 @@ class MailWorker:
 
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str, email: dict | None = None) -> None:
         connector_labels = self.labels.get(connector_name, {})
-        label_name = label_name_for_client(client_id, label, connector_labels.get(label, label))
+        label_name = label_name_for_client(client_id, label, connector_labels.get(label, label), connector_name, account)
         managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account)]))
         if hasattr(connector, "replace_label"):
             connector.replace_label(message_id, label_name, managed_labels)

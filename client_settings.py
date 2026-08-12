@@ -143,9 +143,10 @@ def load_client_settings(client_id: str, connector: str | None = None, account: 
         return {"labels": []}
 
 
-def label_name_for_client(client_id: str, label: str, default_name: str) -> str:
-    _ = client_id, label
-    return default_name
+def label_name_for_client(client_id: str, label: str, default_name: str, connector: str | None = None, account: str | None = None) -> str:
+    setting = _label_setting(client_id, label, connector, account)
+    name = str(setting.get("name", "")).strip() if setting else ""
+    return name or default_name
 
 
 def label_color_for_client(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str | None:

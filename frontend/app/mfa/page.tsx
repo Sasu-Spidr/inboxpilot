@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { currentMfaPendingUser } from "@/lib/auth";
+import { mfaFeatureEnabled } from "@/lib/features";
 
 export default async function MfaPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+  if (!mfaFeatureEnabled()) redirect("/connexion");
   const user = await currentMfaPendingUser();
   if (!user || !user.mfaEnabled) redirect("/connexion");
   const error = (await searchParams)?.error;

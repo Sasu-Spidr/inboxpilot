@@ -7,6 +7,7 @@ import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
+import { mfaFeatureEnabled } from "@/lib/features";
 import { tokenFileExists } from "@/lib/paths";
 
 type SettingsSearchParams = {
@@ -79,9 +80,9 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       {saved && <div className="success-banner">Paramètres enregistrés. La boîte sélectionnée est synchronisée.</div>}
 
-      {params?.mfa === "enabled" && <div className="success-banner">Double authentification activ&eacute;e.</div>}
-      {params?.mfa === "disabled" && <div className="success-banner">Double authentification d&eacute;sactiv&eacute;e.</div>}
-      {params?.mfa === "disable-error" && <div className="error-banner">Code MFA invalide. La double authentification reste active.</div>}
+      {mfaFeatureEnabled() && params?.mfa === "enabled" && <div className="success-banner">Double authentification activ&eacute;e.</div>}
+      {mfaFeatureEnabled() && params?.mfa === "disabled" && <div className="success-banner">Double authentification d&eacute;sactiv&eacute;e.</div>}
+      {mfaFeatureEnabled() && params?.mfa === "disable-error" && <div className="error-banner">Code MFA invalide. La double authentification reste active.</div>}
 
       <AgentActivityMonitor
         initialActivity={activity}
@@ -89,7 +90,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
       />
 
-      <MfaSecurityCard enabled={user.mfaEnabled} />
+      {mfaFeatureEnabled() && <MfaSecurityCard enabled={user.mfaEnabled} />}
 
       <section className="mailbox-settings-card">
         <div className="mailbox-settings-heading">

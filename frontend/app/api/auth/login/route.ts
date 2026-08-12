@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { setMfaPending, setSession, toUser, verifyPassword } from "@/lib/auth";
 import { findUserByEmail } from "@/lib/db";
+import { mfaFeatureEnabled, publicEntryPath } from "@/lib/features";
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -11,10 +12,10 @@ export async function POST(request: Request) {
   const user = row ? toUser(row) : null;
 
   if (!user || !verifyPassword(password, user)) {
-    return redirectTo(request, "/?error=login");
+    return redirectTo(request, `${publicEntryPath()}?error=login`);
   }
 
-  if (user.mfaEnabled) {
+  if (mfaFeatureEnabled() && user.mfaEnabled) {
     await setMfaPending(user.clientId);
     return redirectTo(request, "/mfa");
   }

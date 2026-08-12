@@ -2,10 +2,12 @@ import QRCode from "qrcode";
 import { redirect } from "next/navigation";
 
 import { currentUser, generateMfaSecret, mfaOtpAuthUrl } from "@/lib/auth";
+import { mfaFeatureEnabled } from "@/lib/features";
 
 export default async function MfaSetupPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
   const user = await currentUser();
   if (!user) redirect("/connexion");
+  if (!mfaFeatureEnabled()) redirect("/dashboard");
 
   const secret = generateMfaSecret();
   const otpAuthUrl = mfaOtpAuthUrl(user, secret);
