@@ -12,6 +12,7 @@ import yaml
 
 from activity_store import record_email_activity
 from agent_flow_store import record_agent_flow
+from calendar_sync import CalendarAvailabilitySync
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, is_legacy_label_name, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
@@ -58,6 +59,7 @@ class MailWorker:
         self.drafts = drafts or DraftGenerator(settings["groq_api_key"], settings.get("groq_model", "qwen/qwen3-32b"))
         self.connectors = connectors if connectors is not None else self._build_connectors()
         self.state = state or ProcessedState(settings.get("state_file", "./data/state/processed_messages.enc"), TokenStore(settings["token_encryption_key"]))
+        self.calendar_sync = CalendarAvailabilitySync(settings)
 
     def _build_connectors(self) -> dict[str, dict[str, dict[str, Any]]]:
         store = TokenStore(self.settings["token_encryption_key"])
@@ -118,6 +120,7 @@ class MailWorker:
     def run_cycle(self) -> None:
         self.reload_dynamic_clients()
         self.rules.reload()
+        self.calendar_sync.run_if_due(self.connectors)
         for client_id, entries in self.connectors.items():
             for entry in entries.values():
                 self._poll_account(client_id, entry["name"], entry["account"], entry["connector"])
@@ -318,7 +321,10 @@ class MailWorker:
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label), connector_name, account)
         managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account)]))
         if hasattr(connector, "replace_label"):
-            connector.replace_label(message_id, label_name, managed_labels)
+            if connector_name == "gmail":
+                connector.replace_label(message_id, label_name, managed_labels, allow_custom=True)
+            else:
+                connector.replace_label(message_id, label_name, managed_labels)
         else:
             connector.apply_label(message_id, label_name)
         if connector_name in {"gmail", "hotmail"} and hasattr(connector, "sync_label_color"):
@@ -475,11 +481,15 @@ def main() -> None:
     parser.add_argument("--client", help="Only process/authenticate one configured client id")
     parser.add_argument("--connector", choices=["gmail", "hotmail"], help="Only process/authenticate one connector")
     parser.add_argument("--account", help="Only process/authenticate one account name")
+    parser.add_argument("--sync-calendars-once", action="store_true", help="Run daily calendar availability harmonisation once and exit")
     args = parser.parse_args()
     settings = filter_settings(load_settings(args.config), args.client, args.connector, args.account)
     configure_logging(settings.get("log_level", "INFO"), settings.get("json_logs", True))
     worker = MailWorker(settings)
-    if args.authenticate:
+    if args.sync_calendars_once:
+        worker.calendar_sync.run_once(worker.connectors)
+        log_event("calendar_sync_completed", status="ok")
+    elif args.authenticate:
         worker.authenticate()
         log_event("authentication_completed", status="ok")
     elif args.once:

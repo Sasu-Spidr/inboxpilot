@@ -13,7 +13,12 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from token_store import TokenStore
 
 LOG = logging.getLogger(__name__)
-SCOPES = ["https://www.googleapis.com/auth/gmail.modify", "https://www.googleapis.com/auth/gmail.compose"]
+SCOPES = [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.compose",
+    "https://www.googleapis.com/auth/calendar.events",
+]
+INBOXPILOT_CALENDAR_MARKER = "INBOXPILOT_AVAILABILITY_BLOCK"
 
 ALLOWED_USER_LABELS = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
 LEGACY_USER_LABELS = {
@@ -38,6 +43,8 @@ REMOVABLE_SYSTEM_LABEL_IDS = {
 class GmailConnector:
     def __init__(self, credentials_file: str, token_file: str, token_store: TokenStore, service=None):
         self.credentials_file, self.token_file, self.store, self.service = credentials_file, token_file, token_store, service
+        self.calendar_service = None
+        self.creds = None
 
     def authenticate(self) -> None:
         if self.service:
@@ -53,7 +60,14 @@ class GmailConnector:
             flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
             self.store.save(self.token_file, json_credentials(creds))
+        self.creds = creds
         self.service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+
+    def _calendar_service(self):
+        self.authenticate()
+        if not self.calendar_service:
+            self.calendar_service = build("calendar", "v3", credentials=self.creds, cache_discovery=False)
+        return self.calendar_service
 
     def unread_emails(self, limit: int) -> list[dict]:
         self.authenticate()
@@ -84,14 +98,20 @@ class GmailConnector:
             return
         self._execute(self.service.users().messages().modify(userId="me", id=message_id, body={"addLabelIds": [label_id]}))
 
-    def replace_label(self, message_id: str, label_name: str, managed_labels: list[str]) -> None:
+    def replace_label(self, message_id: str, label_name: str, managed_labels: list[str], allow_custom: bool = False) -> None:
         self.authenticate()
+        managed = {normalize_label_name(label) for label in managed_labels if str(label or "").strip()}
+        target_name = normalize_label_name(label_name)
+        allowed_defaults = {normalize_label_name(label) for label in ALLOWED_USER_LABELS}
+        if target_name not in managed or (not allow_custom and target_name not in allowed_defaults):
+            LOG.warning("Gmail label skipped because it is not managed: %s", label_name)
+            return
         target_id = self._label_id(label_name, create=True)
         if not target_id:
             LOG.warning("Gmail label skipped because it is not managed: %s", label_name)
             return
         labels = self._execute(self.service.users().labels().list(userId="me")).get("labels", [])
-        target_name = normalize_label_name(label_name)
+        legacy = {normalize_label_name(label) for label in LEGACY_USER_LABELS}
         remove_ids = [
             str(label.get("id", ""))
             for label in labels
@@ -100,6 +120,7 @@ class GmailConnector:
                 (
                     str(label.get("type", "user")) != "system"
                     and normalize_label_name(label.get("name", "")) != target_name
+                    and (normalize_label_name(label.get("name", "")) in managed or normalize_label_name(label.get("name", "")) in legacy)
                 )
                 or (
                     str(label.get("type", "user")) == "system"
@@ -193,6 +214,73 @@ class GmailConnector:
         raw = base64.urlsafe_b64encode(mime.as_bytes()).decode()
         self._execute(self.service.users().drafts().create(userId="me", body={"message": {"raw": raw, "threadId": email.get("thread_id")}}))
 
+    def list_calendar_events(self, start_iso: str, end_iso: str) -> list[dict]:
+        service = self._calendar_service()
+        rows = self._execute(
+            service.events().list(
+                calendarId="primary",
+                timeMin=start_iso,
+                timeMax=end_iso,
+                singleEvents=True,
+                orderBy="startTime",
+                showDeleted=False,
+            )
+        ).get("items", [])
+        events = []
+        for row in rows:
+            private_props = row.get("extendedProperties", {}).get("private", {}) or {}
+            if private_props.get("inboxpilot_block_uid") or INBOXPILOT_CALENDAR_MARKER in str(row.get("description", "")):
+                continue
+            if row.get("transparency") == "transparent":
+                continue
+            start = row.get("start", {}).get("dateTime")
+            end = row.get("end", {}).get("dateTime")
+            if not start or not end:
+                continue
+            events.append({"id": row["id"], "start": start, "end": end})
+        return events
+
+    def list_inboxpilot_calendar_blocks(self, start_iso: str, end_iso: str) -> list[dict]:
+        service = self._calendar_service()
+        rows = self._execute(
+            service.events().list(
+                calendarId="primary",
+                timeMin=start_iso,
+                timeMax=end_iso,
+                singleEvents=True,
+                showDeleted=False,
+            )
+        ).get("items", [])
+        blocks = []
+        for row in rows:
+            private_props = row.get("extendedProperties", {}).get("private", {}) or {}
+            uid = private_props.get("inboxpilot_block_uid", "")
+            if not uid and INBOXPILOT_CALENDAR_MARKER in str(row.get("description", "")):
+                uid = _calendar_uid_from_description(str(row.get("description", "")))
+            if uid:
+                blocks.append({"id": row["id"], "uid": uid})
+        return blocks
+
+    def upsert_calendar_block(self, uid: str, start_iso: str, end_iso: str, existing_event_id: str | None = None) -> None:
+        service = self._calendar_service()
+        body = {
+            "summary": "Occupé",
+            "description": f"{INBOXPILOT_CALENDAR_MARKER}\nuid={uid}\nBloc privé généré par InboxPilot pour harmoniser vos disponibilités du jour.",
+            "start": {"dateTime": start_iso},
+            "end": {"dateTime": end_iso},
+            "transparency": "opaque",
+            "visibility": "private",
+            "extendedProperties": {"private": {"inboxpilot_block_uid": uid}},
+        }
+        if existing_event_id:
+            self._execute(service.events().patch(calendarId="primary", eventId=existing_event_id, body=body))
+        else:
+            self._execute(service.events().insert(calendarId="primary", body=body))
+
+    def delete_calendar_event(self, event_id: str) -> None:
+        service = self._calendar_service()
+        self._execute(service.events().delete(calendarId="primary", eventId=event_id))
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True,
            retry=retry_if_exception_type(Exception))
     def _execute(self, request):
@@ -216,6 +304,11 @@ GMAIL_BACKGROUND_COLORS = [
 def gmail_label_color(preferred_color: str) -> dict[str, str]:
     background = nearest_gmail_background(preferred_color)
     return {"backgroundColor": background, "textColor": readable_text_color(background)}
+
+
+def _calendar_uid_from_description(description: str) -> str:
+    match = re.search(r"^uid=([a-f0-9]{16,64})$", description, flags=re.MULTILINE)
+    return match.group(1) if match else ""
 
 
 def nearest_gmail_background(preferred_color: str) -> str:

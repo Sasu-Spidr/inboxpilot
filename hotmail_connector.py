@@ -8,8 +8,11 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from token_store import TokenStore
 
 LOG = logging.getLogger(__name__)
-SCOPES = ["Mail.ReadWrite", "Mail.Read", "User.Read", "MailboxSettings.ReadWrite"]
+MAIL_SCOPES = ["Mail.ReadWrite", "Mail.Read", "User.Read", "MailboxSettings.ReadWrite"]
+CALENDAR_SCOPES = [*MAIL_SCOPES, "Calendars.ReadWrite"]
+SCOPES = CALENDAR_SCOPES
 GRAPH = "https://graph.microsoft.com/v1.0"
+INBOXPILOT_CALENDAR_MARKER = "INBOXPILOT_AVAILABILITY_BLOCK"
 
 
 OUTLOOK_CATEGORY_COLORS = {
@@ -51,31 +54,45 @@ class HotmailConnector:
         if not client_id: raise ValueError("MICROSOFT_CLIENT_ID is required when Hotmail is enabled")
         self.client_id, self.authority, self.token_file, self.store = client_id, f"https://login.microsoftonline.com/{tenant_id}", token_file, token_store
         self.client_secret = client_secret
-        self.session = session or requests.Session(); self.access_token = None
+        self.session = session or requests.Session(); self.access_token = None; self.access_tokens = {}
 
-    def authenticate(self) -> None:
-        if self.access_token: return
+    def authenticate(self, scopes: list[str] | None = None) -> str:
+        scopes = scopes or MAIL_SCOPES
+        scope_key = tuple(sorted(scopes))
+        if scope_key in self.access_tokens:
+            return self.access_tokens[scope_key]
+        if self.access_token and scope_key == tuple(sorted(MAIL_SCOPES)):
+            return self.access_token
         cache = msal.SerializableTokenCache(); saved = self.store.load(self.token_file)
         if saved: cache.deserialize(saved["cache"])
         if self.client_secret:
             app = msal.ConfidentialClientApplication(self.client_id, client_credential=self.client_secret, authority=self.authority, token_cache=cache)
         else:
             app = msal.PublicClientApplication(self.client_id, authority=self.authority, token_cache=cache)
-        accounts = app.get_accounts(); result = app.acquire_token_silent(SCOPES, account=accounts[0]) if accounts else None
+        accounts = app.get_accounts(); result = app.acquire_token_silent(scopes, account=accounts[0]) if accounts else None
         if not result:
             if self.client_secret:
                 raise RuntimeError("Microsoft token cache is empty; reconnect Hotmail from the web dashboard")
-            flow = app.initiate_device_flow(scopes=SCOPES)
+            flow = app.initiate_device_flow(scopes=scopes)
             if "message" not in flow: raise RuntimeError(f"Unable to start Microsoft device flow: {flow}")
             print(flow["message"], flush=True)
             result = app.acquire_token_by_device_flow(flow)
         if "access_token" not in result: raise RuntimeError(f"Microsoft authentication failed: {result.get('error_description', result)}")
-        self.access_token = result["access_token"]; self.store.save(self.token_file, {"cache": cache.serialize()})
+        token = result["access_token"]
+        self.access_tokens[scope_key] = token
+        if scope_key == tuple(sorted(MAIL_SCOPES)):
+            self.access_token = token
+        self.store.save(self.token_file, {"cache": cache.serialize()})
+        return token
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=8), reraise=True,
            retry=retry_if_exception_type(requests.RequestException))
     def _request(self, method: str, path: str, **kwargs):
-        self.authenticate(); response = self.session.request(method, GRAPH + path, headers={"Authorization": f"Bearer {self.access_token}"}, timeout=30, **kwargs)
+        scopes = kwargs.pop("scopes", None)
+        extra_headers = kwargs.pop("headers", {}) or {}
+        token = self.authenticate(scopes)
+        headers = {"Authorization": f"Bearer {token}", **extra_headers}
+        response = self.session.request(method, GRAPH + path, headers=headers, timeout=30, **kwargs)
         response.raise_for_status(); return response.json() if response.content else {}
 
     def unread_emails(self, limit: int) -> list[dict]:
@@ -147,6 +164,75 @@ class HotmailConnector:
     def create_draft(self, email: dict, text: str) -> None:
         self._request("POST", f"/me/messages/{email['id']}/createReply", json={"comment": text})
 
+    def list_calendar_events(self, start_iso: str, end_iso: str) -> list[dict]:
+        data = self._request(
+            "GET",
+            "/me/calendarView",
+            scopes=CALENDAR_SCOPES,
+            headers={"Prefer": 'outlook.timezone="UTC"'},
+            params={
+                "startDateTime": start_iso,
+                "endDateTime": end_iso,
+                "$select": "id,subject,start,end,showAs,isAllDay,bodyPreview",
+                "$top": 100,
+            },
+        )
+        events = []
+        for item in data.get("value", []) or []:
+            if item.get("isAllDay") or str(item.get("showAs", "")).lower() == "free":
+                continue
+            if INBOXPILOT_CALENDAR_MARKER in str(item.get("bodyPreview", "")):
+                continue
+            start = item.get("start", {}).get("dateTime")
+            end = item.get("end", {}).get("dateTime")
+            if not start or not end:
+                continue
+            events.append({"id": item["id"], "start": _ensure_utc_iso(start), "end": _ensure_utc_iso(end)})
+        return events
+
+    def list_inboxpilot_calendar_blocks(self, start_iso: str, end_iso: str) -> list[dict]:
+        data = self._request(
+            "GET",
+            "/me/calendarView",
+            scopes=CALENDAR_SCOPES,
+            headers={"Prefer": 'outlook.timezone="UTC"'},
+            params={
+                "startDateTime": start_iso,
+                "endDateTime": end_iso,
+                "$select": "id,subject,start,end,bodyPreview",
+                "$top": 100,
+            },
+        )
+        blocks = []
+        for item in data.get("value", []) or []:
+            body_preview = str(item.get("bodyPreview", ""))
+            if INBOXPILOT_CALENDAR_MARKER not in body_preview:
+                continue
+            uid = _calendar_uid_from_text(body_preview)
+            if uid:
+                blocks.append({"id": item["id"], "uid": uid})
+        return blocks
+
+    def upsert_calendar_block(self, uid: str, start_iso: str, end_iso: str, existing_event_id: str | None = None) -> None:
+        body = {
+            "subject": "Occupé",
+            "body": {
+                "contentType": "Text",
+                "content": f"{INBOXPILOT_CALENDAR_MARKER}\nuid={uid}\nBloc privé généré par InboxPilot pour harmoniser vos disponibilités du jour.",
+            },
+            "start": {"dateTime": _strip_utc_suffix(start_iso), "timeZone": "UTC"},
+            "end": {"dateTime": _strip_utc_suffix(end_iso), "timeZone": "UTC"},
+            "showAs": "busy",
+            "sensitivity": "private",
+        }
+        if existing_event_id:
+            self._request("PATCH", f"/me/events/{existing_event_id}", scopes=CALENDAR_SCOPES, json=body)
+        else:
+            self._request("POST", "/me/events", scopes=CALENDAR_SCOPES, json=body)
+
+    def delete_calendar_event(self, event_id: str) -> None:
+        self._request("DELETE", f"/me/events/{event_id}", scopes=CALENDAR_SCOPES)
+
     def _category_id(self, display_name: str, create_color: str | None = None) -> str:
         data = self._request("GET", "/me/outlook/masterCategories")
         for category in data.get("value", []) or []:
@@ -176,3 +262,23 @@ def hex_to_rgb(color: str) -> tuple[int, int, int]:
 
 def normalize_category_name(value: str) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip()).casefold()
+
+
+def _calendar_uid_from_text(text: str) -> str:
+    match = re.search(r"uid=([a-f0-9]{16,64})", text)
+    return match.group(1) if match else ""
+
+
+def _ensure_utc_iso(value: str) -> str:
+    if value.endswith("Z") or "+" in value[-6:]:
+        return value
+    return f"{value}+00:00"
+
+
+def _strip_utc_suffix(value: str) -> str:
+    text = str(value)
+    if text.endswith("+00:00"):
+        return text[:-6]
+    if text.endswith("Z"):
+        return text[:-1]
+    return text
