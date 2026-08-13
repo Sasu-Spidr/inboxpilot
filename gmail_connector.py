@@ -13,11 +13,15 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from token_store import TokenStore
 
 LOG = logging.getLogger(__name__)
-SCOPES = [
+MAIL_SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.compose",
+]
+CALENDAR_SCOPES = [
+    *MAIL_SCOPES,
     "https://www.googleapis.com/auth/calendar.events",
 ]
+SCOPES = CALENDAR_SCOPES
 INBOXPILOT_CALENDAR_MARKER = "INBOXPILOT_AVAILABILITY_BLOCK"
 
 ALLOWED_USER_LABELS = {"À répondre", "À traiter", "À lire", "Notification", "Commercial"}
@@ -50,14 +54,14 @@ class GmailConnector:
         if self.service:
             return
         data = self.store.load(self.token_file)
-        creds = Credentials.from_authorized_user_info(data, SCOPES) if data else None
+        creds = Credentials.from_authorized_user_info(data, MAIL_SCOPES) if data else None
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
             self.store.save(self.token_file, json_credentials(creds))
         if not creds or not creds.valid:
             if os.getenv("GMAIL_INTERACTIVE_AUTH") != "1":
                 raise RuntimeError("Gmail token cache is empty or invalid; reconnect Gmail from the web dashboard")
-            flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, MAIL_SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
             self.store.save(self.token_file, json_credentials(creds))
         self.creds = creds
@@ -66,7 +70,14 @@ class GmailConnector:
     def _calendar_service(self):
         self.authenticate()
         if not self.calendar_service:
-            self.calendar_service = build("calendar", "v3", credentials=self.creds, cache_discovery=False)
+            data = self.store.load(self.token_file)
+            creds = Credentials.from_authorized_user_info(data, CALENDAR_SCOPES) if data else None
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                self.store.save(self.token_file, json_credentials(creds))
+            if not creds or not creds.valid:
+                raise RuntimeError("Gmail calendar permission missing; reconnect Gmail from the web dashboard")
+            self.calendar_service = build("calendar", "v3", credentials=creds, cache_discovery=False)
         return self.calendar_service
 
     def unread_emails(self, limit: int) -> list[dict]:
