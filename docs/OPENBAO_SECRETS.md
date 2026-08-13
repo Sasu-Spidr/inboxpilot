@@ -8,7 +8,7 @@ Liste des secrets **application uniquement** à stocker dans OpenBao/Vault pour 
 
 ## 1. Chiffrement et sécurité
 
-### `inboxpilot/common`
+### `secret/inboxpilot/common`
 
 ```bash
 # Générer une clé Fernet (44 caractères base64)
@@ -18,7 +18,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 openssl rand -base64 48
 
 # Stocker dans OpenBao
-bao kv put inboxpilot/common \
+bao kv put secret/inboxpilot/common \
   token_encryption_key="<FERNET_KEY_44_CHARS>" \
   auth_secret="<RANDOM_64_CHARS>"
 ```
@@ -31,14 +31,14 @@ bao kv put inboxpilot/common \
 
 ## 2. Base de données
 
-### `inboxpilot/database`
+### `secret/inboxpilot/database`
 
 ```bash
 # Générer un mot de passe fort
 openssl rand -base64 32
 
 # Stocker dans OpenBao
-bao kv put inboxpilot/database \
+bao kv put secret/inboxpilot/database \
   postgres_db="spidr_mail" \
   postgres_user="spidr" \
   postgres_password="<STRONG_PASSWORD>" \
@@ -49,11 +49,11 @@ bao kv put inboxpilot/database \
 
 ## 3. Services tiers
 
-### `inboxpilot/groq`
+### `secret/inboxpilot/groq`
 
 ```bash
 # Obtenir la clé sur https://console.groq.com/keys
-bao kv put inboxpilot/groq \
+bao kv put secret/inboxpilot/groq \
   api_key="gsk_<YOUR_GROQ_API_KEY>"
 ```
 
@@ -66,7 +66,7 @@ bao kv put inboxpilot/groq \
 Credentials de **votre application Azure AD**, pas des utilisateurs finaux.
 
 ```bash
-bao kv put inboxpilot/oauth/microsoft \
+bao kv put secret/inboxpilot/oauth/microsoft \
   client_id="<MICROSOFT_CLIENT_ID>" \
   client_secret="<MICROSOFT_CLIENT_SECRET>"
 ```
@@ -91,7 +91,7 @@ Credentials de **votre application Google Cloud**, pas des utilisateurs finaux.
 
 ```bash
 # Le fichier JSON complet de Google Cloud Console
-bao kv put inboxpilot/oauth/gmail \
+bao kv put secret/inboxpilot/oauth/gmail \
   client_config='{"web":{"client_id":"...","project_id":"...","auth_uri":"...","token_uri":"...","client_secret":"...","redirect_uris":[...]}}'
 ```
 
@@ -108,25 +108,18 @@ bao kv put inboxpilot/oauth/gmail \
 
 ---
 
-## 5. URLs (par environnement)
-
-### 5.1 Development
+## 5. URLs
 
 ```bash
-bao kv put inboxpilot/urls/dev \
-  oauth_base_url="http://localhost:8080" \
-  oauth_public_url="http://localhost:8080" \
-  frontend_base_url="http://localhost:3000"
+bao kv put secret/inboxpilot/urls \
+  oauth_base_url="<BASE_URL>" \
+  oauth_public_url="<PUBLIC_URL>" \
+  frontend_base_url="<FRONTEND_URL>"
 ```
 
-### 5.2 Production
-
-```bash
-bao kv put inboxpilot/urls/prod \
-  oauth_base_url="https://oauth.spidr.fr" \
-  oauth_public_url="https://oauth.spidr.fr" \
-  frontend_base_url="https://app.spidr.fr"
-```
+**Exemples** :
+- Dev local : `http://localhost:8080`, `http://localhost:3000`
+- Prod : `https://oauth.spidr.fr`, `https://app.spidr.fr`
 
 ---
 
@@ -135,20 +128,20 @@ bao kv put inboxpilot/urls/prod \
 ### Lire tous les secrets d'un path
 
 ```bash
-bao kv get inboxpilot/common
-bao kv get -field=token_encryption_key inboxpilot/common
+bao kv get secret/inboxpilot/common
+bao kv get -field=token_encryption_key secret/inboxpilot/common
 ```
 
 ### Lister les secrets
 
 ```bash
-bao kv list inboxpilot/
+bao kv list secret/inboxpilot/
 ```
 
 ### Mettre à jour un champ sans écraser les autres
 
 ```bash
-bao kv patch inboxpilot/common \
+bao kv patch secret/inboxpilot/common \
   auth_secret="<NEW_VALUE>"
 ```
 
