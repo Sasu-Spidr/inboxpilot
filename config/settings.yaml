@@ -1,5 +1,5 @@
 groq_api_key: ${GROQ_API_KEY}
-groq_model: qwen/qwen3-32b
+groq_model: openai/gpt-oss-120b
 polling_interval_seconds: 60
 max_emails_per_cycle: 20
 token_encryption_key: ${TOKEN_ENCRYPTION_KEY}

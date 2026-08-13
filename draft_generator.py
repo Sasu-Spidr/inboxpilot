@@ -10,7 +10,7 @@ LOG = logging.getLogger(__name__)
 
 
 class DraftGenerator:
-    def __init__(self, api_key: str, model: str = "qwen/qwen3-32b", client=None):
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-120b", client=None):
         if not api_key and client is None:
             raise ValueError("GROQ_API_KEY is required")
         self.client = client or Groq(api_key=api_key)

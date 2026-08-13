@@ -55,8 +55,8 @@ class MailWorker:
         self._connectors_injected = connectors is not None
         self.labels = yaml.safe_load(Path("config/labels.yaml").read_text(encoding="utf-8"))
         self.rules = rules or RulesEngine("config/rules.yaml")
-        self.classifier = classifier or EmailClassifier(settings["groq_api_key"], settings.get("groq_model", "qwen/qwen3-32b"))
-        self.drafts = drafts or DraftGenerator(settings["groq_api_key"], settings.get("groq_model", "qwen/qwen3-32b"))
+        self.classifier = classifier or EmailClassifier(settings["groq_api_key"], settings.get("groq_model", "openai/gpt-oss-120b"))
+        self.drafts = drafts or DraftGenerator(settings["groq_api_key"], settings.get("groq_model", "openai/gpt-oss-120b"))
         self.connectors = connectors if connectors is not None else self._build_connectors()
         self.state = state or ProcessedState(settings.get("state_file", "./data/state/processed_messages.enc"), TokenStore(settings["token_encryption_key"]))
         self.calendar_sync = CalendarAvailabilitySync(settings)

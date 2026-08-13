@@ -23,7 +23,7 @@ DEFAULT_LABEL = LABEL_READ
 
 
 class EmailClassifier:
-    def __init__(self, api_key: str, model: str = "qwen/qwen3-32b", client=None, label_definitions_file: str = "config/label_definitions.yaml"):
+    def __init__(self, api_key: str, model: str = "openai/gpt-oss-120b", client=None, label_definitions_file: str = "config/label_definitions.yaml"):
         if not api_key and client is None:
             raise ValueError("GROQ_API_KEY is required")
         self.client = client or Groq(api_key=api_key)
