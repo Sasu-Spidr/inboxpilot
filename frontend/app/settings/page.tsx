@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import AgentActivityMonitor from "./AgentActivityMonitor";
 import LabelSettingsForm from "./LabelSettingsForm";
-import { canAccessAdmin, currentUser } from "@/lib/auth";
+import { canAccessAdmin, currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
@@ -47,9 +47,9 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
             Configuration IA
           </Link>
         </div>
-        {canAccessAdmin(user) && (
+        {isAdmin(user) && (
           <div className="topbar-actions">
-            <Link className="ghost-button" href="/73948261502839476150">
+            <Link className="ghost-button" href={canAccessAdmin(user) ? "/73948261502839476150" : "/mfa/setup"}>
               Admin
             </Link>
           </div>
