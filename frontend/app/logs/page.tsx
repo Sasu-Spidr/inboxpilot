@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { currentUser, isAdmin } from "@/lib/auth";
+import { canAccessAdmin, currentUser } from "@/lib/auth";
 import { getAgentFlowGroups, type AgentFlowGroup, type AgentFlowLog } from "@/lib/agentFlowLogs";
 
 const EVENT_LABELS: Record<string, string> = {
@@ -24,7 +24,7 @@ const EVENT_LABELS: Record<string, string> = {
 export default async function LogsPage() {
   const user = await currentUser();
   if (!user) redirect("/");
-  if (!isAdmin(user)) notFound();
+  if (!canAccessAdmin(user)) notFound();
 
   const groups = getAgentFlowGroups(80);
   const running = groups.filter((group) => group.status === "started").length;

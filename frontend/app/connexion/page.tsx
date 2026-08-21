@@ -1,11 +1,19 @@
 import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/auth";
+import { publicSignupEnabled } from "@/lib/features";
 
-export default async function ConnexionPage({ searchParams }: { searchParams?: Promise<{ error?: string }> }) {
+export default async function ConnexionPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string; registered?: string }>;
+}) {
   if (await currentUser()) redirect("/dashboard");
 
-  const error = (await searchParams)?.error;
+  const params = await searchParams;
+  const error = params?.error;
+  const registered = params?.registered;
+  const signupEnabled = publicSignupEnabled();
 
   return (
     <main className="auth-shell">
@@ -37,21 +45,36 @@ export default async function ConnexionPage({ searchParams }: { searchParams?: P
       </section>
 
       <section className="auth-panel">
-        {error && <div className="error">Vérifie les informations saisies puis réessaie.</div>}
+        {error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
+        {registered === "verify-email" && (
+          <div className="success-banner">
+            Votre demande de création de compte est prise en compte. Vérifiez votre email pour finaliser l’accès.
+          </div>
+        )}
         <div className="forms">
-          <form action="/api/auth/register" method="post" className="form-card">
-            <h2>Créer mon espace</h2>
-            <label>Prénom et nom</label>
-            <input name="ownerName" placeholder="Jean Martin" required />
-            <label>Email professionnel</label>
-            <input name="email" type="email" placeholder="jean@entreprise.fr" required />
-            <label>Mot de passe</label>
-            <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
-            <button type="submit">Créer et continuer →</button>
-            <p className="form-switch">
-              Déjà inscrit ? <a href="#connexion">Se connecter</a>
-            </p>
-          </form>
+          {signupEnabled ? (
+            <form action="/api/auth/register" method="post" className="form-card">
+              <h2>Créer mon espace</h2>
+              <label>Prénom et nom</label>
+              <input name="ownerName" placeholder="Jean Martin" required />
+              <label>Email professionnel</label>
+              <input name="email" type="email" placeholder="jean@entreprise.fr" required />
+              <label>Mot de passe</label>
+              <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
+              <button type="submit">Créer et continuer →</button>
+              <p className="form-switch">
+                Déjà inscrit ? <a href="#connexion">Se connecter</a>
+              </p>
+            </form>
+          ) : (
+            <article className="form-card">
+              <h2>Accès sur invitation</h2>
+              <p>
+                Les nouvelles inscriptions sont momentanément validées manuellement afin de protéger la plateforme.
+                Si vous avez déjà un compte, connectez-vous avec vos identifiants.
+              </p>
+            </article>
+          )}
 
           <form id="connexion" action="/api/auth/login" method="post" className="form-card secondary">
             <h2>Se connecter</h2>

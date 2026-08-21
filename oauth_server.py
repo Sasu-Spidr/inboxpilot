@@ -294,10 +294,17 @@ class OAuthOnboardingServer:
         clients = self.settings.get("clients", {})
         if client_id not in clients:
             raise ValueError(f"Client inconnu : {client_id}")
-        connector_cfg = clients[client_id].get("connectors", {}).get(connector, {})
+        client_cfg = clients[client_id]
+        if not client_cfg.get("enabled", True):
+            raise ValueError("Client désactivé")
+        connector_cfg = client_cfg.get("connectors", {}).get(connector, {})
+        if not connector_cfg.get("enabled", True):
+            raise ValueError(f"Connecteur {connector} désactivé")
         for account_cfg in connector_cfg.get("accounts", []):
             account_name = account_cfg.get("account") or account_cfg.get("id") or connector
             if account_name == account:
+                if not account_cfg.get("enabled", True):
+                    raise ValueError(f"Compte {connector}/{account} désactivé")
                 return client_id, account, account_cfg
         raise ValueError(f"Compte {connector}/{account} introuvable pour le client {client_id}")
 
@@ -329,7 +336,7 @@ def microsoft_app(account_cfg: dict, cache=None):
     authority = f"https://login.microsoftonline.com/{account_cfg.get('tenant_id', 'consumers')}"
     if client_secret:
         return msal.ConfidentialClientApplication(client_id, client_credential=client_secret, authority=authority, token_cache=cache)
-        return msal.PublicClientApplication(client_id, authority=authority, token_cache=cache)
+    return msal.PublicClientApplication(client_id, authority=authority, token_cache=cache)
 
 
 def gmail_profile_email(credentials) -> str:

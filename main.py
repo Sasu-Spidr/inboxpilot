@@ -322,7 +322,10 @@ class MailWorker:
         managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account)]))
         if hasattr(connector, "replace_label"):
             if connector_name == "gmail":
-                connector.replace_label(message_id, label_name, managed_labels, allow_custom=True)
+                try:
+                    connector.replace_label(message_id, label_name, managed_labels, allow_custom=True)
+                except TypeError:
+                    connector.replace_label(message_id, label_name, managed_labels)
             else:
                 connector.replace_label(message_id, label_name, managed_labels)
         else:
