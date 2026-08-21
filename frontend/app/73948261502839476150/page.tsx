@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
-import { canAccessAdmin, currentUser, isAdmin } from "@/lib/auth";
+import { canAccessAdmin, currentUser } from "@/lib/auth";
 import { deleteClientMailRegistry, getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { deleteClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
@@ -30,7 +30,6 @@ type AccountSummary = {
 export default async function AdminPage() {
   const user = await currentUser();
   if (!user) redirect("/");
-  if (isAdmin(user) && !canAccessAdmin(user)) redirect("/mfa/setup");
   if (!canAccessAdmin(user)) notFound();
 
   const users = await listUsers();
@@ -126,7 +125,6 @@ async function deleteUserAction(formData: FormData) {
 
   const admin = await currentUser();
   if (!admin) redirect("/");
-  if (isAdmin(admin) && !canAccessAdmin(admin)) redirect("/mfa/setup");
   if (!canAccessAdmin(admin)) notFound();
 
   const clientId = String(formData.get("clientId") || "").trim();

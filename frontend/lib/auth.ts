@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 
 import { findUserByClientId, type DbUser } from "./db";
-import { adminMfaRequired } from "./features";
 
 const SESSION_COOKIE = "spidr_session";
 const MFA_PENDING_COOKIE = "spidr_mfa_pending";
@@ -49,7 +48,7 @@ export function isAccountUsable(user: User | null): boolean {
 
 export function canAccessAdmin(user: User | null): boolean {
   if (!user || !isAccountUsable(user) || !isAdmin(user)) return false;
-  return !adminMfaRequired() || user.mfaEnabled;
+  return true;
 }
 
 export function slugify(value: string): string {

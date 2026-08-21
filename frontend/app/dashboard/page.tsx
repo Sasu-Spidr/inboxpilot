@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { canAccessAdmin, currentUser, isAdmin } from "@/lib/auth";
+import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
 
@@ -20,7 +20,7 @@ export default async function Dashboard() {
         </div>
         <div className="topbar-actions">
           {isAdmin(user) && (
-            <a className="ghost-button" href={canAccessAdmin(user) ? "/73948261502839476150" : "/mfa/setup"}>
+            <a className="ghost-button" href="/73948261502839476150">
               Admin
             </a>
           )}
