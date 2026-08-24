@@ -13,6 +13,7 @@ export default async function ConnexionPage({
 
   const params = await searchParams;
   const error = params?.error;
+  const errorMessage = authErrorMessage(error);
   const signupEnabled = publicSignupEnabled();
   const accessCodeRequired = signupAccessCodeRequired();
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || "";
@@ -47,7 +48,7 @@ export default async function ConnexionPage({
       </section>
 
       <section className="auth-panel">
-        {error && <div className="error">V&eacute;rifiez les informations saisies puis r&eacute;essayez.</div>}
+        {errorMessage && <div className="error">{errorMessage}</div>}
         <div className="forms">
           {signupEnabled ? (
             <form action="/api/auth/register" method="post" className="form-card">
@@ -97,6 +98,15 @@ export default async function ConnexionPage({
       </section>
     </main>
   );
+}
+
+function authErrorMessage(error?: string): string {
+  if (error === "exists") return "Ce compte existe deja. Connectez-vous avec cet email.";
+  if (error === "login") return "Email ou mot de passe incorrect.";
+  if (error === "account") return "Ce compte n'est pas encore accessible.";
+  if (error === "signup-disabled") return "La creation de compte est temporairement indisponible.";
+  if (error === "register") return "Verifiez les informations saisies puis reessayez.";
+  return "";
 }
 
 function InboxPilotLogo() {
