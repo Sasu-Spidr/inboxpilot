@@ -7,13 +7,12 @@ import { publicSignupEnabled } from "@/lib/features";
 export default async function ConnexionPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; registered?: string }>;
+  searchParams?: Promise<{ error?: string }>;
 }) {
   if (await currentUser()) redirect("/dashboard");
 
   const params = await searchParams;
   const error = params?.error;
-  const registered = params?.registered;
   const signupEnabled = publicSignupEnabled();
   const accessCodeRequired = signupAccessCodeRequired();
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || "";
@@ -49,11 +48,6 @@ export default async function ConnexionPage({
 
       <section className="auth-panel">
         {error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
-        {registered === "verify-email" && (
-          <div className="success-banner">
-            Votre demande de création de compte est prise en compte. Vérifiez votre email pour finaliser l&apos;accès.
-          </div>
-        )}
         <div className="forms">
           {signupEnabled ? (
             <form action="/api/auth/register" method="post" className="form-card">
