@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { clientIp, sleep } from "@/lib/antiAbuse";
-import { isAccountUsable, setMfaPending, setSession, toUser, verifyPassword } from "@/lib/auth";
+import { isAccountUsable, setSession, toUser, verifyPassword } from "@/lib/auth";
 import { findUserByEmail, logSecurityEvent, touchLastLogin } from "@/lib/db";
-import { mfaFeatureEnabled, publicEntryPath } from "@/lib/features";
+import { publicEntryPath } from "@/lib/features";
 import { checkRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
@@ -54,18 +54,6 @@ export async function POST(request: Request) {
       metadata: { status: user.status, emailVerified: user.emailVerified },
     });
     return redirectTo(request, `${publicEntryPath()}?error=account`);
-  }
-
-  if (mfaFeatureEnabled() && user.mfaEnabled) {
-    await setMfaPending(user.clientId);
-    await logSecurityEvent({
-      eventType: "login_mfa_required",
-      clientId: user.clientId,
-      email: user.email,
-      ip: clientIp(request),
-      userAgent: request.headers.get("user-agent"),
-    });
-    return redirectTo(request, "/mfa");
   }
 
   await setSession(user.clientId);

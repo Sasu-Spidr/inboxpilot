@@ -16,37 +16,20 @@ onboarding:
 clients:
   exuvie:
     enabled: true
-    owner_name: ""
+    owner_name: Exuvie
     connectors:
       gmail:
         enabled: true
         accounts:
           - account: main
-            sender_name: ""
-            credentials_file: ./secrets/exuvie/gmail-client-secret.json
+            sender_name: Exuvie
+            credentials_file: ./secrets/google-oauth-client.json
             token_file: ./data/tokens/exuvie-gmail-main.token.enc
       hotmail:
-        enabled: false
-        accounts:
-          - account: main
-            client_id_env: EXUVIE_MICROSOFT_CLIENT_ID
-            tenant_id: consumers
-            token_file: ./data/tokens/exuvie-hotmail-main.token.enc
-  collegue:
-    enabled: true
-    owner_name: Collegue
-    connectors:
-      gmail:
         enabled: true
         accounts:
           - account: main
-            sender_name: Collegue
-            credentials_file: ./secrets/collegue/gmail-client-secret.json
-            token_file: ./data/tokens/collegue-gmail-main.token.enc
-      hotmail:
-        enabled: false
-        accounts:
-          - account: main
-            client_id_env: COLLEGUE_MICROSOFT_CLIENT_ID
+            client_id_env: MICROSOFT_CLIENT_ID
+            client_secret_env: MICROSOFT_CLIENT_SECRET
             tenant_id: consumers
-            token_file: ./data/tokens/collegue-hotmail-main.token.enc
+            token_file: ./data/tokens/exuvie-hotmail-main.token.enc

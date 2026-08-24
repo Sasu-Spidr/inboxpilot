@@ -3,16 +3,14 @@ import { redirect } from "next/navigation";
 
 import AgentActivityMonitor from "./AgentActivityMonitor";
 import LabelSettingsForm from "./LabelSettingsForm";
-import { currentUser, isAdmin } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
-import { mfaFeatureEnabled } from "@/lib/features";
 import { tokenFileExists } from "@/lib/paths";
 
 type SettingsSearchParams = {
   saved?: string;
-  mfa?: string;
   provider?: string;
   account?: string;
 };
@@ -42,18 +40,11 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
     <main className="dashboard-shell settings-shell">
       <nav className="topbar">
         <div className="view-switcher" aria-label="Navigation principale">
-          <Link href="/dashboard">Vue d'ensemble</Link>
+          <Link href="/dashboard">Vue d&apos;ensemble</Link>
           <Link className="active" href="/settings" aria-current="page">
             Configuration IA
           </Link>
         </div>
-        {isAdmin(user) && (
-          <div className="topbar-actions">
-            <Link className="ghost-button" href="/73948261502839476150">
-              Admin
-            </Link>
-          </div>
-        )}
       </nav>
 
       <section className="dashboard-hero settings-hero">
@@ -61,7 +52,7 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
           <p className="eyebrow">Module de paramètres</p>
           <h1>Libellés et automatisations</h1>
           <p>
-            Configurez les libellés visibles par l'agent, leur couleur et les actions à effectuer automatiquement
+            Configurez les libellés visibles par l&apos;agent, leur couleur et les actions à effectuer automatiquement
             pour votre espace client.
           </p>
         </div>
@@ -80,22 +71,16 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       {saved && <div className="success-banner">Paramètres enregistrés. La boîte sélectionnée est synchronisée.</div>}
 
-      {mfaFeatureEnabled() && params?.mfa === "enabled" && <div className="success-banner">Double authentification activ&eacute;e.</div>}
-      {mfaFeatureEnabled() && params?.mfa === "disabled" && <div className="success-banner">Double authentification d&eacute;sactiv&eacute;e.</div>}
-      {mfaFeatureEnabled() && params?.mfa === "disable-error" && <div className="error-banner">Code MFA invalide. La double authentification reste active.</div>}
-
       <AgentActivityMonitor
         initialActivity={activity}
         initialConnectedMailboxes={connectedMailboxes}
         labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
       />
 
-      {mfaFeatureEnabled() && <MfaSecurityCard enabled={user.mfaEnabled} />}
-
       <section className="mailbox-settings-card">
         <div className="mailbox-settings-heading">
           <p className="eyebrow">Boîte à configurer</p>
-          <h2>Choisissez l'adresse concernée</h2>
+          <h2>Choisissez l&apos;adresse concernée</h2>
           <p>Chaque boîte Gmail ou Outlook peut avoir ses propres libellés, couleurs et actions.</p>
         </div>
         <div className="mailbox-settings-list">
@@ -128,29 +113,6 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
         selectedMailboxLabel={selectedMailbox ? selectedMailbox.email_address || mailboxLabel(selectedMailbox.provider, selectedMailbox.account) : "Configuration globale"}
       />
     </main>
-  );
-}
-
-function MfaSecurityCard({ enabled }: { enabled: boolean }) {
-  return (
-    <section className="security-settings-card">
-      <div>
-        <p className="eyebrow">S&eacute;curit&eacute;</p>
-        <h2>Double authentification</h2>
-        <p>Ajoutez un code &agrave; 6 chiffres apr&egrave;s le mot de passe pour prot&eacute;ger l'acc&egrave;s &agrave; votre espace.</p>
-      </div>
-      {enabled ? (
-        <form action="/api/auth/mfa/disable" method="post" className="mfa-disable-form">
-          <span className="status connected">Activ&eacute;e</span>
-          <input name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="Code MFA" required />
-          <button className="ghost-button danger" type="submit">D&eacute;sactiver</button>
-        </form>
-      ) : (
-        <a className="primary-link security-link" href="/mfa/setup">
-          Activer la double authentification
-        </a>
-      )}
-    </section>
   );
 }
 

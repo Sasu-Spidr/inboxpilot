@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-spidr_mail}
       POSTGRES_USER: ${POSTGRES_USER:-spidr}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spidr_dev_password}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace_me}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +21,7 @@ services:
     env_file: .env
     environment:
       AUTH_SECRET: ${AUTH_SECRET:-}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:replace_me@postgres:5432/spidr_mail}
       DATA_DIR: /data
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
@@ -60,8 +60,8 @@ services:
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
-      EXUVIE_MICROSOFT_CLIENT_ID: ${EXUVIE_MICROSOFT_CLIENT_ID:-}
-      COLLEGUE_MICROSOFT_CLIENT_ID: ${COLLEGUE_MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
       OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PORT: 8080

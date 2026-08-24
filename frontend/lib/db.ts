@@ -16,8 +16,6 @@ export type DbUser = {
   last_login_at: Date | null;
   password_hash: string;
   password_salt: string;
-  mfa_enabled: boolean;
-  mfa_secret: string | null;
   created_at: Date;
 };
 
@@ -46,8 +44,6 @@ export async function ensureSchema(): Promise<void> {
     )
   `);
   await getPool().query("alter table users add column if not exists role text not null default 'customer'");
-  await getPool().query("alter table users add column if not exists mfa_enabled boolean not null default false");
-  await getPool().query("alter table users add column if not exists mfa_secret text");
   await getPool().query("alter table users add column if not exists status text not null default 'ACTIVE'");
   await getPool().query("alter table users add column if not exists email_verified boolean not null default true");
   await getPool().query("alter table users add column if not exists session_version integer not null default 0");
@@ -63,18 +59,6 @@ export async function ensureSchema(): Promise<void> {
   `);
   await getPool().query("create index if not exists users_role_idx on users(role)");
   await getPool().query("create index if not exists users_status_idx on users(status)");
-  await getPool().query(`
-    create table if not exists email_verification_tokens (
-      id text primary key,
-      client_id text not null references users(client_id) on delete cascade,
-      token_hash text not null unique,
-      purpose text not null default 'email_verification',
-      expires_at timestamptz not null,
-      used_at timestamptz,
-      created_at timestamptz not null default now()
-    )
-  `);
-  await getPool().query("create index if not exists email_verification_tokens_client_idx on email_verification_tokens(client_id)");
   await getPool().query(`
     create table if not exists security_events (
       id bigserial primary key,
@@ -115,18 +99,6 @@ export async function deleteUserByClientId(clientId: string): Promise<void> {
   await getPool().query("delete from users where client_id = $1", [clientId]);
 }
 
-export async function updateUserMfa(
-  clientId: string,
-  input: { enabled: boolean; secret: string | null },
-): Promise<void> {
-  await ensureSchema();
-  await getPool().query("update users set mfa_enabled = $2, mfa_secret = $3 where client_id = $1", [
-    clientId,
-    input.enabled,
-    input.secret,
-  ]);
-}
-
 export async function touchLastLogin(clientId: string): Promise<void> {
   await ensureSchema();
   await getPool().query("update users set last_login_at = now() where client_id = $1", [clientId]);
@@ -153,60 +125,6 @@ export async function updateUserSecurityStatus(
   `,
     [clientId, input.status, input.reason || null, input.revokeSessions ? 1 : 0],
   );
-}
-
-export async function createEmailVerificationToken(input: {
-  id: string;
-  clientId: string;
-  tokenHash: string;
-  expiresAt: Date;
-}): Promise<void> {
-  await ensureSchema();
-  await getPool().query(
-    `
-    insert into email_verification_tokens (id, client_id, token_hash, expires_at)
-    values ($1, $2, $3, $4)
-  `,
-    [input.id, input.clientId, input.tokenHash, input.expiresAt],
-  );
-}
-
-export async function consumeEmailVerificationToken(tokenHash: string): Promise<DbUser | null> {
-  await ensureSchema();
-  const client = await getPool().connect();
-  try {
-    await client.query("begin");
-    const tokenResult = await client.query<{ client_id: string }>(
-      `
-      update email_verification_tokens
-      set used_at = now()
-      where token_hash = $1 and used_at is null and expires_at > now()
-      returning client_id
-    `,
-      [tokenHash],
-    );
-    const token = tokenResult.rows[0];
-    if (!token) {
-      await client.query("rollback");
-      return null;
-    }
-    const userResult = await client.query<DbUser>(
-      `
-      update users
-      set status = 'ACTIVE', email_verified = true, session_version = session_version + 1
-      where client_id = $1
-      returning *
-    `,
-      [token.client_id],
-    );
-    await client.query("commit");
-    return userResult.rows[0] || null;
-  } catch (error) {
-    await client.query("rollback");
-    throw error;
-  } finally {
-    client.release();
-  }
 }
 
 export async function logSecurityEvent(input: {

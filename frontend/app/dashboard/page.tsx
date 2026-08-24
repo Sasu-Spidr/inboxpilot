@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { currentUser, isAdmin } from "@/lib/auth";
+import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
 
@@ -15,17 +15,14 @@ export default async function Dashboard() {
     <main className="dashboard-shell">
       <nav className="topbar">
         <div className="view-switcher" aria-label="Navigation principale">
-          <a className="active" href="/dashboard" aria-current="page">Vue d'ensemble</a>
+          <a className="active" href="/dashboard" aria-current="page">Vue d&apos;ensemble</a>
           <a href="/settings">Configuration IA</a>
         </div>
         <div className="topbar-actions">
-          {isAdmin(user) && (
-            <a className="ghost-button" href="/73948261502839476150">
-              Admin
-            </a>
-          )}
           <form action="/api/auth/logout" method="post">
-            <button className="ghost-button" type="submit">Déconnexion <span aria-hidden="true">↪</span></button>
+            <button className="ghost-button" type="submit">
+              Déconnexion <span aria-hidden="true">↪</span>
+            </button>
           </form>
         </div>
       </nav>
@@ -35,12 +32,12 @@ export default async function Dashboard() {
           <p className="eyebrow">Espace client</p>
           <h1>Bonjour <span>{user.ownerName}</span></h1>
           <p>
-            Connectez vos boîtes mail. L'agent trie et route les nouveaux emails selon vos paramètres
+            Connectez vos boîtes mail. L&apos;agent trie et route les nouveaux emails selon vos paramètres
             en les classant et en effectuant des actions à votre place.
           </p>
         </div>
         <div className="hero-visual" aria-hidden="true">
-          <div className="hero-orbit"></div>
+          <div className="hero-orbit" />
           <div className="hero-tile hero-tile-mail">
             <ProviderIcon providerKey="gmail" fallback="G" />
           </div>
@@ -67,13 +64,13 @@ export default async function Dashboard() {
       </section>
 
       <section className="info-panel">
-        <h2>Ce que fait l'agent</h2>
+        <h2>Ce que fait l&apos;agent</h2>
         <ul>
           <li>Analyse uniquement les nouveaux emails non lus, sans les marquer comme lus.</li>
-          <li>Classe automatiquement avec l'IA.</li>
+          <li>Classe automatiquement avec l&apos;IA.</li>
           <li>Applique les libellés Gmail ou les catégories Outlook.</li>
           <li>Prépare un brouillon réponse ou suggère les prochains pas.</li>
-          <li>Gagne du temps et reste concentré sur l'essentiel.</li>
+          <li>Gagne du temps et reste concentré sur l&apos;essentiel.</li>
           <li>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</li>
         </ul>
       </section>
