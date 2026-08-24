@@ -54,6 +54,13 @@ export async function ensureSchema(): Promise<void> {
   await getPool().query("alter table users add column if not exists security_suspended_at timestamptz");
   await getPool().query("alter table users add column if not exists security_suspended_reason text");
   await getPool().query("alter table users add column if not exists last_login_at timestamptz");
+  await getPool().query(`
+    update users
+    set status = 'ACTIVE',
+        email_verified = true,
+        session_version = session_version + 1
+    where status = 'PENDING_EMAIL_VERIFICATION'
+  `);
   await getPool().query("create index if not exists users_role_idx on users(role)");
   await getPool().query("create index if not exists users_status_idx on users(status)");
   await getPool().query(`
