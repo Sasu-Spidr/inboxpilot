@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { clientIp, sleep } from "@/lib/antiAbuse";
 import { isAccountUsable, setMfaPending, setSession, toUser, verifyPassword } from "@/lib/auth";
 import { findUserByEmail, logSecurityEvent, touchLastLogin } from "@/lib/db";
 import { mfaFeatureEnabled, publicEntryPath } from "@/lib/features";
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
   });
 
   if (!limit.allowed) {
+    await sleep(1200);
     await logSecurityEvent({
       eventType: "login_rate_limited",
       email,
@@ -31,6 +33,7 @@ export async function POST(request: Request) {
   const user = row ? toUser(row) : null;
 
   if (!user || !verifyPassword(password, user)) {
+    await sleep(900);
     await logSecurityEvent({
       eventType: "login_failed",
       email,
@@ -83,11 +86,7 @@ function redirectTo(request: Request, path: string): NextResponse {
   return NextResponse.redirect(`${proto}://${host}${path}`, 303);
 }
 
-function clientIp(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "";
-}
-
 function loginRateLimit(): number {
-  const value = Number(process.env.LOGIN_RATE_LIMIT_15M || 10);
-  return Number.isFinite(value) && value > 0 ? value : 10;
+  const value = Number(process.env.LOGIN_RATE_LIMIT_15M || 6);
+  return Number.isFinite(value) && value > 0 ? value : 6;
 }
