@@ -19,7 +19,7 @@ export default async function ConnexionPage({
 
   return (
     <main className="auth-shell">
-      <section className="hero-card" aria-label="Présentation InboxPilot">
+      <section className="hero-card" aria-label="Presentation InboxPilot">
         <div className="brand-pill">
           <span className="brand-icon" aria-hidden="true">
             <InboxPilotLogo />
@@ -30,15 +30,15 @@ export default async function ConnexionPage({
         <div className="hero-copy">
           <p className="eyebrow">Agent email autonome</p>
           <h1>
-            Connectez vos boîtes. <span>L&apos;agent trie le reste.</span>
+            Connectez vos bo&icirc;tes. <span>L&apos;agent trie le reste.</span>
           </h1>
           <p>
-            Gmail et Outlook connectés proprement : emails classés, libellés appliqués,
-            brouillons prêts à relire. Les actions suivent vos paramètres.
+            Gmail et Outlook connect&eacute;s proprement : emails class&eacute;s, libell&eacute;s appliqu&eacute;s,
+            brouillons pr&ecirc;ts &agrave; relire. Les actions suivent vos param&egrave;tres.
           </p>
         </div>
 
-        <div className="feature-grid" aria-label="Fonctionnalités principales">
+        <div className="feature-grid" aria-label="Fonctionnalites principales">
           <span>Gmail OAuth</span>
           <span>Hotmail / Outlook</span>
           <span>Brouillons IA</span>
@@ -47,40 +47,40 @@ export default async function ConnexionPage({
       </section>
 
       <section className="auth-panel">
-        {error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
+        {error && <div className="error">V&eacute;rifiez les informations saisies puis r&eacute;essayez.</div>}
         <div className="forms">
           {signupEnabled ? (
             <form action="/api/auth/register" method="post" className="form-card">
-              <h2>Créer mon espace</h2>
+              <h2>Cr&eacute;er mon espace</h2>
               <input type="hidden" name="signupStartedAt" value={Date.now()} />
               <label className="bot-field" aria-hidden="true">
                 Site web
                 <input name="companyWebsite" tabIndex={-1} autoComplete="off" />
               </label>
-              <label>Prénom et nom</label>
+              <label>Pr&eacute;nom et nom</label>
               <input name="ownerName" placeholder="Jean Martin" required />
               <label>Email professionnel</label>
               <input name="email" type="email" placeholder="jean@entreprise.fr" required />
               <label>Mot de passe</label>
-              <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
+              <input name="password" type="password" minLength={8} placeholder="Minimum 8 caracteres" required />
               {accessCodeRequired && (
                 <>
-                  <label>Code d&apos;accès</label>
-                  <input name="signupAccessCode" placeholder="Code communiqué par InboxPilot" required />
+                  <label>Code d&apos;acc&egrave;s</label>
+                  <input name="signupAccessCode" placeholder="Code communique par InboxPilot" required />
                 </>
               )}
               {turnstileSiteKey && <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />}
-              <button type="submit">Créer et continuer →</button>
+              <button type="submit">Cr&eacute;er et continuer &rarr;</button>
               <p className="form-switch">
-                Déjà inscrit ? <a href="#connexion">Se connecter</a>
+                D&eacute;j&agrave; inscrit ? <a href="#connexion">Se connecter</a>
               </p>
             </form>
           ) : (
             <article className="form-card">
-              <h2>Accès sur invitation</h2>
+              <h2>Acc&egrave;s sur invitation</h2>
               <p>
-                Les nouvelles inscriptions sont momentanément validées manuellement afin de protéger la plateforme.
-                Si vous avez déjà un compte, connectez-vous avec vos identifiants.
+                Les nouvelles inscriptions sont momentan&eacute;ment valid&eacute;es manuellement afin de prot&eacute;ger la plateforme.
+                Si vous avez d&eacute;j&agrave; un compte, connectez-vous avec vos identifiants.
               </p>
             </article>
           )}
