@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { signupAccessCodeRequired } from "@/lib/antiAbuse";
 import { currentUser } from "@/lib/auth";
 import { publicSignupEnabled } from "@/lib/features";
 
@@ -14,6 +15,8 @@ export default async function ConnexionPage({
   const error = params?.error;
   const registered = params?.registered;
   const signupEnabled = publicSignupEnabled();
+  const accessCodeRequired = signupAccessCodeRequired();
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || "";
 
   return (
     <main className="auth-shell">
@@ -48,19 +51,31 @@ export default async function ConnexionPage({
         {error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
         {registered === "verify-email" && (
           <div className="success-banner">
-            Votre demande de création de compte est prise en compte. Vérifiez votre email pour finaliser l’accès.
+            Votre demande de création de compte est prise en compte. Vérifiez votre email pour finaliser l&apos;accès.
           </div>
         )}
         <div className="forms">
           {signupEnabled ? (
             <form action="/api/auth/register" method="post" className="form-card">
               <h2>Créer mon espace</h2>
+              <input type="hidden" name="signupStartedAt" value={Date.now()} />
+              <label className="bot-field" aria-hidden="true">
+                Site web
+                <input name="companyWebsite" tabIndex={-1} autoComplete="off" />
+              </label>
               <label>Prénom et nom</label>
               <input name="ownerName" placeholder="Jean Martin" required />
               <label>Email professionnel</label>
               <input name="email" type="email" placeholder="jean@entreprise.fr" required />
               <label>Mot de passe</label>
               <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
+              {accessCodeRequired && (
+                <>
+                  <label>Code d&apos;accès</label>
+                  <input name="signupAccessCode" placeholder="Code communiqué par InboxPilot" required />
+                </>
+              )}
+              {turnstileSiteKey && <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />}
               <button type="submit">Créer et continuer →</button>
               <p className="form-switch">
                 Déjà inscrit ? <a href="#connexion">Se connecter</a>

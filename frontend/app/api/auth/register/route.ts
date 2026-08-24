@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 
 import { clientIdFromEmail, createPasswordHash } from "@/lib/auth";
+import {
+  checkSignupAbuse,
+  clientIp,
+  normalizeEmail,
+  sleep,
+  verifyTurnstileIfConfigured,
+} from "@/lib/antiAbuse";
 import { createEmailVerificationToken, createUser, findUserByEmail, logSecurityEvent } from "@/lib/db";
 import { publicEntryPath, publicSignupEnabled } from "@/lib/features";
 import { checkRateLimit, rateLimitKey } from "@/lib/rateLimit";
@@ -19,8 +26,12 @@ export async function POST(request: Request) {
 
   const form = await request.formData();
   const ownerName = String(form.get("ownerName") || "").trim();
-  const email = String(form.get("email") || "").trim().toLowerCase();
+  const email = normalizeEmail(String(form.get("email") || ""));
   const password = String(form.get("password") || "");
+  const honeypot = String(form.get("companyWebsite") || "");
+  const startedAt = String(form.get("signupStartedAt") || "");
+  const accessCode = String(form.get("signupAccessCode") || "");
+  const turnstileToken = String(form.get("cf-turnstile-response") || "");
   const clientId = clientIdFromEmail(email);
   const limit = checkRateLimit({
     bucket: "register",
@@ -36,6 +47,42 @@ export async function POST(request: Request) {
       ip: clientIp(request),
       userAgent: request.headers.get("user-agent"),
       metadata: { resetAt: new Date(limit.resetAt).toISOString() },
+    });
+    return redirectTo(request, `${publicEntryPath()}?error=register`);
+  }
+
+  const abuse = checkSignupAbuse({
+    ownerName,
+    email,
+    honeypot,
+    startedAt,
+    accessCode,
+    userAgent: request.headers.get("user-agent"),
+  });
+  if (!abuse.allowed) {
+    await sleep(900);
+    await logSecurityEvent({
+      eventType: "signup_blocked_abuse",
+      email,
+      ip: clientIp(request),
+      userAgent: request.headers.get("user-agent"),
+      metadata: { reason: abuse.reason },
+    });
+    return redirectTo(request, `${publicEntryPath()}?error=register`);
+  }
+
+  const turnstile = await verifyTurnstileIfConfigured({
+    token: turnstileToken,
+    ip: clientIp(request),
+  });
+  if (!turnstile.allowed) {
+    await sleep(900);
+    await logSecurityEvent({
+      eventType: "signup_blocked_turnstile",
+      email,
+      ip: clientIp(request),
+      userAgent: request.headers.get("user-agent"),
+      metadata: { reason: turnstile.reason },
     });
     return redirectTo(request, `${publicEntryPath()}?error=register`);
   }
@@ -104,15 +151,9 @@ function emailVerificationTtlMinutes(): number {
   return Number.isFinite(value) && value > 0 ? value : 30;
 }
 
-function clientIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    ""
-  );
+function registerRateLimit(): number {
+  const value = Number(process.env.REGISTER_RATE_LIMIT_1H || 3);
+  return Number.isFinite(value) && value > 0 ? value : 3;
 }
 
-function registerRateLimit(): number {
-  const value = Number(process.env.REGISTER_RATE_LIMIT_1H || 5);
-  return Number.isFinite(value) && value > 0 ? value : 5;
-}
+export const dynamic = "force-dynamic";
