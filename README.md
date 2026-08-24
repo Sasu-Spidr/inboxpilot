@@ -1,6 +1,6 @@
 # InboxPilot
 
-Version livrable Exuvie d'InboxPilot.
+livrable Exuvie d'InboxPilot.
 
 Cette branche contient uniquement le nécessaire pour lancer l'application :
 
@@ -11,7 +11,7 @@ Cette branche contient uniquement le nécessaire pour lancer l'application :
 - agent de tri, labellisation et brouillons ;
 - Docker Compose avec PostgreSQL, frontend, agent et serveur OAuth.
 
-La page commerciale, la double authentification, l'espace admin, les scripts de maintenance, les tests internes et les documents sensibles ne sont pas inclus dans cette livraison.
+La double authentification, l'espace admin, les scripts de maintenance, les tests internes et les documents sensibles ne sont pas inclus dans cette livraison.
 
 ## Installation locale
 
