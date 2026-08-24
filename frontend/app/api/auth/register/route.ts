@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
 
-import { clientIdFromEmail, createPasswordHash } from "@/lib/auth";
+import { clientIdFromEmail, createPasswordHash, setSession } from "@/lib/auth";
 import {
   checkSignupAbuse,
   clientIp,
@@ -9,7 +8,7 @@ import {
   sleep,
   verifyTurnstileIfConfigured,
 } from "@/lib/antiAbuse";
-import { createEmailVerificationToken, createUser, findUserByEmail, logSecurityEvent } from "@/lib/db";
+import { createUser, findUserByEmail, logSecurityEvent, touchLastLogin } from "@/lib/db";
 import { publicEntryPath, publicSignupEnabled } from "@/lib/features";
 import { checkRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
@@ -113,42 +112,28 @@ export async function POST(request: Request) {
     clientId,
     ownerName,
     email,
-    status: "PENDING_EMAIL_VERIFICATION",
-    emailVerified: false,
+    status: "ACTIVE",
+    emailVerified: true,
     passwordHash: hash,
     passwordSalt: salt,
   });
-  const token = crypto.randomBytes(32).toString("base64url");
-  await createEmailVerificationToken({
-    id: crypto.randomUUID(),
-    clientId,
-    tokenHash: verificationTokenHash(token),
-    expiresAt: new Date(Date.now() + emailVerificationTtlMinutes() * 60 * 1000),
-  });
+  await setSession(clientId);
+  await touchLastLogin(clientId);
   await logSecurityEvent({
-    eventType: "signup_pending_email_verification",
+    eventType: "signup_success",
     clientId,
     email,
     ip: clientIp(request),
     userAgent: request.headers.get("user-agent"),
   });
 
-  return redirectTo(request, `${publicEntryPath()}?registered=verify-email`);
+  return redirectTo(request, "/dashboard");
 }
 
 function redirectTo(request: Request, path: string): NextResponse {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   return NextResponse.redirect(`${proto}://${host}${path}`, 303);
-}
-
-function verificationTokenHash(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
-
-function emailVerificationTtlMinutes(): number {
-  const value = Number(process.env.EMAIL_VERIFICATION_TOKEN_TTL_MINUTES || 30);
-  return Number.isFinite(value) && value > 0 ? value : 30;
 }
 
 function registerRateLimit(): number {
