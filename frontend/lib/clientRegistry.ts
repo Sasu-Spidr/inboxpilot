@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import yaml from "js-yaml";
 
+import { archiveClientSettingsForEmail } from "./clientSettings";
 import { dataPath, resolveTokenFilePath } from "./paths";
 
 export type Provider = "gmail" | "hotmail";
@@ -105,6 +106,9 @@ export function removeMailAccount(clientId: string, provider: Provider, accountN
   if (index === -1) return false;
 
   const [removed] = accounts.splice(index, 1);
+  if (removed?.email_address) {
+    archiveClientSettingsForEmail(clientId, provider, removed.account, removed.email_address);
+  }
   if (removed?.token_file) {
     safeUnlink(resolveTokenFilePath(removed.token_file));
   }

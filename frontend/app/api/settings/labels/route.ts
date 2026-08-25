@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { currentUser } from "@/lib/auth";
-import { DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
+import { archiveSavedClientSettingsForEmail, DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
 
 export async function GET() {
   const user = await currentUser();
@@ -40,6 +41,10 @@ export async function POST(request: NextRequest) {
   }
 
   const savedSettings = saveClientSettings(user.clientId, labels, provider, account || undefined);
+  const mailbox = provider && account ? getClientMailAccounts(user.clientId, provider as Provider).find((item) => item.account === account) : undefined;
+  if (provider && mailbox?.email_address) {
+    archiveSavedClientSettingsForEmail(user.clientId, provider, mailbox.email_address, savedSettings);
+  }
   await syncGmailLabelSettings(user.clientId, removedLabelNames(previousSettings.labels, savedSettings.labels), provider, account || undefined);
   const target = provider && account ? `/settings?provider=${encodeURIComponent(provider)}&account=${encodeURIComponent(account)}&saved=1` : "/settings?saved=1";
   return redirectTo(request, target);

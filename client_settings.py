@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -129,6 +130,40 @@ def scoped_settings_path(client_id: str, connector: str | None, account: str | N
     return data_dir / "client-settings" / safe_client_id / f"{safe_connector}--{safe_account}.json"
 
 
+def email_settings_archive_path(client_id: str, connector: str, email: str) -> Path:
+    data_dir = Path(os.getenv("DATA_DIR", "./data"))
+    safe_client_id = re.sub(r"[^a-zA-Z0-9._-]", "-", client_id)
+    safe_connector = re.sub(r"[^a-zA-Z0-9._-]", "-", connector or "")
+    safe_email = re.sub(r"[^a-zA-Z0-9._-]", "-", normalize_email(email))
+    return data_dir / "client-settings" / safe_client_id / "mailboxes" / f"{safe_connector}--{safe_email}.json"
+
+
+def archive_scoped_settings_for_email(client_id: str, connector: str, account: str, email: str) -> bool:
+    email = normalize_email(email)
+    if not email:
+        return False
+    source = scoped_settings_path(client_id, connector, account)
+    if not source.exists():
+        return False
+    target = email_settings_archive_path(client_id, connector, email)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    return True
+
+
+def restore_scoped_settings_for_email(client_id: str, connector: str, account: str, email: str) -> bool:
+    email = normalize_email(email)
+    if not email:
+        return False
+    source = email_settings_archive_path(client_id, connector, email)
+    if not source.exists():
+        return False
+    target = scoped_settings_path(client_id, connector, account)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    return True
+
+
 def load_client_settings(client_id: str, connector: str | None = None, account: str | None = None) -> dict[str, Any]:
     if connector and account:
         try:
@@ -220,6 +255,10 @@ def unread_delete_after_days_for_client(client_id: str, label: str, connector: s
 def canonical_label_key(label: str) -> str:
     value = repair_mojibake(str(label or "").strip())
     return LEGACY_LABEL_KEYS.get(value, value)
+
+
+def normalize_email(email: str) -> str:
+    return str(email or "").strip().lower()
 
 
 def _label_setting(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> dict[str, Any] | None:

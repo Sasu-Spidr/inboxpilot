@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 
 import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
+import { archiveClientSettingsForEmail } from "@/lib/clientSettings";
 import { publicUrl } from "@/lib/oauthProxy";
 import { resolveTokenFilePath } from "@/lib/paths";
 
@@ -22,6 +23,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   const account = getClientMailAccounts(user.clientId, providerName).find((item) => item.account === accountName);
 
   if (account) {
+    if (account.email_address) {
+      archiveClientSettingsForEmail(user.clientId, providerName, account.account, account.email_address);
+    }
     try {
       fs.unlinkSync(resolveTokenFilePath(account.token_file));
     } catch (error) {

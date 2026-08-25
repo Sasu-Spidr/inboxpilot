@@ -19,7 +19,12 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from client_settings import is_legacy_label_name, label_color_settings_for_client, managed_label_names_for_client
+from client_settings import (
+    is_legacy_label_name,
+    label_color_settings_for_client,
+    managed_label_names_for_client,
+    restore_scoped_settings_for_email,
+)
 from client_registry import merge_registered_clients, update_registered_account
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
@@ -249,6 +254,9 @@ class OAuthOnboardingServer:
         self.store.save(account_cfg["token_file"], json_credentials(flow.credentials))
         email = gmail_profile_email(flow.credentials)
         update_registered_account(self.settings, state["client"], "gmail", state["account"], {"email_address": email, "connected_at": now_iso()})
+        restored = restore_scoped_settings_for_email(state["client"], "gmail", state["account"], email)
+        if restored:
+            LOG.info("Restored Gmail settings from mailbox archive client=%s account=%s email=%s", state["client"], state["account"], email)
         self.settings = merge_registered_clients(self.settings)
         self.sync_label_settings(state["client"], provider="gmail", account=state["account"])
         return success_page("Gmail", state["client"], state["account"], email)
@@ -282,6 +290,9 @@ class OAuthOnboardingServer:
         self.store.save(account_cfg["token_file"], {"cache": cache.serialize()})
         email = microsoft_profile_email(result["access_token"])
         update_registered_account(self.settings, state["client"], "hotmail", state["account"], {"email_address": email, "connected_at": now_iso()})
+        restored = restore_scoped_settings_for_email(state["client"], "hotmail", state["account"], email)
+        if restored:
+            LOG.info("Restored Hotmail settings from mailbox archive client=%s account=%s email=%s", state["client"], state["account"], email)
         self.settings = merge_registered_clients(self.settings)
         self.sync_label_settings(state["client"], provider="hotmail", account=state["account"])
         return success_page("Hotmail / Outlook", state["client"], state["account"], email)
