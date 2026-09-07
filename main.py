@@ -104,6 +104,7 @@ class MailWorker:
                         "sender_name": sender_name,
                         "connected_at": connected_at,
                         "reconcile_recent_inbox": recent_reconciliation_enabled(client_cfg, connector_cfg, account_cfg),
+                        "reconcile_processed_messages": processed_message_reconciliation_enabled(client_cfg, connector_cfg, account_cfg),
                     }
         return built
 
@@ -201,6 +202,9 @@ class MailWorker:
         entry = self._entry(client_id, connector_name, account)
         connector = entry["connector"]
         if self.state.is_processed(client_id, connector_name, account, message_id):
+            if not entry.get("reconcile_processed_messages", True):
+                log_event("processed_email_reconciliation_disabled", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
+                return False
             record = self.state.get(client_id, connector_name, account, message_id) or {}
             email = email or connector.get_email(message_id)
             if self._delete_processed_unread_if_expired(connector, client_id, connector_name, account, message_id, email, record):
@@ -403,6 +407,15 @@ def recent_reconciliation_enabled(client_cfg: dict, connector_cfg: dict, account
         if "recent_reconciliation_enabled" in cfg:
             return bool_setting(cfg.get("recent_reconciliation_enabled"), True)
     return True
+
+
+def processed_message_reconciliation_enabled(client_cfg: dict, connector_cfg: dict, account_cfg: dict) -> bool:
+    for cfg in (account_cfg, connector_cfg, client_cfg):
+        if "reconcile_processed_messages" in cfg:
+            return bool_setting(cfg.get("reconcile_processed_messages"), True)
+        if "processed_reconciliation_enabled" in cfg:
+            return bool_setting(cfg.get("processed_reconciliation_enabled"), True)
+    return recent_reconciliation_enabled(client_cfg, connector_cfg, account_cfg)
 
 
 def bool_setting(value, default: bool = False) -> bool:

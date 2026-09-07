@@ -333,6 +333,42 @@ def test_worker_can_disable_recent_inbox_reconciliation(monkeypatch):
     assert c.calls == []
 
 
+def test_worker_can_skip_processed_message_reconciliation(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class CompletedState(State):
+        def is_processed(self, *args):
+            return True
+
+        def get(self, *args):
+            raise AssertionError("processed message should not be read again")
+
+    class ProcessedUnreadConnector(Connector):
+        def get_email(self, message_id):
+            raise AssertionError("processed message should not be fetched again")
+
+    c = ProcessedUnreadConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(
+        settings,
+        connectors={
+            "geoffroy-spidr-fr": {
+                "hotmail:main": {
+                    "name": "hotmail",
+                    "account": "main",
+                    "connector": c,
+                    "reconcile_processed_messages": False,
+                }
+            }
+        },
+        classifier=Classifier(),
+        drafts=Drafts(),
+        state=CompletedState(),
+    )
+    worker.run_cycle()
+    assert c.calls == []
+
+
 def test_worker_enforces_label_for_processed_message_seen_in_recent_scan(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 
