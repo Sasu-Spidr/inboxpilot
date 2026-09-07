@@ -300,6 +300,39 @@ def test_worker_processes_recent_read_unprocessed_message(monkeypatch):
     assert c.calls[0][1][0] == "2"
 
 
+def test_worker_can_disable_recent_inbox_reconciliation(monkeypatch):
+    monkeypatch.chdir(Path(__file__).parents[1])
+
+    class RecentConnector(Connector):
+        def unread_emails(self, limit):
+            return []
+
+        def recent_inbox_message_ids(self, limit):
+            self.calls.append(("recent_scan", (limit,)))
+            return ["2"]
+
+    c = RecentConnector()
+    settings = {"groq_api_key": "x", "max_emails_per_cycle": 1, "token_encryption_key": "x"}
+    worker = MailWorker(
+        settings,
+        connectors={
+            "geoffroy-spidr-fr": {
+                "gmail:main": {
+                    "name": "gmail",
+                    "account": "main",
+                    "connector": c,
+                    "reconcile_recent_inbox": False,
+                }
+            }
+        },
+        classifier=Classifier(),
+        drafts=Drafts(),
+        state=State(),
+    )
+    worker.run_cycle()
+    assert c.calls == []
+
+
 def test_worker_enforces_label_for_processed_message_seen_in_recent_scan(monkeypatch):
     monkeypatch.chdir(Path(__file__).parents[1])
 

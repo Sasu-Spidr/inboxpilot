@@ -103,6 +103,7 @@ class MailWorker:
                         "connector": connector,
                         "sender_name": sender_name,
                         "connected_at": connected_at,
+                        "reconcile_recent_inbox": recent_reconciliation_enabled(client_cfg, connector_cfg, account_cfg),
                     }
         return built
 
@@ -123,13 +124,18 @@ class MailWorker:
         self.calendar_sync.run_if_due(self.connectors)
         for client_id, entries in self.connectors.items():
             for entry in entries.values():
-                self._poll_account(client_id, entry["name"], entry["account"], entry["connector"])
+                self._poll_account(client_id, entry["name"], entry["account"], entry["connector"], entry)
 
-    def _poll_account(self, client_id: str, connector_name: str, account: str, connector) -> None:
+    def _poll_account(self, client_id: str, connector_name: str, account: str, connector, entry: dict | None = None) -> None:
         try:
             self._sync_account_settings(client_id, connector_name, account, connector)
             emails = connector.unread_emails(self.settings["max_emails_per_cycle"])
-            recent_ids = connector.recent_inbox_message_ids(self.settings["max_emails_per_cycle"]) if hasattr(connector, "recent_inbox_message_ids") else []
+            entry = entry or self._entry(client_id, connector_name, account)
+            recent_ids = []
+            if entry.get("reconcile_recent_inbox", True) and hasattr(connector, "recent_inbox_message_ids"):
+                recent_ids = connector.recent_inbox_message_ids(self.settings["max_emails_per_cycle"])
+            elif not entry.get("reconcile_recent_inbox", True):
+                log_event("recent_inbox_reconciliation_disabled", client_id=client_id, connector=connector_name, account=account, status="skipped")
         except Exception as exc:
             log_event("polling_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, status="failed", error=str(exc), exc_info=True)
             return
@@ -388,6 +394,30 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
     account_cfg = dict(connector_cfg)
     account_cfg.setdefault("account", connector_name)
     return [account_cfg]
+
+
+def recent_reconciliation_enabled(client_cfg: dict, connector_cfg: dict, account_cfg: dict) -> bool:
+    for cfg in (account_cfg, connector_cfg, client_cfg):
+        if "reconcile_recent_inbox" in cfg:
+            return bool_setting(cfg.get("reconcile_recent_inbox"), True)
+        if "recent_reconciliation_enabled" in cfg:
+            return bool_setting(cfg.get("recent_reconciliation_enabled"), True)
+    return True
+
+
+def bool_setting(value, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    normalized = str(value).strip().casefold()
+    if normalized in {"0", "false", "no", "non", "off", "disabled", "désactivé", "desactive"}:
+        return False
+    if normalized in {"1", "true", "yes", "oui", "on", "enabled", "activé", "active", "actif"}:
+        return True
+    return default
 
 
 def normalize_active_label(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str:
