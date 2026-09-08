@@ -50,3 +50,37 @@ def test_traefik_overrides_are_versioned_without_embedded_basic_auth():
     for override in (dev, prod):
         for service_name in ("frontend", "mail-agent", "oauth-onboarding"):
             assert "IMAGE_TAG is required" in override["services"][service_name]["image"]
+
+
+def test_ci_publishes_all_images_after_tests_on_main_and_dev():
+    workflow_text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    workflow = yaml.safe_load(workflow_text)
+    build = workflow["jobs"]["build"]
+    images = {
+        entry["name"]: entry
+        for entry in build["strategy"]["matrix"]["include"]
+    }
+
+    # PyYAML 1.1 parses the unquoted key `on` as True.
+    triggers = workflow.get("on", workflow.get(True))
+    assert set(triggers["push"]["branches"]) == {"main", "dev"}
+    assert build["needs"] == ["test"]
+    assert build["if"] == "github.event_name != 'pull_request'"
+    assert build["permissions"] == {"contents": "read", "packages": "write"}
+    assert set(images) == {"backend", "frontend", "bao-agent"}
+    assert images["bao-agent"]["dockerfile"] == "./deploy/Dockerfile.agent"
+    assert "docker/metadata-action@v5" in workflow_text
+    assert "type=sha" in workflow_text
+    assert "type=ref,event=branch" in workflow_text
+    assert "cache-to: type=gha,mode=max" in workflow_text
+
+
+def test_bao_agent_image_is_version_pinned_and_packages_its_config():
+    dockerfile = (ROOT / "deploy/Dockerfile.agent").read_text(encoding="utf-8")
+    agent_config = (ROOT / "deploy/agent.hcl").read_text(encoding="utf-8")
+
+    assert "FROM openbao/openbao:" in dockerfile
+    assert "openbao/openbao:latest" not in dockerfile
+    assert "COPY deploy/agent.hcl /etc/bao/agent.hcl" in dockerfile
+    assert 'CMD ["agent", "-config=/etc/bao/agent.hcl"]' in dockerfile
+    assert 'method "approle"' in agent_config

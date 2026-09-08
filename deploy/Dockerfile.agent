@@ -1,0 +1,5 @@
+FROM openbao/openbao:2.6.1
+
+COPY deploy/agent.hcl /etc/bao/agent.hcl
+
+CMD ["agent", "-config=/etc/bao/agent.hcl"]

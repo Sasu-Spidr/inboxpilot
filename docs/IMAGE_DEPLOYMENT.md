@@ -4,9 +4,14 @@ La composition principale utilise uniquement les images suivantes :
 
 - `ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG}` pour `mail-agent` et `oauth-onboarding` ;
 - `ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG}` pour le frontend ;
+- `ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG}` pour l'agent OpenBao ;
 - `postgres:16-alpine` pour PostgreSQL.
 
-Le même tag immuable, normalement le SHA du commit, doit être utilisé pour les deux images InboxPilot.
+À chaque push sur `main` ou `dev`, le workflow CI publie les trois images avec
+le même tag immuable `sha-<court>` et avec le tag de branche `main` ou `dev`.
+Les pull requests exécutent les tests sans publier d'image.
+
+Le même tag immuable doit être utilisé pour les trois images InboxPilot.
 
 ## Développement local
 
