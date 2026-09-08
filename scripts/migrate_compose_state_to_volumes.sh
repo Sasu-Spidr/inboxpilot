@@ -40,9 +40,18 @@ for source_dir in "$data_source" "$logs_source" "$secrets_source"; do
   fi
 done
 
-docker volume create "$data_volume" >/dev/null
-docker volume create "$logs_volume" >/dev/null
-docker volume create "$secrets_volume" >/dev/null
+docker volume create \
+  --label "com.docker.compose.project=$project" \
+  --label "com.docker.compose.volume=inboxpilot_data" \
+  "$data_volume" >/dev/null
+docker volume create \
+  --label "com.docker.compose.project=$project" \
+  --label "com.docker.compose.volume=inboxpilot_logs" \
+  "$logs_volume" >/dev/null
+docker volume create \
+  --label "com.docker.compose.project=$project" \
+  --label "com.docker.compose.volume=inboxpilot_runtime_secrets" \
+  "$secrets_volume" >/dev/null
 
 for volume in "$data_volume" "$logs_volume" "$secrets_volume"; do
   if ! docker run --rm -v "$volume:/target" alpine:3.20 sh -c '[ -z "$(ls -A /target)" ]'; then
@@ -51,11 +60,13 @@ for volume in "$data_volume" "$logs_volume" "$secrets_volume"; do
   fi
 done
 
-containers="$(docker ps -q \
-  --filter "label=com.docker.compose.project=$project" \
-  --filter "label=com.docker.compose.service=frontend" \
-  --filter "label=com.docker.compose.service=mail-agent" \
-  --filter "label=com.docker.compose.service=oauth-onboarding")"
+containers="$(
+  for service in frontend mail-agent oauth-onboarding; do
+    docker ps -q \
+      --filter "label=com.docker.compose.project=$project" \
+      --filter "label=com.docker.compose.service=$service"
+  done | sort -u
+)"
 
 restore_legacy_containers() {
   if [ -n "$containers" ]; then
@@ -97,8 +108,8 @@ if ! copy_and_verify "$secrets_source" "$secrets_volume"; then
   exit 74
 fi
 
-docker run --rm -v "$data_volume:/data" alpine:3.20 \
-  touch /data/.inboxpilot-image-migration-complete
+docker run --rm -v "$data_volume:/data" alpine:3.20 sh -c \
+  'mkdir -p /data/tokens /data/state && touch /data/.inboxpilot-image-migration-complete'
 
 trap - HUP INT TERM EXIT
 echo "State copied to $data_volume, $logs_volume and $secrets_volume."
