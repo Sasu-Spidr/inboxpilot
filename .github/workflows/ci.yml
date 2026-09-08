@@ -40,4 +40,11 @@ jobs:
           printf '{"installed":{"client_id":"dummy","client_secret":"dummy","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","redirect_uris":["http://localhost"]}}' > secrets/exuvie/gmail-client-secret.json
 
       - name: Validate Docker Compose
-        run: docker compose config
+        env:
+          IMAGE_TAG: test-sha
+          TRAEFIK_BASIC_AUTH_HASH: test-only-placeholder
+        run: |
+          docker compose config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.build.yml config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet

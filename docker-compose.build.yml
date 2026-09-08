@@ -1,0 +1,19 @@
+services:
+  frontend:
+    image: inboxpilot-frontend:local
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:3000"
+
+  mail-agent:
+    image: inboxpilot:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  oauth-onboarding:
+    image: inboxpilot:local
+    ports:
+      - "${OAUTH_HOST_PORT:-8080}:8080"
