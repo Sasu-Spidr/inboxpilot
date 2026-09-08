@@ -25,6 +25,9 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
             assert not source.startswith(".")
             assert not source.startswith("/")
 
+    assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["mail-agent"]["volumes"]
+    assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["oauth-onboarding"]["volumes"]
+
 def test_local_build_override_restores_all_application_builds():
     compose = load_compose("docker-compose.build.yml")
     assert set(compose["services"]) == {"frontend", "mail-agent", "oauth-onboarding"}

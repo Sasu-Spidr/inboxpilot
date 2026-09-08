@@ -46,6 +46,7 @@ services:
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
+      - inboxpilot_runtime_secrets:/app/secrets:ro
     healthcheck:
       test: ["CMD", "python", "-c", "from pathlib import Path; raise SystemExit(0 if Path('/app/config/settings.yaml').exists() else 1)"]
       interval: 30s
@@ -68,6 +69,7 @@ services:
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
+      - inboxpilot_runtime_secrets:/app/secrets:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3).read()"]
       interval: 30s
@@ -79,3 +81,4 @@ volumes:
   postgres_data:
   inboxpilot_data:
   inboxpilot_logs:
+  inboxpilot_runtime_secrets:

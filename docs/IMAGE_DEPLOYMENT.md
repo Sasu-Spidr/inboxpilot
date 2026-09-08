@@ -49,7 +49,7 @@ IMAGE_TAG="<sha>" docker compose -p spidr-mail \
 
 ## Migration unique des données existantes
 
-Les anciens dossiers `/opt/spidr-mail-dev/data`, `/opt/spidr-mail-dev/logs`, `/opt/spidr-mail/data` et `/opt/spidr-mail/logs` ne doivent pas être abandonnés lors de la bascule. Ils contiennent notamment les jetons OAuth et l'état chiffré.
+Les anciens dossiers `data`, `logs` et `secrets` ne doivent pas être abandonnés lors de la bascule. Ils contiennent notamment les jetons OAuth, l'état chiffré et le fichier client OAuth Gmail. Le fichier OAuth est copié provisoirement dans un volume Docker dédié en lecture seule pour les services applicatifs. L'agent OpenBao remplacera ensuite le contenu de ce volume sans réintroduire de bind mount.
 
 Avant la première bascule par image, vérifier que la configuration n'a pas divergé :
 
@@ -68,7 +68,7 @@ DOCKER_HOST=ssh://root@89.116.111.236 \
   sh scripts/migrate_compose_state_to_volumes.sh spidr-mail /opt/spidr-mail
 ```
 
-Le script vérifie les chemins sur l'hôte Docker distant, refuse d'écraser un volume non vide, arrête uniquement les trois services applicatifs pendant la copie et compare intégralement la source et la destination. En cas d'échec, les anciens conteneurs sont redémarrés. PostgreSQL et son volume ne sont pas modifiés. Il faut lancer immédiatement la nouvelle stack après chaque migration.
+Le script vérifie les chemins sur l'hôte Docker distant, refuse d'écraser un volume non vide, arrête uniquement les trois services applicatifs pendant la copie et compare intégralement la source et la destination. Les secrets ne sont jamais intégrés à l'image. En cas d'échec, les anciens conteneurs sont redémarrés. PostgreSQL et son volume ne sont pas modifiés. Il faut lancer immédiatement la nouvelle stack après chaque migration.
 
 Après la bascule, vérifier :
 
