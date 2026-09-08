@@ -29,6 +29,11 @@ if docker volume inspect "$data_volume" >/dev/null 2>&1 && \
    docker volume inspect "$secrets_volume" >/dev/null 2>&1 && \
    docker run --rm -v "$data_volume:/data:ro" alpine:3.20 \
      test -f /data/.inboxpilot-image-migration-complete; then
+  # Older executions may have written the marker before these runtime
+  # directories became mandatory. Repairing empty directories is safe and
+  # keeps retries idempotent without overwriting migrated state.
+  docker run --rm -v "$data_volume:/data" alpine:3.20 \
+    mkdir -p /data/tokens /data/state
   echo "Migration already completed for $project."
   exit 0
 fi
