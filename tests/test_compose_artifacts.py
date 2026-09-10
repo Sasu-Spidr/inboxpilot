@@ -18,23 +18,35 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
     assert services["oauth-onboarding"]["image"].startswith("ghcr.io/sasu-spidr/inboxpilot:")
     assert services["frontend"]["image"].startswith("ghcr.io/sasu-spidr/inboxpilot-frontend:")
 
-    for service in services.values():
+    for service_name, service in services.items():
         assert "build" not in service
         for volume in service.get("volumes", []):
             source = volume.split(":", 1)[0] if isinstance(volume, str) else volume.get("source", "")
             assert not source.startswith(".")
-            assert not source.startswith("/")
+            if service_name.startswith("bao-agent-"):
+                assert source.startswith("${INBOXPILOT_BOOTSTRAP_ROOT")
+            else:
+                assert not source.startswith("/")
 
     assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["mail-agent"]["volumes"]
     assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["oauth-onboarding"]["volumes"]
 
 def test_local_build_override_restores_all_application_builds():
     compose = load_compose("docker-compose.build.yml")
-    assert set(compose["services"]) == {"frontend", "mail-agent", "oauth-onboarding"}
+    assert set(compose["services"]) == {
+        "bao-agent-frontend",
+        "bao-agent-worker",
+        "frontend",
+        "mail-agent",
+        "oauth-onboarding",
+    }
     assert "build" in compose["services"]["frontend"]
     assert "build" in compose["services"]["mail-agent"]
     assert "build" not in compose["services"]["oauth-onboarding"]
     assert compose["services"]["mail-agent"]["image"] == compose["services"]["oauth-onboarding"]["image"]
+    assert "build" in compose["services"]["bao-agent-frontend"]
+    assert "build" not in compose["services"]["bao-agent-worker"]
+    assert compose["services"]["bao-agent-frontend"]["image"] == compose["services"]["bao-agent-worker"]["image"]
 
 
 def test_traefik_overrides_are_versioned_without_embedded_basic_auth():
@@ -84,3 +96,49 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     assert "COPY deploy/agent.hcl /etc/bao/agent.hcl" in dockerfile
     assert 'CMD ["agent", "-config=/etc/bao/agent.hcl"]' in dockerfile
     assert 'method "approle"' in agent_config
+    assert 'role_id_file_path                   = "/bootstrap/role_id"' in agent_config
+    assert 'secret_id_file_path                 = "/bootstrap/secret_id"' in agent_config
+    assert "remove_secret_id_file_after_reading = false" in agent_config
+    assert "api_proxy" in agent_config
+    assert "use_auto_auth_token = true" in agent_config
+    assert 'address     = "0.0.0.0:8100"' in agent_config
+    assert 'address = "${BAO_ADDR}"' in agent_config
+
+
+def test_bao_agents_are_network_isolated_and_not_published():
+    compose = load_compose("docker-compose.yml")
+    services = compose["services"]
+    frontend_agent = services["bao-agent-frontend"]
+    worker_agent = services["bao-agent-worker"]
+
+    assert frontend_agent["networks"] == ["bao_frontend"]
+    assert worker_agent["networks"] == ["bao_worker"]
+    assert "ports" not in frontend_agent
+    assert "ports" not in worker_agent
+    assert services["frontend"]["networks"] == ["default", "bao_frontend"]
+    assert services["mail-agent"]["networks"] == ["default", "bao_worker"]
+    assert services["oauth-onboarding"]["networks"] == ["default", "bao_worker"]
+    assert "bao_worker" not in services["frontend"]["networks"]
+    assert "bao_frontend" not in services["mail-agent"]["networks"]
+    assert "bao_frontend" not in services["oauth-onboarding"]["networks"]
+
+    for agent in (frontend_agent, worker_agent):
+        assert agent["read_only"] is True
+        assert agent["cap_drop"] == ["ALL"]
+        assert agent["security_opt"] == ["no-new-privileges:true"]
+        assert agent["volumes"][0]["read_only"] is True
+        assert agent["healthcheck"]["test"][-1].endswith("/v1/sys/health")
+
+    assert services["frontend"]["depends_on"]["bao-agent-frontend"]["condition"] == "service_healthy"
+    assert services["mail-agent"]["depends_on"]["bao-agent-worker"]["condition"] == "service_healthy"
+    assert services["oauth-onboarding"]["depends_on"]["bao-agent-worker"]["condition"] == "service_healthy"
+
+
+def test_manual_deployment_can_target_dev_without_touching_prod():
+    workflow_text = (ROOT / ".github/workflows/publish-and-deploy.yml").read_text(encoding="utf-8")
+
+    assert "target:" in workflow_text
+    assert "inputs.target == 'dev' || inputs.target == 'all'" in workflow_text
+    assert "inputs.target == 'prod'" in workflow_text
+    assert "BAO_ADDR: ${{ vars.BAO_ADDR }}" in workflow_text
+    assert "Build and push OpenBao agent image" in workflow_text

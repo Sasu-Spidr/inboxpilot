@@ -21,7 +21,7 @@ case "$environment" in
     ;;
 esac
 
-required="VPS_HOST VPS_USER VPS_SSH_PORT IMAGE_TAG GHCR_TOKEN GHCR_USER FRONTEND_BASE_URL OAUTH_BASE_URL OAUTH_PUBLIC_URL"
+required="VPS_HOST VPS_USER VPS_SSH_PORT IMAGE_TAG GHCR_TOKEN GHCR_USER FRONTEND_BASE_URL OAUTH_BASE_URL OAUTH_PUBLIC_URL BAO_ADDR"
 for name in $required; do
   eval "value=\${$name:-}"
   if [ -z "$value" ]; then
@@ -46,7 +46,7 @@ cleanup_and_rollback() {
   rm -f "$runtime_env"
   if [ "$status" -ne 0 ] && [ "$deployment_succeeded" != true ]; then
     echo "Deployment failed; restoring the legacy $environment stack." >&2
-    $ssh_cmd "cd '$legacy_root' && docker compose up -d" >/dev/null 2>&1 || true
+    $ssh_cmd "cd '$legacy_root' && docker compose up -d --remove-orphans" >/dev/null 2>&1 || true
   fi
   exit "$status"
 }
@@ -67,6 +67,8 @@ set_runtime_value IMAGE_TAG "$IMAGE_TAG"
 set_runtime_value FRONTEND_BASE_URL "$FRONTEND_BASE_URL"
 set_runtime_value OAUTH_BASE_URL "$OAUTH_BASE_URL"
 set_runtime_value OAUTH_PUBLIC_URL "$OAUTH_PUBLIC_URL"
+set_runtime_value BAO_ADDR "$BAO_ADDR"
+set_runtime_value INBOXPILOT_BOOTSTRAP_ROOT "/etc/inboxpilot/$environment"
 
 if [ "$environment" = dev ]; then
   basic_auth_hash="$($ssh_cmd "docker inspect --format '{{ index .Config.Labels \"traefik.http.middlewares.inboxpilot-dev-auth.basicauth.users\" }}' '$frontend_container'")"

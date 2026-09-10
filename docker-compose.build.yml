@@ -1,4 +1,13 @@
 services:
+  bao-agent-frontend:
+    image: inboxpilot-bao-agent:local
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.agent
+
+  bao-agent-worker:
+    image: inboxpilot-bao-agent:local
+
   frontend:
     image: inboxpilot-frontend:local
     build:

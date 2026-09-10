@@ -41,6 +41,8 @@ jobs:
 
       - name: Validate Docker Compose
         env:
+          BAO_ADDR: https://bao.invalid
+          INBOXPILOT_BOOTSTRAP_ROOT: /etc/inboxpilot/test
           IMAGE_TAG: test-sha
           TRAEFIK_BASIC_AUTH_HASH: test-only-placeholder
         run: |

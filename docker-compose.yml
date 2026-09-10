@@ -13,6 +13,62 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  bao-agent-frontend:
+    image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    user: "0:0"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
+      BAO_SKIP_DROP_ROOT: "1"
+    volumes:
+      - type: bind
+        source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/frontend
+        target: /bootstrap
+        read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=0700
+    networks:
+      - bao_frontend
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8100/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+  bao-agent-worker:
+    image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    user: "0:0"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
+      BAO_SKIP_DROP_ROOT: "1"
+    volumes:
+      - type: bind
+        source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/worker
+        target: /bootstrap
+        read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=0700
+    networks:
+      - bao_worker
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8100/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
   frontend:
     image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:-local}
     restart: unless-stopped
@@ -28,10 +84,15 @@ services:
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     volumes:
       - inboxpilot_data:/data
+    networks:
+      - default
+      - bao_frontend
     depends_on:
       postgres:
         condition: service_healthy
       oauth-onboarding:
+        condition: service_healthy
+      bao-agent-frontend:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
@@ -47,6 +108,12 @@ services:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
       - inboxpilot_runtime_secrets:/app/secrets:ro
+    networks:
+      - default
+      - bao_worker
+    depends_on:
+      bao-agent-worker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "from pathlib import Path; raise SystemExit(0 if Path('/app/config/settings.yaml').exists() else 1)"]
       interval: 30s
@@ -70,6 +137,12 @@ services:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
       - inboxpilot_runtime_secrets:/app/secrets:ro
+    networks:
+      - default
+      - bao_worker
+    depends_on:
+      bao-agent-worker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3).read()"]
       interval: 30s
@@ -82,3 +155,7 @@ volumes:
   inboxpilot_data:
   inboxpilot_logs:
   inboxpilot_runtime_secrets:
+
+networks:
+  bao_frontend:
+  bao_worker:
