@@ -36,7 +36,7 @@ services:
     networks:
       - bao_frontend
     healthcheck:
-      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://localhost:8100/v1/sys/health"]
+      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8100/v1/sys/health"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -64,7 +64,7 @@ services:
     networks:
       - bao_worker
     healthcheck:
-      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://localhost:8100/v1/sys/health"]
+      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8100/v1/sys/health"]
       interval: 10s
       timeout: 5s
       retries: 12
