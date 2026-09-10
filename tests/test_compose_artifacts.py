@@ -102,7 +102,10 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     assert "api_proxy" in agent_config
     assert "use_auto_auth_token = true" in agent_config
     assert 'address     = "0.0.0.0:8100"' in agent_config
-    assert 'address = "${BAO_ADDR}"' in agent_config
+    # The server address must come from the container's BAO_ADDR: an address
+    # in the config would override it.
+    config_lines = [line for line in agent_config.splitlines() if not line.lstrip().startswith("#")]
+    assert not any(line.lstrip().startswith("vault") for line in config_lines)
 
 
 def test_bao_agents_are_network_isolated_and_not_published():
@@ -115,6 +118,8 @@ def test_bao_agents_are_network_isolated_and_not_published():
     assert worker_agent["networks"] == ["bao_worker"]
     assert "ports" not in frontend_agent
     assert "ports" not in worker_agent
+    assert frontend_agent["environment"]["BAO_ADDR"].startswith("${BAO_ADDR:?")
+    assert worker_agent["environment"]["BAO_ADDR"].startswith("${BAO_ADDR:?")
     assert services["frontend"]["networks"] == ["default", "bao_frontend"]
     assert services["mail-agent"]["networks"] == ["default", "bao_worker"]
     assert services["oauth-onboarding"]["networks"] == ["default", "bao_worker"]
