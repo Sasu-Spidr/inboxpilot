@@ -19,6 +19,6 @@ listener "tcp" {
   tls_disable = true
 }
 
-vault {
-  address = "${BAO_ADDR}"
-}
+# No vault { address } block: the server address comes from the container's
+# BAO_ADDR environment variable. An address set here takes precedence over
+# the environment, and "${BAO_ADDR}" is not guaranteed to be expanded in HCL.
