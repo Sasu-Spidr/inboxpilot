@@ -28,8 +28,33 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
             else:
                 assert not source.startswith("/")
 
-    assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["mail-agent"]["volumes"]
-    assert "inboxpilot_runtime_secrets:/app/secrets:ro" in services["oauth-onboarding"]["volumes"]
+    assert "inboxpilot_runtime_secrets" not in compose.get("volumes", {})
+    for service_name in ("mail-agent", "oauth-onboarding"):
+        service = services[service_name]
+        assert "env_file" not in service
+        assert service["environment"]["BAO_AGENT_ADDR"].endswith("bao-agent-worker:8100}")
+        assert not {
+            "GROQ_API_KEY",
+            "TOKEN_ENCRYPTION_KEY",
+            "MICROSOFT_CLIENT_ID",
+            "MICROSOFT_CLIENT_SECRET",
+            "GMAIL_OAUTH_CLIENT_FILE",
+        } & set(service["environment"])
+        assert all("/app/secrets" not in str(volume) for volume in service.get("volumes", []))
+
+
+def test_python_runtime_no_longer_depends_on_google_secret_files():
+    compose_text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    settings_text = (ROOT / "config/settings.yaml").read_text(encoding="utf-8")
+    connector_text = (ROOT / "gmail_connector.py").read_text(encoding="utf-8")
+    oauth_text = (ROOT / "oauth_server.py").read_text(encoding="utf-8")
+    deploy_text = (ROOT / "scripts/deploy_remote_images.sh").read_text(encoding="utf-8")
+
+    assert "from_client_secrets_file" not in connector_text
+    assert "from_client_secrets_file" not in oauth_text
+    assert "credentials_file" not in settings_text
+    assert "google-oauth-client.json" not in compose_text
+    assert "google-oauth-client.json" not in deploy_text
 
 def test_local_build_override_restores_all_application_builds():
     compose = load_compose("docker-compose.build.yml")

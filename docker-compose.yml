@@ -80,7 +80,6 @@ services:
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
       OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
-      GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
       TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
     volumes:
       - inboxpilot_data:/data
@@ -103,11 +102,16 @@ services:
   mail-agent:
     image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
+    environment:
+      BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
+      DATA_DIR: /app/data
+      CALENDAR_SYNC_ENABLED: ${CALENDAR_SYNC_ENABLED:-true}
+      CALENDAR_SYNC_RUN_HOUR: ${CALENDAR_SYNC_RUN_HOUR:-0}
+      CALENDAR_SYNC_DAYS: ${CALENDAR_SYNC_DAYS:-1}
+      CALENDAR_SYNC_TIMEZONE: ${CALENDAR_SYNC_TIMEZONE:-Europe/Paris}
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
-      - inboxpilot_runtime_secrets:/app/secrets:ro
     networks:
       - default
       - bao_worker
@@ -123,20 +127,16 @@ services:
   oauth-onboarding:
     image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
     command: ["python", "oauth_server.py"]
     environment:
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
-      EXUVIE_MICROSOFT_CLIENT_ID: ${EXUVIE_MICROSOFT_CLIENT_ID:-}
-      COLLEGUE_MICROSOFT_CLIENT_ID: ${COLLEGUE_MICROSOFT_CLIENT_ID:-}
+      BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
+      DATA_DIR: /app/data
       OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PORT: 8080
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
-      - inboxpilot_runtime_secrets:/app/secrets:ro
     networks:
       - default
       - bao_worker
@@ -154,7 +154,6 @@ volumes:
   postgres_data:
   inboxpilot_data:
   inboxpilot_logs:
-  inboxpilot_runtime_secrets:
 
 networks:
   bao_frontend:

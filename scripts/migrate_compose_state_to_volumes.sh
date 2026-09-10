@@ -19,14 +19,11 @@ esac
 
 data_source="$legacy_root/data"
 logs_source="$legacy_root/logs"
-secrets_source="$legacy_root/secrets"
 data_volume="${project}_inboxpilot_data"
 logs_volume="${project}_inboxpilot_logs"
-secrets_volume="${project}_inboxpilot_runtime_secrets"
 
 if docker volume inspect "$data_volume" >/dev/null 2>&1 && \
    docker volume inspect "$logs_volume" >/dev/null 2>&1 && \
-   docker volume inspect "$secrets_volume" >/dev/null 2>&1 && \
    docker run --rm -v "$data_volume:/data:ro" alpine:3.20 \
      test -f /data/.inboxpilot-image-migration-complete; then
   # Older executions may have written the marker before these runtime
@@ -38,7 +35,7 @@ if docker volume inspect "$data_volume" >/dev/null 2>&1 && \
   exit 0
 fi
 
-for source_dir in "$data_source" "$logs_source" "$secrets_source"; do
+for source_dir in "$data_source" "$logs_source"; do
   if ! docker run --rm -v /:/host:ro alpine:3.20 test -d "/host$source_dir"; then
     echo "Missing source directory on the Docker host: $source_dir" >&2
     exit 66
@@ -53,12 +50,7 @@ docker volume create \
   --label "com.docker.compose.project=$project" \
   --label "com.docker.compose.volume=inboxpilot_logs" \
   "$logs_volume" >/dev/null
-docker volume create \
-  --label "com.docker.compose.project=$project" \
-  --label "com.docker.compose.volume=inboxpilot_runtime_secrets" \
-  "$secrets_volume" >/dev/null
-
-for volume in "$data_volume" "$logs_volume" "$secrets_volume"; do
+for volume in "$data_volume" "$logs_volume"; do
   if ! docker run --rm -v "$volume:/target" alpine:3.20 sh -c '[ -z "$(ls -A /target)" ]'; then
     echo "Refusing to overwrite non-empty volume: $volume" >&2
     exit 73
@@ -108,14 +100,9 @@ if ! copy_and_verify "$logs_source" "$logs_volume"; then
   exit 74
 fi
 
-if ! copy_and_verify "$secrets_source" "$secrets_volume"; then
-  restore_legacy_containers
-  exit 74
-fi
-
 docker run --rm -v "$data_volume:/data" alpine:3.20 sh -c \
   'mkdir -p /data/tokens /data/state && touch /data/.inboxpilot-image-migration-complete'
 
 trap - HUP INT TERM EXIT
-echo "State copied to $data_volume, $logs_volume and $secrets_volume."
+echo "State copied to $data_volume and $logs_volume."
 echo "Start the image-based stack now; legacy application containers remain stopped."

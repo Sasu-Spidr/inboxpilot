@@ -92,8 +92,6 @@ docker compose --env-file "$runtime_env" -p "$project" \
 
 docker run --rm -v "${project}_inboxpilot_data:/data:ro" alpine:3.20 \
   sh -c 'test -d /data/tokens && test -d /data/state'
-docker run --rm -v "${project}_inboxpilot_runtime_secrets:/secrets:ro" alpine:3.20 \
-  test -s /secrets/google-oauth-client.json
 
 deployment_succeeded=true
 trap - EXIT HUP INT TERM

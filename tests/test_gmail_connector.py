@@ -1,6 +1,7 @@
 import base64
 from email import message_from_bytes
 
+import gmail_connector
 from gmail_connector import GmailConnector, gmail_label_color, recipient_address
 from token_store import TokenStore
 
@@ -271,6 +272,43 @@ def test_gmail_auth_without_token_does_not_open_browser(tmp_path, monkeypatch):
         assert "reconnect Gmail from the web dashboard" in str(exc)
     else:
         raise AssertionError("authenticate should fail without an OAuth token")
+
+
+def test_interactive_gmail_auth_uses_openbao_client_config(tmp_path, monkeypatch):
+    client_config = {"web": {"client_id": "gmail-id", "client_secret": "gmail-secret"}}
+    captured = {}
+
+    class FakeCredentials:
+        valid = True
+        expired = False
+        refresh_token = "refresh"
+        token = "token"
+        token_uri = "https://oauth2.googleapis.com/token"
+        client_id = "gmail-id"
+        client_secret = "gmail-secret"
+        scopes = []
+
+    class FakeFlow:
+        def run_local_server(self, **kwargs):
+            return FakeCredentials()
+
+    def from_client_config(config, scopes):
+        captured["config"] = config
+        captured["scopes"] = scopes
+        return FakeFlow()
+
+    monkeypatch.setenv("GMAIL_INTERACTIVE_AUTH", "1")
+    monkeypatch.setattr(gmail_connector.InstalledAppFlow, "from_client_config", staticmethod(from_client_config))
+    monkeypatch.setattr(gmail_connector, "build", lambda *args, **kwargs: object())
+    connector = GmailConnector(
+        client_config,
+        str(tmp_path / "token.enc"),
+        TokenStore(TokenStore.generate_key()),
+    )
+
+    connector.authenticate()
+
+    assert captured["config"] == client_config
 
 
 def test_create_draft_uses_plain_email_address_for_to_header():

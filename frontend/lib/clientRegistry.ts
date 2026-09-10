@@ -11,7 +11,6 @@ export type MailAccount = {
   email_address?: string;
   connected_at?: string;
   sender_name?: string;
-  credentials_file?: string;
   client_id_env?: string;
   client_secret_env?: string;
   tenant_id?: string;
@@ -49,7 +48,6 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
           {
             account: "main",
             sender_name: ownerName,
-            credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
             token_file: `./data/tokens/${clientId}-gmail-main.token.enc`,
             connected_at: "",
           },
@@ -182,7 +180,6 @@ function buildAccountConfig(clientId: string, ownerName: string, provider: Provi
     return {
       account,
       sender_name: ownerName,
-      credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
       token_file: `./data/tokens/${clientId}-gmail-${tokenAccount}.token.enc`,
       connected_at: "",
     };

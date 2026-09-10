@@ -79,9 +79,6 @@ def make_client_id(value: str) -> str:
 
 def build_registered_client(settings: dict, client_id: str, owner_name: str, email: str = "") -> dict:
     onboarding = settings.get("onboarding", {}) or {}
-    gmail_credentials_file = os.path.expandvars(
-        os.getenv("GMAIL_OAUTH_CLIENT_FILE") or onboarding.get("gmail_credentials_file", "./secrets/google-oauth-client.json")
-    )
     microsoft_client_id_env = onboarding.get("microsoft_client_id_env", "MICROSOFT_CLIENT_ID")
     microsoft_client_secret_env = onboarding.get("microsoft_client_secret_env", "MICROSOFT_CLIENT_SECRET")
     return {
@@ -95,7 +92,6 @@ def build_registered_client(settings: dict, client_id: str, owner_name: str, ema
                     {
                         "account": "main",
                         "sender_name": owner_name,
-                        "credentials_file": gmail_credentials_file,
                         "token_file": f"./data/tokens/{client_id}-gmail-main.token.enc",
                         "connected_at": "",
                     }

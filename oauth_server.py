@@ -19,6 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
+from bao_secrets import load_yaml_settings, runtime_secret
 from client_settings import (
     is_legacy_label_name,
     label_color_settings_for_client,
@@ -223,17 +224,27 @@ class OAuthOnboardingServer:
 
     def _label_sync_connector(self, provider: str, account_cfg: dict, token_file: str):
         if provider == "gmail":
-            return GmailConnector(account_cfg["credentials_file"], token_file, self.store)
-        client_id = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+            return GmailConnector(runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"), token_file, self.store)
+        client_id = account_cfg.get("client_id") or runtime_secret(
+            self.settings,
+            account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"),
+        )
         if not client_id:
             raise ValueError("Microsoft client_id manquant")
-        client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+        client_secret = account_cfg.get("client_secret") or runtime_secret(
+            self.settings,
+            account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"),
+        )
         return HotmailConnector(client_id, account_cfg.get("tenant_id", "consumers"), token_file, self.store, client_secret=client_secret)
 
     def start_gmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "gmail")
         redirect_uri = f"{self.base_url}/oauth/gmail/callback"
-        flow = Flow.from_client_secrets_file(account_cfg["credentials_file"], scopes=GMAIL_SCOPES, redirect_uri=redirect_uri)
+        flow = Flow.from_client_config(
+            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+            scopes=GMAIL_SCOPES,
+            redirect_uri=redirect_uri,
+        )
         auth_url, _ = flow.authorization_url(
             access_type="offline",
             include_granted_scopes="true",
@@ -249,7 +260,11 @@ class OAuthOnboardingServer:
         state = self._verify_state(one(params, "state"), "gmail")
         _, _, account_cfg = self._account(urlencode({"client": state["client"], "account": state["account"]}), "gmail")
         redirect_uri = f"{self.base_url}/oauth/gmail/callback"
-        flow = Flow.from_client_secrets_file(account_cfg["credentials_file"], scopes=GMAIL_SCOPES, redirect_uri=redirect_uri)
+        flow = Flow.from_client_config(
+            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+            scopes=GMAIL_SCOPES,
+            redirect_uri=redirect_uri,
+        )
         flow.fetch_token(code=one(params, "code"))
         self.store.save(account_cfg["token_file"], json_credentials(flow.credentials))
         email = gmail_profile_email(flow.credentials)
@@ -264,7 +279,7 @@ class OAuthOnboardingServer:
     def start_hotmail(self, query: str) -> str:
         client_id, account, account_cfg = self._account(query, "hotmail")
         redirect_uri = f"{self.base_url}/oauth/hotmail/callback"
-        app = microsoft_app(account_cfg)
+        app = microsoft_app(account_cfg, settings=self.settings)
         return app.get_authorization_request_url(
             scopes=HOTMAIL_SCOPES,
             state=self._sign_state("hotmail", client_id, account),
@@ -279,7 +294,7 @@ class OAuthOnboardingServer:
         state = self._verify_state(one(params, "state"), "hotmail")
         _, _, account_cfg = self._account(urlencode({"client": state["client"], "account": state["account"]}), "hotmail")
         cache = msal.SerializableTokenCache()
-        app = microsoft_app(account_cfg, cache)
+        app = microsoft_app(account_cfg, cache, settings=self.settings)
         result = app.acquire_token_by_authorization_code(
             code=one(params, "code"),
             scopes=HOTMAIL_SCOPES,
@@ -339,11 +354,18 @@ class OAuthOnboardingServer:
         return payload
 
 
-def microsoft_app(account_cfg: dict, cache=None):
-    client_id = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+def microsoft_app(account_cfg: dict, cache=None, settings: dict | None = None):
+    runtime_settings = settings or {}
+    client_id = account_cfg.get("client_id") or runtime_secret(
+        runtime_settings,
+        account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"),
+    )
     if not client_id:
         raise ValueError("Microsoft client_id manquant")
-    client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+    client_secret = account_cfg.get("client_secret") or runtime_secret(
+        runtime_settings,
+        account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"),
+    )
     authority = f"https://login.microsoftonline.com/{account_cfg.get('tenant_id', 'consumers')}"
     if client_secret:
         return msal.ConfidentialClientApplication(client_id, client_credential=client_secret, authority=authority, token_cache=cache)
@@ -376,9 +398,8 @@ def microsoft_profile_email(access_token: str) -> str:
         return ""
 
 
-def load_settings(path: str) -> dict:
-    raw = Path(path).read_text(encoding="utf-8")
-    return merge_registered_clients(yaml.safe_load(os.path.expandvars(raw)))
+def load_settings(path: str, secret_resolver=None) -> dict:
+    return merge_registered_clients(load_yaml_settings(path, secret_resolver))
 
 
 def one(params: dict, key: str) -> str:

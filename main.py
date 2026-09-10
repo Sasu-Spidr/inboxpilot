@@ -12,6 +12,7 @@ import yaml
 
 from activity_store import record_email_activity
 from agent_flow_store import record_agent_flow
+from bao_secrets import load_yaml_settings, runtime_secret
 from calendar_sync import CalendarAvailabilitySync
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, is_legacy_label_name, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
@@ -30,9 +31,8 @@ LOG = logging.getLogger("spidr_mail")
 def _normalized_name(value: str) -> str:
     return " ".join(str(value or "").strip().casefold().split())
 
-def load_settings(path: str = "config/settings.yaml") -> dict:
-    raw = Path(path).read_text(encoding="utf-8")
-    return merge_registered_clients(yaml.safe_load(os.path.expandvars(raw)))
+def load_settings(path: str = "config/settings.yaml", secret_resolver=None) -> dict:
+    return merge_registered_clients(load_yaml_settings(path, secret_resolver))
 
 
 def filter_settings(settings: dict, client: str | None = None, connector: str | None = None, account: str | None = None) -> dict:
@@ -85,13 +85,23 @@ class MailWorker:
                         LOG.info("Connector activation timestamp initialized: client=%s connector=%s account=%s", client_id, connector_name, account)
                     key = f"{connector_name}:{account}"
                     if connector_name == "gmail":
-                        connector = GmailConnector(account_cfg["credentials_file"], account_cfg["token_file"], store)
+                        connector = GmailConnector(
+                            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+                            account_cfg["token_file"],
+                            store,
+                        )
                     elif connector_name == "hotmail":
-                        client_id_value = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+                        client_id_value = account_cfg.get("client_id") or runtime_secret(
+                            self.settings,
+                            account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"),
+                        )
                         if not client_id_value:
                             LOG.warning("Hotmail connector skipped because Microsoft client id is missing: client=%s account=%s", client_id, account)
                             continue
-                        client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+                        client_secret = account_cfg.get("client_secret") or runtime_secret(
+                            self.settings,
+                            account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"),
+                        )
                         connector = HotmailConnector(client_id_value, account_cfg.get("tenant_id", "consumers"), account_cfg["token_file"], store, client_secret=client_secret)
                     else:
                         LOG.warning("Unknown connector ignored: %s", connector_name)
