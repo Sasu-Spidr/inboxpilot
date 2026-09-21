@@ -157,7 +157,13 @@ def test_bao_agents_are_network_isolated_and_not_published():
         assert agent["cap_drop"] == ["ALL"]
         assert agent["security_opt"] == ["no-new-privileges:true"]
         assert agent["volumes"][0]["read_only"] is True
-        assert agent["healthcheck"]["test"][-1].endswith("/v1/sys/health")
+
+    assert frontend_agent["healthcheck"]["test"][-1].endswith(
+        "/v1/secret/data/inboxpilot/frontend"
+    )
+    assert worker_agent["healthcheck"]["test"][-1].endswith(
+        "/v1/secret/data/inboxpilot/groq"
+    )
 
     assert services["frontend"]["depends_on"]["bao-agent-frontend"]["condition"] == "service_healthy"
     assert services["mail-agent"]["depends_on"]["bao-agent-worker"]["condition"] == "service_healthy"

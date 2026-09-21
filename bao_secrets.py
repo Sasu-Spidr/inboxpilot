@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import re
 from pathlib import Path
@@ -18,7 +17,8 @@ SECRET_LOCATIONS: dict[str, tuple[str, str]] = {
     "TOKEN_ENCRYPTION_KEY": ("secret/data/inboxpilot/crypto", "token_encryption_key"),
     "MICROSOFT_CLIENT_ID": ("secret/data/inboxpilot/oauth/microsoft", "client_id"),
     "MICROSOFT_CLIENT_SECRET": ("secret/data/inboxpilot/oauth/microsoft", "client_secret"),
-    "GMAIL_CLIENT_CONFIG": ("secret/data/inboxpilot/oauth/gmail", "client_config"),
+    "GMAIL_CLIENT_ID": ("secret/data/inboxpilot/oauth/gmail", "client_id"),
+    "GMAIL_CLIENT_SECRET": ("secret/data/inboxpilot/oauth/gmail", "client_secret"),
 }
 
 _VARIABLE_PATTERN = re.compile(r"\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))")
@@ -53,10 +53,7 @@ class BaoSecrets:
         return value
 
     def load_required(self) -> dict[str, Any]:
-        values = {name: self.get(name) for name in SECRET_LOCATIONS}
-        values["GMAIL_CLIENT_CONFIG"] = parse_gmail_client_config(values["GMAIL_CLIENT_CONFIG"])
-        self._secret_cache["GMAIL_CLIENT_CONFIG"] = values["GMAIL_CLIENT_CONFIG"]
-        return values
+        return {name: self.get(name) for name in SECRET_LOCATIONS}
 
     def _read_path(self, path: str) -> Mapping[str, Any]:
         if path in self._path_cache:
@@ -78,19 +75,17 @@ class BaoSecrets:
         return values
 
 
-def parse_gmail_client_config(value: Any) -> dict[str, Any]:
-    if isinstance(value, Mapping):
-        config = dict(value)
-    elif isinstance(value, str):
-        try:
-            config = json.loads(value)
-        except json.JSONDecodeError as exc:
-            raise BaoSecretError("GMAIL_CLIENT_CONFIG is not valid JSON") from exc
-    else:
-        raise BaoSecretError("GMAIL_CLIENT_CONFIG must be a JSON object")
-    if not isinstance(config, dict) or not ({"web", "installed"} & set(config)):
-        raise BaoSecretError("GMAIL_CLIENT_CONFIG must contain a web or installed OAuth client")
-    return config
+def gmail_client_config(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Build Google's OAuth web-client configuration without storing JSON."""
+
+    return {
+        "web": {
+            "client_id": runtime_secret(settings, "GMAIL_CLIENT_ID"),
+            "client_secret": runtime_secret(settings, "GMAIL_CLIENT_SECRET"),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    }
 
 
 def resolve_settings_text(raw: str, secrets: Mapping[str, Any]) -> str:

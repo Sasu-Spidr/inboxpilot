@@ -1,9 +1,7 @@
-import json
-
 import pytest
 import requests
 
-from bao_secrets import BaoSecretError, BaoSecrets, load_yaml_settings, runtime_secret
+from bao_secrets import BaoSecretError, BaoSecrets, gmail_client_config, load_yaml_settings, runtime_secret
 
 
 class FakeResponse:
@@ -42,7 +40,8 @@ def required_payloads():
             "client_secret": "bao-client-secret",
         },
         "secret/data/inboxpilot/oauth/gmail": {
-            "client_config": json.dumps({"web": {"client_id": "gmail-id", "client_secret": "gmail-secret"}}),
+            "client_id": "gmail-id",
+            "client_secret": "gmail-secret",
         },
     }
 
@@ -96,3 +95,36 @@ def test_path_payload_is_cached_for_multiple_fields():
     assert resolver.get("MICROSOFT_CLIENT_SECRET") == "bao-client-secret"
     microsoft_calls = [url for url, _ in session.calls if url.endswith("/oauth/microsoft")]
     assert len(microsoft_calls) == 1
+
+
+def test_gmail_config_is_built_in_memory_from_openbao_fields(tmp_path):
+    config = tmp_path / "settings.yaml"
+    config.write_text("groq_api_key: ${GROQ_API_KEY}\n", encoding="utf-8")
+    settings = load_yaml_settings(
+        str(config),
+        BaoSecrets("http://agent:8100", session=FakeSession(required_payloads())),
+    )
+
+    assert gmail_client_config(settings) == {
+        "web": {
+            "client_id": "gmail-id",
+            "client_secret": "gmail-secret",
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    }
+
+
+def test_gmail_secret_environment_cannot_override_openbao(tmp_path, monkeypatch):
+    monkeypatch.setenv("GMAIL_CLIENT_ID", "environment-client-id")
+    monkeypatch.setenv("GMAIL_CLIENT_SECRET", "environment-client-secret")
+    config = tmp_path / "settings.yaml"
+    config.write_text("groq_api_key: ${GROQ_API_KEY}\n", encoding="utf-8")
+    settings = load_yaml_settings(
+        str(config),
+        BaoSecrets("http://agent:8100", session=FakeSession(required_payloads())),
+    )
+
+    built = gmail_client_config(settings)["web"]
+    assert built["client_id"] == "gmail-id"
+    assert built["client_secret"] == "gmail-secret"

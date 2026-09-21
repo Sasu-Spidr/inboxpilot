@@ -96,11 +96,6 @@ OAUTH_PUBLIC_URL=$(get_secret inboxpilot/urls/$ENVIRONMENT oauth_public_url)
 FRONTEND_BASE_URL=$(get_secret inboxpilot/urls/$ENVIRONMENT frontend_base_url)
 
 # =============================================================================
-# OAuth - Gmail
-# =============================================================================
-GMAIL_OAUTH_CLIENT_FILE=./secrets/google-oauth-client.json
-
-# =============================================================================
 # Service Ports
 # =============================================================================
 OAUTH_PORT=8080
@@ -110,24 +105,8 @@ EOF
 
 echo "✅ .env file generated"
 
-# Create secrets directory
-mkdir -p "$PROJECT_ROOT/secrets"
-
-# Generate google-oauth-client.json from Vault
-echo "📥 Fetching Gmail OAuth client config..."
-GMAIL_CLIENT_CONFIG=$(get_secret inboxpilot/oauth/gmail client_config)
-
-if [ -n "$GMAIL_CLIENT_CONFIG" ]; then
-    echo "$GMAIL_CLIENT_CONFIG" > "$PROJECT_ROOT/secrets/google-oauth-client.json"
-    echo "✅ secrets/google-oauth-client.json generated"
-else
-    echo -e "${YELLOW}⚠️  Gmail OAuth config not found in Vault${NC}"
-    echo "   You can create a placeholder or set it manually"
-fi
-
 # Set permissions
 chmod 600 "$PROJECT_ROOT/.env"
-chmod 600 "$PROJECT_ROOT/secrets/google-oauth-client.json" 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}✅ All secrets loaded successfully!${NC}"

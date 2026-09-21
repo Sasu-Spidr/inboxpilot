@@ -19,7 +19,7 @@ import yaml
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import Flow
 
-from bao_secrets import load_yaml_settings, runtime_secret
+from bao_secrets import gmail_client_config, load_yaml_settings, runtime_secret
 from client_settings import (
     is_legacy_label_name,
     label_color_settings_for_client,
@@ -224,7 +224,7 @@ class OAuthOnboardingServer:
 
     def _label_sync_connector(self, provider: str, account_cfg: dict, token_file: str):
         if provider == "gmail":
-            return GmailConnector(runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"), token_file, self.store)
+            return GmailConnector(gmail_client_config(self.settings), token_file, self.store)
         client_id = account_cfg.get("client_id") or runtime_secret(
             self.settings,
             account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"),
@@ -241,7 +241,7 @@ class OAuthOnboardingServer:
         client_id, account, account_cfg = self._account(query, "gmail")
         redirect_uri = f"{self.base_url}/oauth/gmail/callback"
         flow = Flow.from_client_config(
-            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+            gmail_client_config(self.settings),
             scopes=GMAIL_SCOPES,
             redirect_uri=redirect_uri,
         )
@@ -261,7 +261,7 @@ class OAuthOnboardingServer:
         _, _, account_cfg = self._account(urlencode({"client": state["client"], "account": state["account"]}), "gmail")
         redirect_uri = f"{self.base_url}/oauth/gmail/callback"
         flow = Flow.from_client_config(
-            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+            gmail_client_config(self.settings),
             scopes=GMAIL_SCOPES,
             redirect_uri=redirect_uri,
         )

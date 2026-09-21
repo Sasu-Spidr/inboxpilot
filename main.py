@@ -12,7 +12,7 @@ import yaml
 
 from activity_store import record_email_activity
 from agent_flow_store import record_agent_flow
-from bao_secrets import load_yaml_settings, runtime_secret
+from bao_secrets import gmail_client_config, load_yaml_settings, runtime_secret
 from calendar_sync import CalendarAvailabilitySync
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, is_legacy_label_name, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
@@ -86,7 +86,7 @@ class MailWorker:
                     key = f"{connector_name}:{account}"
                     if connector_name == "gmail":
                         connector = GmailConnector(
-                            runtime_secret(self.settings, "GMAIL_CLIENT_CONFIG"),
+                            gmail_client_config(self.settings),
                             account_cfg["token_file"],
                             store,
                         )
