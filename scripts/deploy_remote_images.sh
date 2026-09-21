@@ -21,7 +21,7 @@ case "$environment" in
     ;;
 esac
 
-required="VPS_HOST VPS_USER VPS_SSH_PORT IMAGE_TAG GHCR_TOKEN GHCR_USER FRONTEND_BASE_URL OAUTH_BASE_URL OAUTH_PUBLIC_URL BAO_ADDR"
+required="VPS_HOST VPS_USER VPS_SSH_PORT IMAGE_TAG GHCR_TOKEN GHCR_USER FRONTEND_BASE_URL OAUTH_BASE_URL OAUTH_PUBLIC_URL BAO_ADDR TURNSTILE_SITE_KEY"
 for name in $required; do
   eval "value=\${$name:-}"
   if [ -z "$value" ]; then
@@ -68,6 +68,7 @@ set_runtime_value FRONTEND_BASE_URL "$FRONTEND_BASE_URL"
 set_runtime_value OAUTH_BASE_URL "$OAUTH_BASE_URL"
 set_runtime_value OAUTH_PUBLIC_URL "$OAUTH_PUBLIC_URL"
 set_runtime_value BAO_ADDR "$BAO_ADDR"
+set_runtime_value TURNSTILE_SITE_KEY "$TURNSTILE_SITE_KEY"
 set_runtime_value INBOXPILOT_BOOTSTRAP_ROOT "/etc/inboxpilot/$environment"
 
 if [ "$environment" = dev ]; then

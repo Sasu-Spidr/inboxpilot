@@ -212,4 +212,8 @@ def test_manual_deployment_can_target_dev_without_touching_prod():
     assert "inputs.target == 'dev' || inputs.target == 'all'" in workflow_text
     assert "inputs.target == 'prod'" in workflow_text
     assert "BAO_ADDR: ${{ vars.BAO_ADDR }}" in workflow_text
+    assert "TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}" in workflow_text
+    assert 'set_runtime_value TURNSTILE_SITE_KEY "$TURNSTILE_SITE_KEY"' in (
+        ROOT / "scripts/deploy_remote_images.sh"
+    ).read_text(encoding="utf-8")
     assert "Build and push OpenBao agent image" in workflow_text
