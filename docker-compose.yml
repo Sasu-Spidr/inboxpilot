@@ -72,15 +72,23 @@ services:
   frontend:
     image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
     environment:
-      AUTH_SECRET: ${AUTH_SECRET:-}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
+      BAO_AGENT_ADDR: ${FRONTEND_BAO_AGENT_ADDR:-http://bao-agent-frontend:8100}
       DATA_DIR: /data
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
       OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
-      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      SECURITY_BLOCKED_EMAIL_DOMAINS: ${SECURITY_BLOCKED_EMAIL_DOMAINS:-}
+      SIGNUP_MIN_SECONDS: ${SIGNUP_MIN_SECONDS:-3}
+      REGISTER_RATE_LIMIT_1H: ${REGISTER_RATE_LIMIT_1H:-3}
+      LOGIN_RATE_LIMIT_15M: ${LOGIN_RATE_LIMIT_15M:-6}
+      SESSION_MAX_AGE_SECONDS: ${SESSION_MAX_AGE_SECONDS:-86400}
+      INBOXPILOT_PRIVATE_CLIENT_MODE: ${INBOXPILOT_PRIVATE_CLIENT_MODE:-false}
+      INBOXPILOT_ENABLE_LANDING: ${INBOXPILOT_ENABLE_LANDING:-true}
+      INBOXPILOT_ENABLE_MFA: ${INBOXPILOT_ENABLE_MFA:-true}
+      PUBLIC_SIGNUP_ENABLED: ${PUBLIC_SIGNUP_ENABLED:-false}
+      ADMIN_MFA_REQUIRED: ${ADMIN_MFA_REQUIRED:-true}
     volumes:
       - inboxpilot_data:/data
     networks:
@@ -134,6 +142,7 @@ services:
       OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PORT: 8080
+      FRONTEND_SERVICE_HOST: frontend
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs

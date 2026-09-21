@@ -1,3 +1,5 @@
+import { secret } from "./baoSecrets";
+
 const DEFAULT_BLOCKED_DOMAINS = new Set([
   "immenseignite.info",
   "mailinator.com",
@@ -65,11 +67,11 @@ export function blockedEmailDomains(): Set<string> {
 }
 
 export function signupAccessCodeRequired(): boolean {
-  return Boolean(process.env.SIGNUP_ACCESS_CODE);
+  return Boolean(secret("SIGNUP_ACCESS_CODE"));
 }
 
 export function signupAccessCodeMatches(value: string): boolean {
-  const expected = process.env.SIGNUP_ACCESS_CODE || "";
+  const expected = secret("SIGNUP_ACCESS_CODE");
   if (!expected) return true;
   return String(value || "").trim() === expected;
 }
@@ -132,12 +134,12 @@ export async function verifyTurnstileIfConfigured(input: {
   token: string;
   ip: string;
 }): Promise<SignupAbuseCheck> {
-  const secret = process.env.TURNSTILE_SECRET_KEY || "";
-  if (!secret) return { allowed: true };
+  const turnstileSecret = secret("TURNSTILE_SECRET_KEY");
+  if (!turnstileSecret) return { allowed: true };
   if (!input.token) return { allowed: false, reason: "turnstile_missing" };
 
   const body = new URLSearchParams();
-  body.set("secret", secret);
+  body.set("secret", turnstileSecret);
   body.set("response", input.token);
   if (input.ip) body.set("remoteip", input.ip);
 

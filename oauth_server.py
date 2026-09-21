@@ -7,6 +7,7 @@ import hmac
 import json
 import logging
 import os
+import socket
 import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -82,7 +83,7 @@ class OAuthOnboardingServer:
                     length = int(self.headers.get("Content-Length", "0"))
                     raw_body = self.rfile.read(length)
                     if parsed.path == "/internal/sync-label-settings":
-                        if self.headers.get("X-Internal-Sync-Key") != server.settings["token_encryption_key"]:
+                        if not server.is_trusted_frontend(self.client_address[0]):
                             self._json(403, {"error": "forbidden"})
                             return
                         payload = json.loads(raw_body.decode("utf-8") or "{}")
@@ -145,6 +146,20 @@ class OAuthOnboardingServer:
                 self.wfile.write(body)
 
         return Handler
+
+    def is_trusted_frontend(self, remote_address: str) -> bool:
+        """Allow the internal label endpoint only from the frontend service."""
+
+        host = os.getenv("FRONTEND_SERVICE_HOST", "frontend")
+        try:
+            addresses = {
+                entry[4][0]
+                for entry in socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+            }
+        except socket.gaierror:
+            LOG.error("Unable to resolve the trusted frontend service host: %s", host)
+            return False
+        return remote_address in addresses
 
     def sync_label_settings(self, client_id: str, removed_labels: list[str] | None = None, provider: str | None = None, account: str | None = None) -> dict:
         self.settings = merge_registered_clients(self.settings)

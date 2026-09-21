@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { archiveSavedClientSettingsForEmail, DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { oauthInternalBase } from "@/lib/oauthProxy";
 
 export async function GET() {
   const user = await currentUser();
@@ -66,16 +67,11 @@ function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSett
 }
 
 async function syncGmailLabelSettings(clientId: string, removedLabels: string[], provider?: string, account?: string): Promise<void> {
-  const internalUrl = process.env.OAUTH_INTERNAL_URL;
-  const syncKey = process.env.TOKEN_ENCRYPTION_KEY;
-  if (!internalUrl || !syncKey) return;
-
   try {
-    const response = await fetch(new URL("/internal/sync-label-settings", internalUrl), {
+    const response = await fetch(new URL("/internal/sync-label-settings", oauthInternalBase()), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Internal-Sync-Key": syncKey,
       },
       body: JSON.stringify({ client: clientId, removed_labels: removedLabels, provider, account }),
       cache: "no-store",

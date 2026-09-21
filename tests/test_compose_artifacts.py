@@ -42,6 +42,18 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
         } & set(service["environment"])
         assert all("/app/secrets" not in str(volume) for volume in service.get("volumes", []))
 
+    frontend = services["frontend"]
+    assert "env_file" not in frontend
+    assert frontend["environment"]["BAO_AGENT_ADDR"].endswith("bao-agent-frontend:8100}")
+    assert "TURNSTILE_SITE_KEY" in frontend["environment"]
+    assert not {
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "TOKEN_ENCRYPTION_KEY",
+        "TURNSTILE_SECRET_KEY",
+        "SIGNUP_ACCESS_CODE",
+    } & set(frontend["environment"])
+
 
 def test_python_runtime_no_longer_depends_on_google_secret_files():
     compose_text = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
@@ -55,6 +67,29 @@ def test_python_runtime_no_longer_depends_on_google_secret_files():
     assert "credentials_file" not in settings_text
     assert "google-oauth-client.json" not in compose_text
     assert "google-oauth-client.json" not in deploy_text
+
+
+def test_frontend_runtime_preloads_openbao_secrets_without_worker_key():
+    resolver_text = (ROOT / "frontend/lib/baoSecrets.ts").read_text(encoding="utf-8")
+    instrumentation_text = (ROOT / "frontend/instrumentation.ts").read_text(encoding="utf-8")
+    auth_text = (ROOT / "frontend/lib/auth.ts").read_text(encoding="utf-8")
+    db_text = (ROOT / "frontend/lib/db.ts").read_text(encoding="utf-8")
+    abuse_text = (ROOT / "frontend/lib/antiAbuse.ts").read_text(encoding="utf-8")
+    labels_route_text = (ROOT / "frontend/app/api/settings/labels/route.ts").read_text(encoding="utf-8")
+
+    for name in ("DATABASE_URL", "AUTH_SECRET", "TURNSTILE_SECRET_KEY", "SIGNUP_ACCESS_CODE"):
+        assert name in resolver_text
+    assert "TOKEN_ENCRYPTION_KEY" not in resolver_text
+    assert "bao-agent-frontend:8100" in resolver_text
+    assert "await preload()" in instrumentation_text
+    assert 'secret("AUTH_SECRET")' in auth_text
+    assert 'secret("DATABASE_URL")' in db_text
+    assert 'secret("TURNSTILE_SECRET_KEY")' in abuse_text
+    assert 'secret("SIGNUP_ACCESS_CODE")' in abuse_text
+    assert "process.env.AUTH_SECRET" not in auth_text
+    assert "process.env.DATABASE_URL" not in db_text
+    assert "process.env.TOKEN_ENCRYPTION_KEY" not in labels_route_text
+    assert "X-Internal-Sync-Key" not in labels_route_text
 
 def test_local_build_override_restores_all_application_builds():
     compose = load_compose("docker-compose.build.yml")
