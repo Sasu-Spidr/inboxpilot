@@ -74,36 +74,16 @@ jobs:
   deploy-dev:
     needs: publish
     if: inputs.target == 'dev' || inputs.target == 'all'
-    runs-on: ubuntu-latest
-    environment: dev
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure pinned SSH access
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
-        run: |
-          install -d -m 700 ~/.ssh
-          install -m 600 /dev/null ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-
-      - name: Deploy dev
-        env:
-          VPS_HOST: ${{ vars.VPS_HOST }}
-          VPS_USER: ${{ vars.VPS_USER }}
-          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
-          IMAGE_TAG: ${{ github.sha }}
-          GHCR_TOKEN: ${{ github.token }}
-          GHCR_USER: ${{ github.actor }}
-          FRONTEND_BASE_URL: ${{ vars.FRONTEND_BASE_URL }}
-          OAUTH_BASE_URL: ${{ vars.OAUTH_BASE_URL }}
-          OAUTH_PUBLIC_URL: ${{ vars.OAUTH_PUBLIC_URL }}
-          BAO_ADDR: ${{ vars.BAO_ADDR }}
-          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-        run: sh scripts/deploy_remote_images.sh dev
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      project: spidr-mail-dev
+      overlay: docker-compose.dev.yml
+      image_tag: ${{ github.sha }}
+    secrets: inherit
 
   deploy-prod:
     needs: [publish, deploy-dev]
@@ -111,33 +91,13 @@ jobs:
       always() && needs.publish.result == 'success' &&
       (inputs.target == 'prod' ||
       (inputs.target == 'all' && needs.deploy-dev.result == 'success'))
-    runs-on: ubuntu-latest
-    environment: prod
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure pinned SSH access
-        env:
-          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
-          VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
-        run: |
-          install -d -m 700 ~/.ssh
-          install -m 600 /dev/null ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-
-      - name: Deploy prod
-        env:
-          VPS_HOST: ${{ vars.VPS_HOST }}
-          VPS_USER: ${{ vars.VPS_USER }}
-          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
-          IMAGE_TAG: ${{ github.sha }}
-          GHCR_TOKEN: ${{ github.token }}
-          GHCR_USER: ${{ github.actor }}
-          FRONTEND_BASE_URL: ${{ vars.FRONTEND_BASE_URL }}
-          OAUTH_BASE_URL: ${{ vars.OAUTH_BASE_URL }}
-          OAUTH_PUBLIC_URL: ${{ vars.OAUTH_PUBLIC_URL }}
-          BAO_ADDR: ${{ vars.BAO_ADDR }}
-          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
-        run: sh scripts/deploy_remote_images.sh prod
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: prod
+      project: spidr-mail
+      overlay: docker-compose.prod.yml
+      image_tag: ${{ github.sha }}
+    secrets: inherit

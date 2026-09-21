@@ -60,7 +60,7 @@ def test_python_runtime_no_longer_depends_on_google_secret_files():
     settings_text = (ROOT / "config/settings.yaml").read_text(encoding="utf-8")
     connector_text = (ROOT / "gmail_connector.py").read_text(encoding="utf-8")
     oauth_text = (ROOT / "oauth_server.py").read_text(encoding="utf-8")
-    deploy_text = (ROOT / "scripts/deploy_remote_images.sh").read_text(encoding="utf-8")
+    deploy_text = (ROOT / "scripts/deploy_via_context.sh").read_text(encoding="utf-8")
 
     assert "from_client_secrets_file" not in connector_text
     assert "from_client_secrets_file" not in oauth_text
@@ -143,8 +143,48 @@ def test_ci_publishes_all_images_after_tests_on_main_and_dev():
     assert images["bao-agent"]["dockerfile"] == "./deploy/Dockerfile.agent"
     assert "docker/metadata-action@v5" in workflow_text
     assert "type=sha" in workflow_text
+    assert "type=raw,value=${{ github.sha }}" in workflow_text
     assert "type=ref,event=branch" in workflow_text
     assert "cache-to: type=gha,mode=max" in workflow_text
+
+
+def test_ci_deploys_dev_through_the_reusable_workflow():
+    ci_text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    ci = yaml.safe_load(ci_text)
+    deploy = ci["jobs"]["deploy-dev"]
+
+    assert deploy["needs"] == ["build"]
+    assert deploy["uses"] == "./.github/workflows/deploy.yml"
+    assert deploy["with"] == {
+        "environment": "dev",
+        "project": "spidr-mail-dev",
+        "overlay": "docker-compose.dev.yml",
+        "image_tag": "${{ github.sha }}",
+    }
+    assert deploy["secrets"] == "inherit"
+    assert "refs/heads/dev" in deploy["if"]
+
+
+def test_reusable_deployment_uses_remote_context_health_checks_and_rollback():
+    workflow_text = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")
+    script_text = (ROOT / "scripts/deploy_via_context.sh").read_text(encoding="utf-8")
+
+    assert "workflow_call:" in workflow_text
+    for input_name in ("environment", "project", "overlay", "image_tag"):
+        assert f"{input_name}:" in workflow_text
+    assert 'docker context create vps --docker "host=ssh://' in workflow_text
+    assert "docker login ghcr.io" in workflow_text
+    assert "docker context rm -f vps" in workflow_text
+    assert "environment: ${{ inputs.environment }}" in workflow_text
+    assert "89.116.111.236" not in workflow_text
+    assert "/opt/spidr-mail" not in workflow_text
+
+    assert 'docker --context "$DOCKER_CONTEXT" compose' in script_text
+    assert "bao-agent-frontend bao-agent-worker" in script_text
+    assert "previous_image=" in script_text
+    assert 'deploy_tag "$previous_tag"' in script_text
+    assert "docker login" not in script_text
+    assert "scp " not in script_text
 
 
 def test_bao_agent_image_is_version_pinned_and_packages_its_config():
@@ -211,9 +251,7 @@ def test_manual_deployment_can_target_dev_without_touching_prod():
     assert "target:" in workflow_text
     assert "inputs.target == 'dev' || inputs.target == 'all'" in workflow_text
     assert "inputs.target == 'prod'" in workflow_text
-    assert "BAO_ADDR: ${{ vars.BAO_ADDR }}" in workflow_text
-    assert "TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}" in workflow_text
-    assert 'set_runtime_value TURNSTILE_SITE_KEY "$TURNSTILE_SITE_KEY"' in (
-        ROOT / "scripts/deploy_remote_images.sh"
-    ).read_text(encoding="utf-8")
+    assert workflow_text.count("uses: ./.github/workflows/deploy.yml") == 2
+    assert "environment: dev" in workflow_text
+    assert "environment: prod" in workflow_text
     assert "Build and push OpenBao agent image" in workflow_text

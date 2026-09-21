@@ -96,6 +96,7 @@ jobs:
           images: ${{ matrix.image }}
           tags: |
             type=sha
+            type=raw,value=${{ github.sha }}
             type=ref,event=branch
 
       - name: Build and push ${{ matrix.name }}
@@ -108,3 +109,17 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  deploy-dev:
+    needs: [build]
+    if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      project: spidr-mail-dev
+      overlay: docker-compose.dev.yml
+      image_tag: ${{ github.sha }}
+    secrets: inherit

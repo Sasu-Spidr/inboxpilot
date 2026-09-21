@@ -1,0 +1,115 @@
+name: Reusable image deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment providing runtime variables
+        required: true
+        type: string
+      project:
+        description: Existing Docker Compose project name
+        required: true
+        type: string
+      overlay:
+        description: Environment-specific Compose overlay
+        required: true
+        type: string
+      image_tag:
+        description: Immutable tag shared by all application images
+        required: true
+        type: string
+    secrets:
+      VPS_SSH_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      packages: read
+    concurrency:
+      group: inboxpilot-${{ inputs.environment }}-deployment
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout deployment manifests
+        uses: actions/checkout@v4
+
+      - name: Validate deployment inputs
+        env:
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          COMPOSE_PROJECT: ${{ inputs.project }}
+          COMPOSE_OVERLAY: ${{ inputs.overlay }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -eu
+          case "$DEPLOY_ENVIRONMENT:$COMPOSE_PROJECT:$COMPOSE_OVERLAY" in
+            dev:spidr-mail-dev:docker-compose.dev.yml|prod:spidr-mail:docker-compose.prod.yml) ;;
+            *) echo "Unsupported deployment target." >&2; exit 64 ;;
+          esac
+          test -f "$COMPOSE_OVERLAY"
+          test -n "$IMAGE_TAG"
+
+      - name: Configure pinned SSH access
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ vars.VPS_KNOWN_HOSTS }}
+        run: |
+          set -eu
+          test -n "$VPS_SSH_KEY"
+          test -n "$VPS_KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Log in to GHCR on the runner
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          echo "::add-mask::$GHCR_TOKEN"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
+
+      - name: Create remote Docker context
+        env:
+          VPS_HOST: ${{ vars.VPS_HOST }}
+          VPS_USER: ${{ vars.VPS_USER }}
+          VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
+        run: |
+          set -eu
+          test -n "$VPS_HOST"
+          test -n "$VPS_USER"
+          test -n "$VPS_SSH_PORT"
+          docker context create vps --docker "host=ssh://${VPS_USER}@${VPS_HOST}:${VPS_SSH_PORT}"
+          docker --context vps info >/dev/null
+
+      - name: Deploy image tag with health checks and rollback
+        env:
+          DOCKER_CONTEXT: vps
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          COMPOSE_PROJECT: ${{ inputs.project }}
+          COMPOSE_OVERLAY: ${{ inputs.overlay }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          BAO_ADDR: ${{ vars.BAO_ADDR }}
+          FRONTEND_BASE_URL: ${{ vars.FRONTEND_BASE_URL }}
+          OAUTH_BASE_URL: ${{ vars.OAUTH_BASE_URL }}
+          OAUTH_PUBLIC_URL: ${{ vars.OAUTH_PUBLIC_URL }}
+          TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+          TRAEFIK_BASIC_AUTH_HASH: ${{ vars.TRAEFIK_BASIC_AUTH_HASH }}
+          PUBLIC_SIGNUP_ENABLED: ${{ vars.PUBLIC_SIGNUP_ENABLED }}
+          ADMIN_MFA_REQUIRED: ${{ vars.ADMIN_MFA_REQUIRED }}
+          LOGIN_RATE_LIMIT_15M: ${{ vars.LOGIN_RATE_LIMIT_15M }}
+          REGISTER_RATE_LIMIT_1H: ${{ vars.REGISTER_RATE_LIMIT_1H }}
+          SESSION_MAX_AGE_SECONDS: ${{ vars.SESSION_MAX_AGE_SECONDS }}
+        run: bash scripts/deploy_via_context.sh
+
+      - name: Remove ephemeral credentials and Docker context
+        if: always()
+        run: |
+          docker context rm -f vps >/dev/null 2>&1 || true
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          rm -f ~/.ssh/id_ed25519 ~/.ssh/known_hosts
