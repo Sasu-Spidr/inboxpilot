@@ -146,6 +146,9 @@ def test_ci_publishes_all_images_after_tests_on_main_and_dev():
     assert "type=raw,value=${{ github.sha }}" in workflow_text
     assert "type=ref,event=branch" in workflow_text
     assert "cache-to: type=gha,mode=max" in workflow_text
+    assert "Verify hardened ${{ matrix.name }} image runtime" in workflow_text
+    assert "--read-only --cap-drop ALL" in workflow_text
+    assert "tests/test_security_operations.py" in workflow_text
 
 
 def test_ci_deploys_dev_through_the_reusable_workflow():

@@ -64,16 +64,22 @@ jobs:
         include:
           - name: backend
             image: ghcr.io/${{ github.repository }}
+            runtime_image: ghcr.io/sasu-spidr/inboxpilot
             context: .
             dockerfile: ./Dockerfile
+            expected_user: "10001:10001"
           - name: frontend
             image: ghcr.io/${{ github.repository }}-frontend
+            runtime_image: ghcr.io/sasu-spidr/inboxpilot-frontend
             context: ./frontend
             dockerfile: ./frontend/Dockerfile
+            expected_user: "node"
           - name: bao-agent
             image: ghcr.io/${{ github.repository }}-bao-agent
+            runtime_image: ghcr.io/sasu-spidr/inboxpilot-bao-agent
             context: .
             dockerfile: ./deploy/Dockerfile.agent
+            expected_user: "openbao"
 
     steps:
       - name: Checkout
@@ -109,6 +115,38 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Verify hardened ${{ matrix.name }} image runtime
+        env:
+          IMAGE: ${{ matrix.runtime_image }}:${{ github.sha }}
+          EXPECTED_USER: ${{ matrix.expected_user }}
+          IMAGE_NAME: ${{ matrix.name }}
+        run: |
+          set -eu
+          docker pull "$IMAGE"
+          actual_user="$(docker image inspect --format '{{.Config.User}}' "$IMAGE")"
+          test "$actual_user" = "$EXPECTED_USER"
+          case "$IMAGE_NAME" in
+            backend)
+              docker run --rm --read-only --cap-drop ALL \
+                --security-opt no-new-privileges \
+                --tmpfs /tmp:size=32m,mode=0700,uid=10001,gid=10001 \
+                "$IMAGE" python -m pytest tests/test_security_operations.py -q \
+                --basetemp=/tmp/pytest
+              ;;
+            frontend)
+              docker run --rm --read-only --cap-drop ALL \
+                --security-opt no-new-privileges \
+                --tmpfs /tmp:size=32m,mode=0700,uid=1000,gid=1000 \
+                "$IMAGE" node -e 'if (process.getuid() === 0) process.exit(1)'
+              ;;
+            bao-agent)
+              docker run --rm --read-only --cap-drop ALL \
+                --security-opt no-new-privileges \
+                --tmpfs /tmp:size=16m,mode=0700,uid=100,gid=1000 \
+                "$IMAGE" version
+              ;;
+          esac
 
   deploy-dev:
     needs: [build]
