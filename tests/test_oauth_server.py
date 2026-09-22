@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import oauth_server
 from client_registry import build_registered_client, merge_registered_clients, save_registered_client
 from oauth_server import OAuthOnboardingServer, render_auth_required, render_home
 
@@ -52,6 +53,31 @@ def test_client_page_requires_frontend_auth():
     html = render_auth_required()
     assert "Espace sécurisé" in html
     assert "Gmail" not in html
+
+
+def test_internal_sync_trusts_only_the_frontend_service_ip(monkeypatch):
+    server = OAuthOnboardingServer(settings(), "http://localhost:8080")
+    monkeypatch.setattr(
+        oauth_server.socket,
+        "getaddrinfo",
+        lambda *args, **kwargs: [
+            (oauth_server.socket.AF_INET, oauth_server.socket.SOCK_STREAM, 6, "", ("172.30.0.4", 0))
+        ],
+    )
+
+    assert server.is_trusted_frontend("172.30.0.4") is True
+    assert server.is_trusted_frontend("172.30.0.5") is False
+
+
+def test_internal_sync_fails_closed_when_frontend_dns_is_unavailable(monkeypatch):
+    server = OAuthOnboardingServer(settings(), "http://localhost:8080")
+
+    def fail_resolution(*args, **kwargs):
+        raise oauth_server.socket.gaierror("not found")
+
+    monkeypatch.setattr(oauth_server.socket, "getaddrinfo", fail_resolution)
+
+    assert server.is_trusted_frontend("172.30.0.4") is False
 
 
 def test_registered_client_is_merged(tmp_path):

@@ -45,8 +45,8 @@ REMOVABLE_SYSTEM_LABEL_IDS = {
 
 
 class GmailConnector:
-    def __init__(self, credentials_file: str, token_file: str, token_store: TokenStore, service=None):
-        self.credentials_file, self.token_file, self.store, self.service = credentials_file, token_file, token_store, service
+    def __init__(self, client_config: dict, token_file: str, token_store: TokenStore, service=None):
+        self.client_config, self.token_file, self.store, self.service = client_config, token_file, token_store, service
         self.calendar_service = None
         self.creds = None
 
@@ -61,7 +61,9 @@ class GmailConnector:
         if not creds or not creds.valid:
             if os.getenv("GMAIL_INTERACTIVE_AUTH") != "1":
                 raise RuntimeError("Gmail token cache is empty or invalid; reconnect Gmail from the web dashboard")
-            flow = InstalledAppFlow.from_client_secrets_file(self.credentials_file, MAIL_SCOPES)
+            if not isinstance(self.client_config, dict):
+                raise RuntimeError("Gmail OAuth client configuration is missing from OpenBao")
+            flow = InstalledAppFlow.from_client_config(self.client_config, MAIL_SCOPES)
             creds = flow.run_local_server(port=0, open_browser=True)
             self.store.save(self.token_file, json_credentials(creds))
         self.creds = creds

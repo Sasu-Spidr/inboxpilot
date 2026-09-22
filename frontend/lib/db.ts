@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 
+import { secret } from "./baoSecrets";
+
 let pool: Pool | null = null;
 let initialized = false;
 
@@ -22,10 +24,7 @@ export type DbUser = {
 };
 
 export function getPool(): Pool {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required for frontend authentication");
-  }
+  const connectionString = secret("DATABASE_URL");
   if (!pool) {
     pool = new Pool({ connectionString });
   }

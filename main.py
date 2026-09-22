@@ -12,6 +12,7 @@ import yaml
 
 from activity_store import record_email_activity
 from agent_flow_store import record_agent_flow
+from bao_secrets import gmail_client_config, load_yaml_settings, runtime_secret
 from calendar_sync import CalendarAvailabilitySync
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, is_legacy_label_name, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
@@ -30,9 +31,8 @@ LOG = logging.getLogger("spidr_mail")
 def _normalized_name(value: str) -> str:
     return " ".join(str(value or "").strip().casefold().split())
 
-def load_settings(path: str = "config/settings.yaml") -> dict:
-    raw = Path(path).read_text(encoding="utf-8")
-    return merge_registered_clients(yaml.safe_load(os.path.expandvars(raw)))
+def load_settings(path: str = "config/settings.yaml", secret_resolver=None) -> dict:
+    return merge_registered_clients(load_yaml_settings(path, secret_resolver))
 
 
 def filter_settings(settings: dict, client: str | None = None, connector: str | None = None, account: str | None = None) -> dict:
@@ -85,13 +85,23 @@ class MailWorker:
                         LOG.info("Connector activation timestamp initialized: client=%s connector=%s account=%s", client_id, connector_name, account)
                     key = f"{connector_name}:{account}"
                     if connector_name == "gmail":
-                        connector = GmailConnector(account_cfg["credentials_file"], account_cfg["token_file"], store)
+                        connector = GmailConnector(
+                            gmail_client_config(self.settings),
+                            account_cfg["token_file"],
+                            store,
+                        )
                     elif connector_name == "hotmail":
-                        client_id_value = account_cfg.get("client_id") or os.getenv(account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"), "")
+                        client_id_value = account_cfg.get("client_id") or runtime_secret(
+                            self.settings,
+                            account_cfg.get("client_id_env", "MICROSOFT_CLIENT_ID"),
+                        )
                         if not client_id_value:
                             LOG.warning("Hotmail connector skipped because Microsoft client id is missing: client=%s account=%s", client_id, account)
                             continue
-                        client_secret = account_cfg.get("client_secret") or os.getenv(account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"), "")
+                        client_secret = account_cfg.get("client_secret") or runtime_secret(
+                            self.settings,
+                            account_cfg.get("client_secret_env", "MICROSOFT_CLIENT_SECRET"),
+                        )
                         connector = HotmailConnector(client_id_value, account_cfg.get("tenant_id", "consumers"), account_cfg["token_file"], store, client_secret=client_secret)
                     else:
                         LOG.warning("Unknown connector ignored: %s", connector_name)
@@ -103,6 +113,8 @@ class MailWorker:
                         "connector": connector,
                         "sender_name": sender_name,
                         "connected_at": connected_at,
+                        "reconcile_recent_inbox": recent_reconciliation_enabled(client_cfg, connector_cfg, account_cfg),
+                        "reconcile_processed_messages": processed_message_reconciliation_enabled(client_cfg, connector_cfg, account_cfg),
                     }
         return built
 
@@ -123,13 +135,18 @@ class MailWorker:
         self.calendar_sync.run_if_due(self.connectors)
         for client_id, entries in self.connectors.items():
             for entry in entries.values():
-                self._poll_account(client_id, entry["name"], entry["account"], entry["connector"])
+                self._poll_account(client_id, entry["name"], entry["account"], entry["connector"], entry)
 
-    def _poll_account(self, client_id: str, connector_name: str, account: str, connector) -> None:
+    def _poll_account(self, client_id: str, connector_name: str, account: str, connector, entry: dict | None = None) -> None:
         try:
             self._sync_account_settings(client_id, connector_name, account, connector)
             emails = connector.unread_emails(self.settings["max_emails_per_cycle"])
-            recent_ids = connector.recent_inbox_message_ids(self.settings["max_emails_per_cycle"]) if hasattr(connector, "recent_inbox_message_ids") else []
+            entry = entry or self._entry(client_id, connector_name, account)
+            recent_ids = []
+            if entry.get("reconcile_recent_inbox", True) and hasattr(connector, "recent_inbox_message_ids"):
+                recent_ids = connector.recent_inbox_message_ids(self.settings["max_emails_per_cycle"])
+            elif not entry.get("reconcile_recent_inbox", True):
+                log_event("recent_inbox_reconciliation_disabled", client_id=client_id, connector=connector_name, account=account, status="skipped")
         except Exception as exc:
             log_event("polling_failed", logging.ERROR, client_id=client_id, connector=connector_name, account=account, status="failed", error=str(exc), exc_info=True)
             return
@@ -195,6 +212,9 @@ class MailWorker:
         entry = self._entry(client_id, connector_name, account)
         connector = entry["connector"]
         if self.state.is_processed(client_id, connector_name, account, message_id):
+            if not entry.get("reconcile_processed_messages", True):
+                log_event("processed_email_reconciliation_disabled", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
+                return False
             record = self.state.get(client_id, connector_name, account, message_id) or {}
             email = email or connector.get_email(message_id)
             if self._delete_processed_unread_if_expired(connector, client_id, connector_name, account, message_id, email, record):
@@ -388,6 +408,39 @@ def normalize_accounts(connector_name: str, connector_cfg: dict) -> list[dict]:
     account_cfg = dict(connector_cfg)
     account_cfg.setdefault("account", connector_name)
     return [account_cfg]
+
+
+def recent_reconciliation_enabled(client_cfg: dict, connector_cfg: dict, account_cfg: dict) -> bool:
+    for cfg in (account_cfg, connector_cfg, client_cfg):
+        if "reconcile_recent_inbox" in cfg:
+            return bool_setting(cfg.get("reconcile_recent_inbox"), True)
+        if "recent_reconciliation_enabled" in cfg:
+            return bool_setting(cfg.get("recent_reconciliation_enabled"), True)
+    return True
+
+
+def processed_message_reconciliation_enabled(client_cfg: dict, connector_cfg: dict, account_cfg: dict) -> bool:
+    for cfg in (account_cfg, connector_cfg, client_cfg):
+        if "reconcile_processed_messages" in cfg:
+            return bool_setting(cfg.get("reconcile_processed_messages"), True)
+        if "processed_reconciliation_enabled" in cfg:
+            return bool_setting(cfg.get("processed_reconciliation_enabled"), True)
+    return recent_reconciliation_enabled(client_cfg, connector_cfg, account_cfg)
+
+
+def bool_setting(value, default: bool = False) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    normalized = str(value).strip().casefold()
+    if normalized in {"0", "false", "no", "non", "off", "disabled", "désactivé", "desactive"}:
+        return False
+    if normalized in {"1", "true", "yes", "oui", "on", "enabled", "activé", "active", "actif"}:
+        return True
+    return default
 
 
 def normalize_active_label(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str:

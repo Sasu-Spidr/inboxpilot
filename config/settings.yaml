@@ -9,7 +9,6 @@ json_logs: true
 
 onboarding:
   registry_file: ./data/clients/clients.yaml
-  gmail_credentials_file: ./secrets/google-oauth-client.json
   microsoft_client_id_env: MICROSOFT_CLIENT_ID
   microsoft_client_secret_env: MICROSOFT_CLIENT_SECRET
 
@@ -23,7 +22,6 @@ clients:
         accounts:
           - account: main
             sender_name: ""
-            credentials_file: ./secrets/exuvie/gmail-client-secret.json
             token_file: ./data/tokens/exuvie-gmail-main.token.enc
       hotmail:
         enabled: false
@@ -41,7 +39,6 @@ clients:
         accounts:
           - account: main
             sender_name: Collegue
-            credentials_file: ./secrets/collegue/gmail-client-secret.json
             token_file: ./data/tokens/collegue-gmail-main.token.enc
       hotmail:
         enabled: false

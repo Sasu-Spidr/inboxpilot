@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import yaml from "js-yaml";
 
+import { archiveClientSettingsForEmail } from "./clientSettings";
 import { dataPath, resolveTokenFilePath } from "./paths";
 
 export type Provider = "gmail" | "hotmail";
@@ -10,7 +11,6 @@ export type MailAccount = {
   email_address?: string;
   connected_at?: string;
   sender_name?: string;
-  credentials_file?: string;
   client_id_env?: string;
   client_secret_env?: string;
   tenant_id?: string;
@@ -48,7 +48,6 @@ export function ensureClientRegistry(clientId: string, ownerName: string, email:
           {
             account: "main",
             sender_name: ownerName,
-            credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
             token_file: `./data/tokens/${clientId}-gmail-main.token.enc`,
             connected_at: "",
           },
@@ -105,6 +104,9 @@ export function removeMailAccount(clientId: string, provider: Provider, accountN
   if (index === -1) return false;
 
   const [removed] = accounts.splice(index, 1);
+  if (removed?.email_address) {
+    archiveClientSettingsForEmail(clientId, provider, removed.account, removed.email_address);
+  }
   if (removed?.token_file) {
     safeUnlink(resolveTokenFilePath(removed.token_file));
   }
@@ -178,7 +180,6 @@ function buildAccountConfig(clientId: string, ownerName: string, provider: Provi
     return {
       account,
       sender_name: ownerName,
-      credentials_file: process.env.GMAIL_OAUTH_CLIENT_FILE || "./secrets/google-oauth-client.json",
       token_file: `./data/tokens/${clientId}-gmail-${tokenAccount}.token.enc`,
       connected_at: "",
     };

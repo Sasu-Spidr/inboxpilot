@@ -5,8 +5,12 @@ __pycache__
 .pytest_cache
 .pytest_tmp
 .pytest_tmp*
+.pytest-tmp*
+.pytest-unread
 .pytest_run_tmp
 .pytest_run_tmp*
+.pytest-cache*
+MB-exuvie
 secrets
 data
 logs

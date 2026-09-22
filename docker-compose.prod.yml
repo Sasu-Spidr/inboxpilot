@@ -1,0 +1,24 @@
+services:
+  frontend:
+    image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:?IMAGE_TAG is required}
+    networks:
+      - default
+      - chatmallow_edge
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=chatmallow_edge"
+      - "traefik.http.routers.inboxpilot.rule=Host(`inboxpilot.mallow-hub.tech`)"
+      - "traefik.http.routers.inboxpilot.entrypoints=websecure"
+      - "traefik.http.routers.inboxpilot.tls=true"
+      - "traefik.http.routers.inboxpilot.tls.certresolver=le"
+      - "traefik.http.services.inboxpilot.loadbalancer.server.port=3000"
+
+  mail-agent:
+    image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:?IMAGE_TAG is required}
+
+  oauth-onboarding:
+    image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:?IMAGE_TAG is required}
+
+networks:
+  chatmallow_edge:
+    external: true

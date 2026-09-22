@@ -1,0 +1,12 @@
+# Add this stanza to each OpenBao server configuration (dev and prod).
+# Keep log_raw=false: audit records retain paths and identities while secrets
+# remain HMAC-protected.
+audit "file" "inboxpilot-json" {
+  description = "InboxPilot security audit trail"
+  options = {
+    file_path = "/var/log/openbao/inboxpilot-audit.jsonl"
+    format    = "json"
+    log_raw  = "false"
+    mode     = "0600"
+  }
+}

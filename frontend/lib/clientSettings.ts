@@ -98,6 +98,23 @@ export function saveClientSettings(clientId: string, labels: LabelSetting[], pro
   return settings;
 }
 
+export function archiveClientSettingsForEmail(clientId: string, provider: string, account: string, email: string): void {
+  const normalizedEmail = normalizeEmail(email);
+  if (!provider || !account || !normalizedEmail) return;
+  const settings = getClientSettings(clientId, provider, account);
+  const file = emailArchiveFile(clientId, provider, normalizedEmail);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2), "utf-8");
+}
+
+export function archiveSavedClientSettingsForEmail(clientId: string, provider: string, email: string, settings: ClientSettings): void {
+  const normalizedEmail = normalizeEmail(email);
+  if (!provider || !normalizedEmail) return;
+  const file = emailArchiveFile(clientId, provider, normalizedEmail);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(settings, null, 2), "utf-8");
+}
+
 export function deleteClientSettings(clientId: string): void {
   try {
     fs.unlinkSync(settingsFile(clientId));
@@ -156,6 +173,17 @@ function settingsFile(clientId: string, provider?: string, account?: string): st
     return dataPath("client-settings", safeClientId, `${safeProvider}--${safeAccount}.json`);
   }
   return dataPath("client-settings", `${safeClientId}.json`);
+}
+
+function emailArchiveFile(clientId: string, provider: string, email: string): string {
+  const safeClientId = clientId.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const safeProvider = provider.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const safeEmail = normalizeEmail(email).replace(/[^a-zA-Z0-9._-]/g, "-");
+  return dataPath("client-settings", safeClientId, "mailboxes", `${safeProvider}--${safeEmail}.json`);
+}
+
+function normalizeEmail(email: string): string {
+  return String(email || "").trim().toLowerCase();
 }
 
 function sanitizeLabel(label: LabelSetting, fallback: LabelSetting): LabelSetting {

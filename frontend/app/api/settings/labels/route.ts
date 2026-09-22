@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { currentUser } from "@/lib/auth";
-import { DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
+import { archiveSavedClientSettingsForEmail, DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { oauthInternalBase } from "@/lib/oauthProxy";
 
 export async function GET() {
   const user = await currentUser();
@@ -40,6 +42,10 @@ export async function POST(request: NextRequest) {
   }
 
   const savedSettings = saveClientSettings(user.clientId, labels, provider, account || undefined);
+  const mailbox = provider && account ? getClientMailAccounts(user.clientId, provider as Provider).find((item) => item.account === account) : undefined;
+  if (provider && mailbox?.email_address) {
+    archiveSavedClientSettingsForEmail(user.clientId, provider, mailbox.email_address, savedSettings);
+  }
   await syncGmailLabelSettings(user.clientId, removedLabelNames(previousSettings.labels, savedSettings.labels), provider, account || undefined);
   const target = provider && account ? `/settings?provider=${encodeURIComponent(provider)}&account=${encodeURIComponent(account)}&saved=1` : "/settings?saved=1";
   return redirectTo(request, target);
@@ -61,16 +67,11 @@ function removedLabelNames(previousLabels: LabelSetting[], nextLabels: LabelSett
 }
 
 async function syncGmailLabelSettings(clientId: string, removedLabels: string[], provider?: string, account?: string): Promise<void> {
-  const internalUrl = process.env.OAUTH_INTERNAL_URL;
-  const syncKey = process.env.TOKEN_ENCRYPTION_KEY;
-  if (!internalUrl || !syncKey) return;
-
   try {
-    const response = await fetch(new URL("/internal/sync-label-settings", internalUrl), {
+    const response = await fetch(new URL("/internal/sync-label-settings", oauthInternalBase()), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Internal-Sync-Key": syncKey,
       },
       body: JSON.stringify({ client: clientId, removed_labels: removedLabels, provider, account }),
       cache: "no-store",

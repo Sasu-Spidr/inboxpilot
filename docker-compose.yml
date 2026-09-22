@@ -13,39 +13,134 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+  bao-agent-frontend:
+    image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
+    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    user: "100:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
-      AUTH_SECRET: ${AUTH_SECRET:-}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://spidr:spidr_dev_password@postgres:5432/spidr_mail}
+      BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
+    volumes:
+      - type: bind
+        source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/frontend
+        target: /bootstrap
+        read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=0700
+    networks:
+      - bao_frontend
+    healthcheck:
+      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8100/v1/secret/data/inboxpilot/frontend"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+  bao-agent-worker:
+    image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    user: "100:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
+    volumes:
+      - type: bind
+        source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/worker
+        target: /bootstrap
+        read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=0700
+    networks:
+      - bao_worker
+    healthcheck:
+      test: ["CMD", "/usr/bin/wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8100/v1/secret/data/inboxpilot/groq"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+  frontend:
+    image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_AGENT_ADDR: ${FRONTEND_BAO_AGENT_ADDR:-http://bao-agent-frontend:8100}
       DATA_DIR: /data
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PUBLIC_URL: ${OAUTH_PUBLIC_URL:-}
       OAUTH_INTERNAL_URL: ${OAUTH_INTERNAL_URL:-http://oauth-onboarding:8080}
-      GMAIL_OAUTH_CLIENT_FILE: ${GMAIL_OAUTH_CLIENT_FILE:-./secrets/google-oauth-client.json}
-      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
-    ports:
-      - "${FRONTEND_HOST_PORT:-3000}:3000"
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      SECURITY_BLOCKED_EMAIL_DOMAINS: ${SECURITY_BLOCKED_EMAIL_DOMAINS:-}
+      SIGNUP_MIN_SECONDS: ${SIGNUP_MIN_SECONDS:-3}
+      REGISTER_RATE_LIMIT_1H: ${REGISTER_RATE_LIMIT_1H:-3}
+      LOGIN_RATE_LIMIT_15M: ${LOGIN_RATE_LIMIT_15M:-6}
+      SESSION_MAX_AGE_SECONDS: ${SESSION_MAX_AGE_SECONDS:-86400}
+      INBOXPILOT_PRIVATE_CLIENT_MODE: ${INBOXPILOT_PRIVATE_CLIENT_MODE:-false}
+      INBOXPILOT_ENABLE_LANDING: ${INBOXPILOT_ENABLE_LANDING:-true}
+      INBOXPILOT_ENABLE_MFA: ${INBOXPILOT_ENABLE_MFA:-true}
+      PUBLIC_SIGNUP_ENABLED: ${PUBLIC_SIGNUP_ENABLED:-false}
+      ADMIN_MFA_REQUIRED: ${ADMIN_MFA_REQUIRED:-true}
     volumes:
-      - ./data:/data
+      - inboxpilot_data:/data
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=1000,gid=1000
+      - /app/.next/cache:size=64m,mode=0700,uid=1000,gid=1000
+    networks:
+      - default
+      - bao_frontend
     depends_on:
       postgres:
         condition: service_healthy
       oauth-onboarding:
-        condition: service_started
+        condition: service_healthy
+      bao-agent-frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
   mail-agent:
-    build: .
+    image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
+      DATA_DIR: /app/data
+      CALENDAR_SYNC_ENABLED: ${CALENDAR_SYNC_ENABLED:-true}
+      CALENDAR_SYNC_RUN_HOUR: ${CALENDAR_SYNC_RUN_HOUR:-0}
+      CALENDAR_SYNC_DAYS: ${CALENDAR_SYNC_DAYS:-1}
+      CALENDAR_SYNC_TIMEZONE: ${CALENDAR_SYNC_TIMEZONE:-Europe/Paris}
     volumes:
-      - ./config:/app/config:ro
-      - ./secrets:/app/secrets:ro
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - inboxpilot_data:/app/data
+      - inboxpilot_logs:/app/logs
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=10001,gid=10001
+    networks:
+      - default
+      - bao_worker
+    depends_on:
+      bao-agent-worker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "from pathlib import Path; raise SystemExit(0 if Path('/app/config/settings.yaml').exists() else 1)"]
       interval: 30s
@@ -53,25 +148,33 @@ services:
       retries: 3
       start_period: 20s
   oauth-onboarding:
-    build: .
+    image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
-    env_file: .env
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     command: ["python", "oauth_server.py"]
     environment:
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY}
-      EXUVIE_MICROSOFT_CLIENT_ID: ${EXUVIE_MICROSOFT_CLIENT_ID:-}
-      COLLEGUE_MICROSOFT_CLIENT_ID: ${COLLEGUE_MICROSOFT_CLIENT_ID:-}
+      BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
+      DATA_DIR: /app/data
       OAUTH_BASE_URL: ${OAUTH_BASE_URL:-http://localhost:8080}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
       OAUTH_PORT: 8080
-    ports:
-      - "${OAUTH_HOST_PORT:-8080}:8080"
+      FRONTEND_SERVICE_HOST: frontend
     volumes:
-      - ./config:/app/config:ro
-      - ./secrets:/app/secrets
-      - ./data:/app/data
-      - ./logs:/app/logs
+      - inboxpilot_data:/app/data
+      - inboxpilot_logs:/app/logs
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=10001,gid=10001
+    networks:
+      - default
+      - bao_worker
+    depends_on:
+      bao-agent-worker:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3).read()"]
       interval: 30s
@@ -81,3 +184,9 @@ services:
 
 volumes:
   postgres_data:
+  inboxpilot_data:
+  inboxpilot_logs:
+
+networks:
+  bao_frontend:
+  bao_worker:

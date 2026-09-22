@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 
+import { secret } from "./baoSecrets";
 import { findUserByClientId, type DbUser } from "./db";
 
 const SESSION_COOKIE = "spidr_session";
@@ -211,11 +212,11 @@ function sessionMaxAgeSeconds(): number {
 }
 
 function authSecret(): string {
-  const secret = process.env.AUTH_SECRET || process.env.TOKEN_ENCRYPTION_KEY || "";
-  if (!secret) {
+  const value = secret("AUTH_SECRET");
+  if (!value) {
     throw new Error("AUTH_SECRET is required");
   }
-  return secret;
+  return value;
 }
 
 function readMfaSecretFromStorage(value: string): string {
