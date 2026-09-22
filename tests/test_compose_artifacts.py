@@ -228,6 +228,7 @@ def test_bao_agents_are_network_isolated_and_not_published():
     assert "bao_frontend" not in services["oauth-onboarding"]["networks"]
 
     for agent in (frontend_agent, worker_agent):
+        assert agent["user"] == "100:1000"
         assert agent["read_only"] is True
         assert agent["cap_drop"] == ["ALL"]
         assert agent["security_opt"] == ["no-new-privileges:true"]
@@ -243,6 +244,36 @@ def test_bao_agents_are_network_isolated_and_not_published():
     assert services["frontend"]["depends_on"]["bao-agent-frontend"]["condition"] == "service_healthy"
     assert services["mail-agent"]["depends_on"]["bao-agent-worker"]["condition"] == "service_healthy"
     assert services["oauth-onboarding"]["depends_on"]["bao-agent-worker"]["condition"] == "service_healthy"
+
+
+def test_all_application_services_are_hardened_and_non_root():
+    compose = load_compose("docker-compose.yml")
+    services = compose["services"]
+
+    expected_users = {
+        "frontend": "1000:1000",
+        "mail-agent": "10001:10001",
+        "oauth-onboarding": "10001:10001",
+    }
+    for service_name, expected_user in expected_users.items():
+        service = services[service_name]
+        assert service["user"] == expected_user
+        assert service["read_only"] is True
+        assert service["cap_drop"] == ["ALL"]
+        assert service["security_opt"] == ["no-new-privileges:true"]
+        assert service["tmpfs"]
+
+    assert "USER 10001:10001" in (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert "USER node" in (ROOT / "frontend/Dockerfile").read_text(encoding="utf-8")
+
+
+def test_runtime_compose_does_not_publish_host_ports():
+    compose = load_compose("docker-compose.yml")
+    dev = load_compose("docker-compose.dev.yml")
+    prod = load_compose("docker-compose.prod.yml")
+    for definition in (compose, dev, prod):
+        for service in definition.get("services", {}).values():
+            assert "ports" not in service
 
 
 def test_manual_deployment_can_target_dev_without_touching_prod():

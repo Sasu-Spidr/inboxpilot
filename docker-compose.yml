@@ -17,7 +17,7 @@ services:
     image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
     restart: unless-stopped
     command: ["agent", "-config=/etc/bao/agent.hcl"]
-    user: "0:0"
+    user: "100:1000"
     read_only: true
     cap_drop:
       - ALL
@@ -25,7 +25,6 @@ services:
       - no-new-privileges:true
     environment:
       BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
-      BAO_SKIP_DROP_ROOT: "1"
     volumes:
       - type: bind
         source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/frontend
@@ -45,7 +44,7 @@ services:
     image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
     restart: unless-stopped
     command: ["agent", "-config=/etc/bao/agent.hcl"]
-    user: "0:0"
+    user: "100:1000"
     read_only: true
     cap_drop:
       - ALL
@@ -53,7 +52,6 @@ services:
       - no-new-privileges:true
     environment:
       BAO_ADDR: ${BAO_ADDR:?BAO_ADDR is required}
-      BAO_SKIP_DROP_ROOT: "1"
     volumes:
       - type: bind
         source: ${INBOXPILOT_BOOTSTRAP_ROOT:-/etc/inboxpilot/dev}/worker
@@ -72,6 +70,12 @@ services:
   frontend:
     image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "1000:1000"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
       BAO_AGENT_ADDR: ${FRONTEND_BAO_AGENT_ADDR:-http://bao-agent-frontend:8100}
       DATA_DIR: /data
@@ -91,6 +95,9 @@ services:
       ADMIN_MFA_REQUIRED: ${ADMIN_MFA_REQUIRED:-true}
     volumes:
       - inboxpilot_data:/data
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=1000,gid=1000
+      - /app/.next/cache:size=64m,mode=0700,uid=1000,gid=1000
     networks:
       - default
       - bao_frontend
@@ -110,6 +117,12 @@ services:
   mail-agent:
     image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     environment:
       BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
       DATA_DIR: /app/data
@@ -120,6 +133,8 @@ services:
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=10001,gid=10001
     networks:
       - default
       - bao_worker
@@ -135,6 +150,12 @@ services:
   oauth-onboarding:
     image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
     restart: unless-stopped
+    user: "10001:10001"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     command: ["python", "oauth_server.py"]
     environment:
       BAO_AGENT_ADDR: ${BAO_AGENT_ADDR:-http://bao-agent-worker:8100}
@@ -146,6 +167,8 @@ services:
     volumes:
       - inboxpilot_data:/app/data
       - inboxpilot_logs:/app/logs
+    tmpfs:
+      - /tmp:size=32m,mode=0700,uid=10001,gid=10001
     networks:
       - default
       - bao_worker
