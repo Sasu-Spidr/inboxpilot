@@ -289,3 +289,19 @@ def test_manual_deployment_can_target_dev_without_touching_prod():
     assert "environment: dev" in workflow_text
     assert "environment: prod" in workflow_text
     assert "Build and push OpenBao agent image" in workflow_text
+
+
+def test_production_release_uses_the_reusable_deployer_with_guards():
+    workflow_text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert 'tags: ["v*"]' in workflow_text
+    assert "deploy_prod:" in workflow_text
+    assert "validate-prod-release:" in workflow_text
+    assert 'git merge-base --is-ancestor "$release_commit" origin/main' in workflow_text
+    assert "push:refs/tags/v*" in workflow_text
+    assert "workflow_dispatch:refs/heads/main" in workflow_text
+    assert "deploy-prod:" in workflow_text
+    assert "environment: prod" in workflow_text
+    assert "project: spidr-mail" in workflow_text
+    assert "overlay: docker-compose.prod.yml" in workflow_text
+    assert "image_tag: ${{ github.sha }}" in workflow_text
