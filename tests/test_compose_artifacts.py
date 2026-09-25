@@ -317,6 +317,10 @@ def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
     assert "/v1/sys/wrapping/unwrap" in workflow_text
     assert "vars.INBOXPILOT_ROLE_ID" in workflow_text
     assert "smoke_gmail_token_enc_b64" in workflow_text
+    assert "data/tokens/smoke-gmail-main.token.enc" in workflow_text
+    assert '"connected_at": "1970-01-01T00:00:00+00:00"' in workflow_text
+    assert 'event.get("event") == "email_classified"' in workflow_text
+    assert 'event.get("event") == "label_applied"' in workflow_text
     for obsolete_secret in (
         "secrets.GROQ_API_KEY",
         "secrets.TOKEN_ENCRYPTION_KEY",
