@@ -305,3 +305,27 @@ def test_production_release_uses_the_reusable_deployer_with_guards():
     assert "project: spidr-mail" in workflow_text
     assert "overlay: docker-compose.prod.yml" in workflow_text
     assert "image_tag: ${{ github.sha }}" in workflow_text
+
+
+def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
+    workflow_text = (ROOT / ".github/workflows/mailbox-smoke.yml").read_text(encoding="utf-8")
+
+    assert "id-token: write" in workflow_text
+    assert "environment: dev" in workflow_text
+    assert "inboxpilot-jwt-dev" in workflow_text
+    assert "X-Vault-Wrap-TTL: 300s" in workflow_text
+    assert "/v1/sys/wrapping/unwrap" in workflow_text
+    assert "vars.INBOXPILOT_ROLE_ID" in workflow_text
+    assert "smoke_gmail_token_enc_b64" in workflow_text
+    for obsolete_secret in (
+        "secrets.GROQ_API_KEY",
+        "secrets.TOKEN_ENCRYPTION_KEY",
+        "secrets.GMAIL_CLIENT_SECRET_JSON",
+        "secrets.GMAIL_TOKEN_ENC_B64",
+    ):
+        assert obsolete_secret not in workflow_text
+
+
+def test_legacy_secret_exporters_are_removed():
+    assert not (ROOT / "scripts/load-secrets.sh").exists()
+    assert not (ROOT / "scripts/export_openbao_secrets.py").exists()
