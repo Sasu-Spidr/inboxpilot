@@ -339,6 +339,7 @@ def test_invited_signup_email_remains_server_side_enforced():
     features = (ROOT / "frontend/lib/features.ts").read_text(encoding="utf-8")
     register = (ROOT / "frontend/app/api/auth/register/route.ts").read_text(encoding="utf-8")
     page = (ROOT / "frontend/app/connexion/page.tsx").read_text(encoding="utf-8")
+    invitation_page = (ROOT / "frontend/app/inscription/page.tsx").read_text(encoding="utf-8")
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     deploy = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")
 
@@ -347,5 +348,8 @@ def test_invited_signup_email_remains_server_side_enforced():
     assert "signupEmailAllowed(email)" in register
     assert "signupEmailAllowed(invitedEmail)" in page
     assert "readOnly={invitedSignup}" in page
+    assert "signupEmailAllowed(email)" in invitation_page
+    assert '<h2>Créer mon espace</h2>' in invitation_page
+    assert 'value={email} readOnly required' in invitation_page
     assert "SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}" in compose
     assert "SIGNUP_ALLOWED_EMAILS: ${{ vars.SIGNUP_ALLOWED_EMAILS }}" in deploy
