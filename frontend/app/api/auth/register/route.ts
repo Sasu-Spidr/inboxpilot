@@ -17,6 +17,9 @@ export async function POST(request: Request) {
   const ownerName = String(form.get("ownerName") || "").trim();
   const email = normalizeEmail(String(form.get("email") || ""));
   const invitedEmail = signupEmailAllowed(email);
+  const failurePath = invitedEmail
+    ? `/inscription?email=${encodeURIComponent(email)}`
+    : publicEntryPath();
 
   if (!publicSignupEnabled() && !invitedEmail) {
     await logSecurityEvent({
@@ -26,7 +29,7 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       metadata: { path: new URL(request.url).pathname },
     });
-    return redirectTo(request, `${publicEntryPath()}?error=signup-disabled`);
+    return redirectWithError(request, failurePath, "signup-disabled");
   }
 
   const password = String(form.get("password") || "");
@@ -50,7 +53,7 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       metadata: { resetAt: new Date(limit.resetAt).toISOString() },
     });
-    return redirectTo(request, `${publicEntryPath()}?error=register`);
+    return redirectWithError(request, failurePath, "register");
   }
 
   const abuse = checkSignupAbuse({
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       metadata: { reason: abuse.reason },
     });
-    return redirectTo(request, `${publicEntryPath()}?error=register`);
+    return redirectWithError(request, failurePath, "register");
   }
 
   const turnstile = await verifyTurnstileIfConfigured({
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       metadata: { reason: turnstile.reason },
     });
-    return redirectTo(request, `${publicEntryPath()}?error=register`);
+    return redirectWithError(request, failurePath, "register");
   }
 
   if (!ownerName || !email || !password || password.length < 8) {
@@ -97,7 +100,7 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       metadata: { reason: "invalid_form" },
     });
-    return redirectTo(request, `${publicEntryPath()}?error=register`);
+    return redirectWithError(request, failurePath, "register");
   }
 
   if (await findUserByEmail(email)) {
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
       ip: clientIp(request),
       userAgent: request.headers.get("user-agent"),
     });
-    return redirectTo(request, `${publicEntryPath()}?error=exists`);
+    return redirectWithError(request, failurePath, "exists");
   }
 
   const { hash, salt } = createPasswordHash(password);
@@ -137,6 +140,11 @@ function redirectTo(request: Request, path: string): NextResponse {
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   return NextResponse.redirect(`${proto}://${host}${path}`, 303);
+}
+
+function redirectWithError(request: Request, path: string, error: string): NextResponse {
+  const separator = path.includes("?") ? "&" : "?";
+  return redirectTo(request, `${path}${separator}error=${encodeURIComponent(error)}`);
 }
 
 function registerRateLimit(): number {
