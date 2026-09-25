@@ -3,42 +3,20 @@ name: Mailbox smoke test
 on:
   workflow_dispatch:
     inputs:
-      target_client:
-        description: "Client to test"
-        required: true
-        default: "exuvie"
-        type: choice
-        options:
-          - "exuvie"
-          - "collegue"
-      gmail_enabled:
-        description: "Test Gmail"
-        required: true
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
-      hotmail_enabled:
-        description: "Test Hotmail/Outlook"
-        required: true
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
       run_once:
-        description: "Run one processing cycle after restoring encrypted OAuth tokens"
+        description: Run one Gmail processing cycle after authentication
         required: true
-        default: "true"
-        type: choice
-        options:
-          - "true"
-          - "false"
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    environment: dev
 
     steps:
       - name: Checkout
@@ -52,91 +30,167 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Prepare runtime from GitHub secrets
+      - name: Run tests
+        run: pytest -q
+
+      - name: Authenticate to OpenBao with GitHub OIDC
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
-          EXUVIE_MICROSOFT_CLIENT_ID: ${{ secrets.EXUVIE_MICROSOFT_CLIENT_ID }}
-          COLLEGUE_MICROSOFT_CLIENT_ID: ${{ secrets.COLLEGUE_MICROSOFT_CLIENT_ID }}
-          GMAIL_CLIENT_SECRET_JSON: ${{ secrets.GMAIL_CLIENT_SECRET_JSON }}
-          GMAIL_TOKEN_ENC_B64: ${{ secrets.GMAIL_TOKEN_ENC_B64 }}
-          COLLEGUE_GMAIL_TOKEN_ENC_B64: ${{ secrets.COLLEGUE_GMAIL_TOKEN_ENC_B64 }}
-          HOTMAIL_TOKEN_ENC_B64: ${{ secrets.HOTMAIL_TOKEN_ENC_B64 }}
-          COLLEGUE_HOTMAIL_TOKEN_ENC_B64: ${{ secrets.COLLEGUE_HOTMAIL_TOKEN_ENC_B64 }}
-          TARGET_CLIENT: ${{ inputs.target_client }}
-          GMAIL_ENABLED: ${{ inputs.gmail_enabled }}
-          HOTMAIL_ENABLED: ${{ inputs.hotmail_enabled }}
+          BAO_ADDR: ${{ vars.BAO_ADDR }}
+          INBOXPILOT_ROLE_ID: ${{ vars.INBOXPILOT_ROLE_ID }}
+          OIDC_AUDIENCE: https://github.com/Sasu-Spidr/inboxpilot
           RUN_ONCE: ${{ inputs.run_once }}
         run: |
-          test -n "$GROQ_API_KEY"
-          test -n "$TOKEN_ENCRYPTION_KEY"
-          mkdir -p secrets/exuvie secrets/collegue data/tokens data/state logs
-          {
-            echo "GROQ_API_KEY=$GROQ_API_KEY"
-            echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
-            echo "COLLEGUE_MICROSOFT_CLIENT_ID=$COLLEGUE_MICROSOFT_CLIENT_ID"
-            echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
-          } > .env
-          {
-            echo "GROQ_API_KEY=$GROQ_API_KEY"
-            echo "EXUVIE_MICROSOFT_CLIENT_ID=$EXUVIE_MICROSOFT_CLIENT_ID"
-            echo "COLLEGUE_MICROSOFT_CLIENT_ID=$COLLEGUE_MICROSOFT_CLIENT_ID"
-            echo "TOKEN_ENCRYPTION_KEY=$TOKEN_ENCRYPTION_KEY"
-          } >> "$GITHUB_ENV"
+          set -Eeuo pipefail
+          test -n "$BAO_ADDR"
+          test -n "$INBOXPILOT_ROLE_ID"
+          install -d -m 700 .runtime data/tokens data/state data/clients logs
 
-          if [ "$TARGET_CLIENT" = "exuvie" ]; then
-            ACTIVE_GMAIL_TOKEN="$GMAIL_TOKEN_ENC_B64"
-            ACTIVE_HOTMAIL_TOKEN="$HOTMAIL_TOKEN_ENC_B64"
-            ACTIVE_MICROSOFT_CLIENT_ID="$EXUVIE_MICROSOFT_CLIENT_ID"
-          elif [ "$TARGET_CLIENT" = "collegue" ]; then
-            ACTIVE_GMAIL_TOKEN="$COLLEGUE_GMAIL_TOKEN_ENC_B64"
-            ACTIVE_HOTMAIL_TOKEN="$COLLEGUE_HOTMAIL_TOKEN_ENC_B64"
-            ACTIVE_MICROSOFT_CLIENT_ID="$COLLEGUE_MICROSOFT_CLIENT_ID"
-          else
-            echo "Unknown target client: $TARGET_CLIENT"
-            exit 1
-          fi
+          oidc_response="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$OIDC_AUDIENCE")"
+          oidc_token="$(jq -er '.value' <<<"$oidc_response")"
+          echo "::add-mask::$oidc_token"
 
-          if [ "$GMAIL_ENABLED" = "true" ]; then
-            test -n "$GMAIL_CLIENT_SECRET_JSON"
-            printf '%s' "$GMAIL_CLIENT_SECRET_JSON" > "secrets/$TARGET_CLIENT/gmail-client-secret.json"
-            if [ "$RUN_ONCE" = "true" ]; then
-              test -n "$ACTIVE_GMAIL_TOKEN"
-            fi
-            if [ -n "$ACTIVE_GMAIL_TOKEN" ]; then
-              printf '%s' "$ACTIVE_GMAIL_TOKEN" | base64 -d > "data/tokens/$TARGET_CLIENT-gmail-main.token.enc"
-            fi
-          fi
+          jwt_response="$(curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -cn --arg role inboxpilot-jwt-dev --arg jwt "$oidc_token" \
+              '{role:$role,jwt:$jwt}')" \
+            "$BAO_ADDR/v1/auth/jwt/login")"
+          jwt_token="$(jq -er '.auth.client_token' <<<"$jwt_response")"
+          echo "::add-mask::$jwt_token"
 
-          if [ "$HOTMAIL_ENABLED" = "true" ]; then
-            test -n "$ACTIVE_MICROSOFT_CLIENT_ID"
-            if [ "$RUN_ONCE" = "true" ]; then
-              test -n "$ACTIVE_HOTMAIL_TOKEN"
-            fi
-            if [ -n "$ACTIVE_HOTMAIL_TOKEN" ]; then
-              printf '%s' "$ACTIVE_HOTMAIL_TOKEN" | base64 -d > "data/tokens/$TARGET_CLIENT-hotmail-main.token.enc"
-            fi
-          fi
+          wrapped_response="$(curl --fail --silent --show-error \
+            --request POST \
+            --header "X-Vault-Token: $jwt_token" \
+            --header 'X-Vault-Wrap-TTL: 300s' \
+            "$BAO_ADDR/v1/auth/approle/role/inboxpilot-dev/secret-id")"
+          wrapping_token="$(jq -er '.wrap_info.token' <<<"$wrapped_response")"
+          echo "::add-mask::$wrapping_token"
 
-          python - <<'PY'
-          import os
+          unwrap_response="$(curl --fail --silent --show-error \
+            --request POST \
+            --header "X-Vault-Token: $wrapping_token" \
+            "$BAO_ADDR/v1/sys/wrapping/unwrap")"
+          secret_id="$(jq -er '.data.secret_id' <<<"$unwrap_response")"
+          echo "::add-mask::$secret_id"
+
+          approle_response="$(curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -cn --arg role_id "$INBOXPILOT_ROLE_ID" --arg secret_id "$secret_id" \
+              '{role_id:$role_id,secret_id:$secret_id}')" \
+            "$BAO_ADDR/v1/auth/approle/login")"
+          bao_token="$(jq -er '.auth.client_token' <<<"$approle_response")"
+          echo "::add-mask::$bao_token"
+          install -m 600 /dev/null .runtime/bao-token
+          printf '%s' "$bao_token" > .runtime/bao-token
+
+          require_field() {
+            local path="$1" field="$2"
+            curl --fail --silent --show-error \
+              --header "X-Vault-Token: $bao_token" \
+              "$BAO_ADDR/v1/secret/data/inboxpilot/$path" \
+              | jq -e --arg field "$field" \
+                '.data.data[$field] as $value
+                 | ($value | type) == "string" and ($value | length) > 0' >/dev/null
+          }
+          require_field crypto token_encryption_key
+          require_field groq api_key
+          require_field oauth/gmail client_id
+          require_field oauth/gmail client_secret
+          require_field oauth/microsoft client_id
+          require_field oauth/microsoft client_secret
+
+          if [ "$RUN_ONCE" = "true" ]; then
+            curl --fail --silent --show-error \
+              --header "X-Vault-Token: $bao_token" \
+              "$BAO_ADDR/v1/secret/data/inboxpilot/oauth/gmail" \
+              | jq -er '.data.data.smoke_gmail_token_enc_b64' \
+              | base64 --decode > data/tokens/smoke-gmail-main.token.enc
+            chmod 600 data/tokens/smoke-gmail-main.token.enc
+            test -s data/tokens/smoke-gmail-main.token.enc
+
+            python - <<'PY'
           from pathlib import Path
           import yaml
 
           path = Path("config/settings.yaml")
           settings = yaml.safe_load(path.read_text(encoding="utf-8"))
-          target_client = os.environ["TARGET_CLIENT"]
-          for client_id, client in settings["clients"].items():
-              client["enabled"] = client_id == target_client
-              connectors = client["connectors"]
-              connectors["gmail"]["enabled"] = client_id == target_client and os.environ["GMAIL_ENABLED"] == "true"
-              connectors["hotmail"]["enabled"] = client_id == target_client and os.environ["HOTMAIL_ENABLED"] == "true"
-          path.write_text(yaml.safe_dump(settings, allow_unicode=True, sort_keys=False), encoding="utf-8")
+          settings["clients"] = {
+              "smoke": {
+                  "enabled": True,
+                  "owner_name": "InboxPilot Smoke",
+                  "connectors": {
+                      "gmail": {
+                          "enabled": True,
+                          "accounts": [
+                              {
+                                  "account": "main",
+                                  "token_file": "./data/tokens/smoke-gmail-main.token.enc",
+                                  "connected_at": "1970-01-01T00:00:00+00:00",
+                                  "reconcile_recent_inbox": False,
+                                  "reconcile_processed_messages": False,
+                              }
+                          ],
+                      },
+                      "hotmail": {"enabled": False, "accounts": []},
+                  },
+              }
+          }
+          path.write_text(
+              yaml.safe_dump(settings, allow_unicode=True, sort_keys=False),
+              encoding="utf-8",
+          )
+          PY
+          fi
+
+      - name: Run one mailbox cycle through the ephemeral OpenBao proxy
+        if: ${{ inputs.run_once }}
+        env:
+          BAO_ADDR: ${{ vars.BAO_ADDR }}
+          BAO_AGENT_ADDR: http://127.0.0.1:8100
+        run: |
+          set -Eeuo pipefail
+          python scripts/openbao_ci_proxy.py \
+            --address "$BAO_ADDR" \
+            --token-file .runtime/bao-token \
+            >.runtime/proxy.log 2>&1 &
+          proxy_pid=$!
+          trap 'kill "$proxy_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            curl --fail --silent http://127.0.0.1:8100/healthz >/dev/null && break
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8100/healthz >/dev/null
+          if ! python main.py --once >.runtime/mailbox.log 2>&1; then
+            echo "The Gmail smoke cycle failed; logs remain private." >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          events = []
+          for line in Path(".runtime/mailbox.log").read_text(encoding="utf-8").splitlines():
+              try:
+                  events.append(json.loads(line))
+              except json.JSONDecodeError:
+                  continue
+
+          classified = [event for event in events if event.get("event") == "email_classified"]
+          applied = [event for event in events if event.get("event") == "label_applied"]
+          failures = [event for event in events if event.get("status") == "failed"]
+          if failures:
+              raise SystemExit("The Gmail smoke cycle reported an application failure.")
+          if not classified or not applied:
+              raise SystemExit(
+                  "No unread test email was both classified and labelled. "
+                  "Prepare one unread message in the dedicated smoke mailbox and retry."
+              )
+          print(f"Gmail smoke succeeded: {len(applied)} unread message(s) labelled.")
           PY
 
-      - name: Run tests
-        run: pytest -q
-
-      - name: Run one mailbox cycle
-        if: ${{ inputs.run_once == 'true' }}
-        run: python main.py --once
+      - name: Remove ephemeral authentication material
+        if: always()
+        run: rm -rf .runtime data/tokens data/state data/clients

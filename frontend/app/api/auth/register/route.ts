@@ -9,13 +9,19 @@ import {
   verifyTurnstileIfConfigured,
 } from "@/lib/antiAbuse";
 import { createUser, findUserByEmail, logSecurityEvent, touchLastLogin } from "@/lib/db";
-import { publicEntryPath, publicSignupEnabled } from "@/lib/features";
+import { publicEntryPath, publicSignupEnabled, signupEmailAllowed } from "@/lib/features";
 import { checkRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
-  if (!publicSignupEnabled()) {
+  const form = await request.formData();
+  const ownerName = String(form.get("ownerName") || "").trim();
+  const email = normalizeEmail(String(form.get("email") || ""));
+  const invitedEmail = signupEmailAllowed(email);
+
+  if (!publicSignupEnabled() && !invitedEmail) {
     await logSecurityEvent({
       eventType: "signup_blocked_public_disabled",
+      email,
       ip: clientIp(request),
       userAgent: request.headers.get("user-agent"),
       metadata: { path: new URL(request.url).pathname },
@@ -23,9 +29,6 @@ export async function POST(request: Request) {
     return redirectTo(request, `${publicEntryPath()}?error=signup-disabled`);
   }
 
-  const form = await request.formData();
-  const ownerName = String(form.get("ownerName") || "").trim();
-  const email = normalizeEmail(String(form.get("email") || ""));
   const password = String(form.get("password") || "");
   const honeypot = String(form.get("companyWebsite") || "");
   const startedAt = String(form.get("signupStartedAt") || "");

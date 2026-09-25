@@ -289,3 +289,63 @@ def test_manual_deployment_can_target_dev_without_touching_prod():
     assert "environment: dev" in workflow_text
     assert "environment: prod" in workflow_text
     assert "Build and push OpenBao agent image" in workflow_text
+
+
+def test_production_release_uses_the_reusable_deployer_with_guards():
+    workflow_text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert 'tags: ["v*"]' in workflow_text
+    assert "deploy_prod:" in workflow_text
+    assert "validate-prod-release:" in workflow_text
+    assert 'git merge-base --is-ancestor "$release_commit" origin/main' in workflow_text
+    assert "push:refs/tags/v*" in workflow_text
+    assert "workflow_dispatch:refs/heads/main" in workflow_text
+    assert "deploy-prod:" in workflow_text
+    assert "environment: prod" in workflow_text
+    assert "project: spidr-mail" in workflow_text
+    assert "overlay: docker-compose.prod.yml" in workflow_text
+    assert "image_tag: ${{ github.sha }}" in workflow_text
+
+
+def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
+    workflow_text = (ROOT / ".github/workflows/mailbox-smoke.yml").read_text(encoding="utf-8")
+
+    assert "id-token: write" in workflow_text
+    assert "environment: dev" in workflow_text
+    assert "inboxpilot-jwt-dev" in workflow_text
+    assert "X-Vault-Wrap-TTL: 300s" in workflow_text
+    assert "/v1/sys/wrapping/unwrap" in workflow_text
+    assert "vars.INBOXPILOT_ROLE_ID" in workflow_text
+    assert "smoke_gmail_token_enc_b64" in workflow_text
+    assert "data/tokens/smoke-gmail-main.token.enc" in workflow_text
+    assert '"connected_at": "1970-01-01T00:00:00+00:00"' in workflow_text
+    assert 'event.get("event") == "email_classified"' in workflow_text
+    assert 'event.get("event") == "label_applied"' in workflow_text
+    for obsolete_secret in (
+        "secrets.GROQ_API_KEY",
+        "secrets.TOKEN_ENCRYPTION_KEY",
+        "secrets.GMAIL_CLIENT_SECRET_JSON",
+        "secrets.GMAIL_TOKEN_ENC_B64",
+    ):
+        assert obsolete_secret not in workflow_text
+
+
+def test_legacy_secret_exporters_are_removed():
+    assert not (ROOT / "scripts/load-secrets.sh").exists()
+    assert not (ROOT / "scripts/export_openbao_secrets.py").exists()
+
+
+def test_invited_signup_email_remains_server_side_enforced():
+    features = (ROOT / "frontend/lib/features.ts").read_text(encoding="utf-8")
+    register = (ROOT / "frontend/app/api/auth/register/route.ts").read_text(encoding="utf-8")
+    page = (ROOT / "frontend/app/connexion/page.tsx").read_text(encoding="utf-8")
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    deploy = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")
+
+    assert "SIGNUP_ALLOWED_EMAILS" in features
+    assert "!publicSignupEnabled() && !invitedEmail" in register
+    assert "signupEmailAllowed(email)" in register
+    assert "signupEmailAllowed(invitedEmail)" in page
+    assert "readOnly={invitedSignup}" in page
+    assert "SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}" in compose
+    assert "SIGNUP_ALLOWED_EMAILS: ${{ vars.SIGNUP_ALLOWED_EMAILS }}" in deploy
