@@ -16,6 +16,16 @@ export function publicSignupEnabled(): boolean {
   return process.env.PUBLIC_SIGNUP_ENABLED === "true";
 }
 
+export function signupEmailAllowed(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return false;
+  return (process.env.SIGNUP_ALLOWED_EMAILS || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
+    .includes(normalized);
+}
+
 export function adminMfaRequired(): boolean {
   if (!mfaFeatureEnabled()) return false;
   return process.env.ADMIN_MFA_REQUIRED !== "false";

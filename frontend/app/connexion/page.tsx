@@ -2,18 +2,20 @@ import { redirect } from "next/navigation";
 
 import { signupAccessCodeRequired } from "@/lib/antiAbuse";
 import { currentUser } from "@/lib/auth";
-import { publicSignupEnabled } from "@/lib/features";
+import { publicSignupEnabled, signupEmailAllowed } from "@/lib/features";
 
 export default async function ConnexionPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; signup?: string }>;
 }) {
   if (await currentUser()) redirect("/dashboard");
 
   const params = await searchParams;
   const error = params?.error;
-  const signupEnabled = publicSignupEnabled();
+  const invitedEmail = String(params?.signup || "").trim().toLowerCase();
+  const invitedSignup = signupEmailAllowed(invitedEmail);
+  const signupEnabled = publicSignupEnabled() || invitedSignup;
   const accessCodeRequired = signupAccessCodeRequired();
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || "";
 
@@ -60,7 +62,14 @@ export default async function ConnexionPage({
               <label>Prénom et nom</label>
               <input name="ownerName" placeholder="Jean Martin" required />
               <label>Email professionnel</label>
-              <input name="email" type="email" placeholder="jean@entreprise.fr" required />
+              <input
+                name="email"
+                type="email"
+                placeholder="jean@entreprise.fr"
+                defaultValue={invitedSignup ? invitedEmail : ""}
+                readOnly={invitedSignup}
+                required
+              />
               <label>Mot de passe</label>
               <input name="password" type="password" minLength={8} placeholder="Minimum 8 caractères" required />
               {accessCodeRequired && (

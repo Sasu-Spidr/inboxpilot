@@ -333,3 +333,19 @@ def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
 def test_legacy_secret_exporters_are_removed():
     assert not (ROOT / "scripts/load-secrets.sh").exists()
     assert not (ROOT / "scripts/export_openbao_secrets.py").exists()
+
+
+def test_invited_signup_email_remains_server_side_enforced():
+    features = (ROOT / "frontend/lib/features.ts").read_text(encoding="utf-8")
+    register = (ROOT / "frontend/app/api/auth/register/route.ts").read_text(encoding="utf-8")
+    page = (ROOT / "frontend/app/connexion/page.tsx").read_text(encoding="utf-8")
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    deploy = (ROOT / ".github/workflows/deploy.yml").read_text(encoding="utf-8")
+
+    assert "SIGNUP_ALLOWED_EMAILS" in features
+    assert "!publicSignupEnabled() && !invitedEmail" in register
+    assert "signupEmailAllowed(email)" in register
+    assert "signupEmailAllowed(invitedEmail)" in page
+    assert "readOnly={invitedSignup}" in page
+    assert "SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}" in compose
+    assert "SIGNUP_ALLOWED_EMAILS: ${{ vars.SIGNUP_ALLOWED_EMAILS }}" in deploy
