@@ -16,31 +16,56 @@
 
 ## 1. Audit OpenBao
 
-Les serveurs `bao-dev` et `bao-prod` sont externes au VPS InboxPilot. Cette
-opération doit donc être réalisée sur chacun des deux serveurs OpenBao par un
-administrateur ayant la capacité `sudo` sur `sys/audit`.
+Les serveurs OpenBao ne sont pas le VPS InboxPilot : ils appartiennent à
+l'infrastructure SpidR. L'activation du journal, sa rotation et la surveillance
+des événements sensibles sont donc **pilotées par le dépôt `spidr-infra`**, pas
+par celui-ci :
 
-OpenBao 2.6 recommande une configuration déclarative plutôt qu'une création
-par API. Copier le bloc de `deploy/openbao/audit.hcl.example` dans la
-configuration serveur, créer `/var/log/openbao` avec le propriétaire du
-processus OpenBao, puis recharger le service. Conserver `log_raw=false`.
+- workflow `OpenBao - Enable audit log` (`enable-audit-openbao.yml`), au
+  déclenchement manuel, environnement `dev` ou `prod` ;
+- playbook `ansible/openbao/enable-audit.yml`, copié sur le VPS et exécuté sur
+  place ;
+- policy `audit-<env>-readonly`, générée depuis
+  `config/openbao/policy-templates/audit-admin.hcl.j2`.
 
-Vérification sans afficher le token administrateur :
+Le runner n'utilise aucun token statique : OIDC GitHub, puis rôle JWT
+`audit-jwt-<env>`, puis AppRole `audit-<env>`. Le token vaut une heure, ne porte
+que la lecture de `sys/audit`, et est révoqué en fin de job.
+
+Trois propriétés de cette activation méritent d'être connues côté application :
+
+- **Le device est déclaratif.** OpenBao 2.6 refuse la création par API avec
+  `400 cannot enable audit device via API; use declarative, config-based audit
+  device management instead`. Le bloc est écrit dans `server.hcl` et appliqué au
+  `SIGHUP`, jamais par redémarrage : les deux instances sont en sceau Shamir 3/5
+  sans descellement automatique, un redémarrage laisserait le serveur scellé.
+- **Le journal est commun à toutes les applications** servies par l'instance,
+  d'où un nom neutre : device `audit-json`, fichier
+  `/opt/openbao-<env>/logs/audit.jsonl`, un par instance pour que l'option
+  `--environment` ne mélange pas dev et prod.
+- **`log_raw` reste à `false`.** Les chemins et les identités sont en clair, les
+  valeurs sont HMAC. Si un device activé ne peut pas écrire, OpenBao refuse
+  toutes les requêtes — d'où l'activation de dev avant prod.
+
+Vérification côté application, sans token administrateur :
 
 ```bash
-install -m 600 /dev/null /run/openbao-admin-token
-# Écrire le token dans ce fichier par un canal sûr, sans le passer sur la ligne de commande.
-python3 scripts/verify_openbao_audit.py \
-  --address https://bao-dev.mallow-hub.tech \
-  --token-file /run/openbao-admin-token
+ssh spidr-ovh 'sudo tail -1 /opt/openbao-dev/logs/audit.jsonl | head -c 300'
 ```
 
-Répéter pour `https://bao-prod.mallow-hub.tech`, puis supprimer le fichier de
-token. La commande doit afficher au moins `inboxpilot-json/`.
+`scripts/verify_openbao_audit.py` reste disponible pour une vérification par
+l'API, avec un token admin passé par fichier et jamais en ligne de commande.
 
-Configurer `logrotate` pour le journal. Après rotation, envoyer `SIGHUP` au
-processus OpenBao afin qu'il rouvre le fichier. Le répertoire et les archives
-doivent rester lisibles uniquement par l'équipe infrastructure.
+### Détection d'anomalies applicatives
+
+Le playbook installe déjà une surveillance des événements sensibles à l'échelle
+du serveur : refus, suppression de secret, modification de policy ou de device,
+usage d'un token `root`. Elle écrit dans journald sous le tag
+`openbao-audit-alert`.
+
+`scripts/analyze_openbao_audit.py` couvre l'angle applicatif, que le serveur ne
+peut pas juger : volume anormal par identité et par chemin, et surtout lecture
+croisée entre les zones `frontend` et `worker`. Les deux sont complémentaires.
 
 ### Anomalies retenues
 
@@ -48,20 +73,35 @@ doivent rester lisibles uniquement par l'équipe infrastructure.
 - toute lecture d'un chemin worker par l'identité frontend, ou l'inverse ;
 - au moins 5 refus d'autorisation en 5 minutes pour une même identité.
 
-Contrôle manuel :
+Le seuil de 60 lectures est le défaut du script. Le trafic dev normal atteint
+~57 lectures en 5 minutes sur un même chemin : relever le seuil ou allonger le
+`cache_ttl` des agents avant de programmer ce contrôle, sinon il alertera en
+continu. Allonger le `cache_ttl` traite la cause.
+
+Contrôle manuel, depuis un poste ayant accès au journal :
 
 ```bash
-OPENBAO_ALERT_WEBHOOK_URL='https://webhook-equipe.example' \
-python3 scripts/analyze_openbao_audit.py \
-  --environment dev \
-  /var/log/openbao/inboxpilot-audit.jsonl
+ssh spidr-ovh 'sudo cat /opt/openbao-dev/logs/audit.jsonl' \
+  | python3 scripts/analyze_openbao_audit.py --environment dev --read-threshold 150 /dev/stdin
 ```
 
-Sans webhook, une anomalie est écrite sur stderr et le programme termine avec
-le code `2`. Avec le webhook, une notification textuelle est également envoyée
-à l'équipe. Exécuter cette commande toutes les 5 minutes avec le mécanisme de
-supervision déjà utilisé par l'infrastructure. L'URL du webhook doit être
-stockée dans OpenBao ou dans le gestionnaire de secrets de la supervision.
+Codes de sortie : `0` aucune anomalie, `2` anomalie signalée, `3` anomalie
+signalée mais la notification a échoué. Les anomalies sont toujours écrites sur
+stderr avant toute tentative de notification, donc une panne de notification ne
+perd jamais l'alerte.
+
+**Reste à faire** : ce contrôle n'est pas encore programmé. Sa place est le
+playbook `enable-audit.yml` de `spidr-infra`, à côté de la surveillance
+serveur — pas un déploiement séparé depuis ce dépôt, qui dupliquerait l'accès
+SSH au VPS OpenBao.
+
+Quand une URL d'alerte d'équipe existera, la déposer dans OpenBao à
+`secret/data/audit/alerting`, champ `webhook_url`, et passer `--approle-dir` au
+script : il lit l'URL à l'exécution avec un AppRole limité à ce seul chemin,
+révoque son token aussitôt, et ne la lit **que** lorsqu'une anomalie se
+déclenche — donc sans gonfler les compteurs de lecture qu'il surveille. Aucune
+copie de l'URL sur l'hôte ni dans GitHub. `--webhook-url` court-circuite
+l'AppRole, réservé au débogage : l'URL finit dans l'historique du shell.
 
 ## 2. Durcissement des conteneurs
 
