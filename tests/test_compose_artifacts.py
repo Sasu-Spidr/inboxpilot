@@ -254,7 +254,7 @@ def test_all_application_services_are_hardened_and_non_root():
     services = compose["services"]
 
     expected_users = {
-        "frontend": "1000:1000",
+        "frontend": "10001:10001",
         "mail-agent": "10001:10001",
         "oauth-onboarding": "10001:10001",
     }
@@ -268,6 +268,25 @@ def test_all_application_services_are_hardened_and_non_root():
 
     assert "USER 10001:10001" in (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "USER node" in (ROOT / "frontend/Dockerfile").read_text(encoding="utf-8")
+
+
+def test_runtime_volume_initializer_repairs_permissions_before_apps_start():
+    compose = load_compose("docker-compose.yml")
+    services = compose["services"]
+    initializer = services["runtime-data-init"]
+
+    assert initializer["restart"] == "no"
+    assert initializer["user"] == "0:0"
+    assert initializer["read_only"] is True
+    assert initializer["cap_drop"] == ["ALL"]
+    assert set(initializer["cap_add"]) == {"CHOWN", "DAC_OVERRIDE"}
+    assert "10001:10001" in " ".join(initializer["command"])
+    assert "inboxpilot_data:/runtime-data" in initializer["volumes"]
+    assert "inboxpilot_logs:/runtime-logs" in initializer["volumes"]
+
+    for service_name in ("frontend", "mail-agent", "oauth-onboarding"):
+        dependency = services[service_name]["depends_on"]["runtime-data-init"]
+        assert dependency["condition"] == "service_completed_successfully"
 
 
 def test_runtime_compose_does_not_publish_host_ports():
