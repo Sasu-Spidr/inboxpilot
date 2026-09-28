@@ -279,7 +279,7 @@ def test_runtime_volume_initializer_repairs_permissions_before_apps_start():
     assert initializer["user"] == "0:0"
     assert initializer["read_only"] is True
     assert initializer["cap_drop"] == ["ALL"]
-    assert set(initializer["cap_add"]) == {"CHOWN", "DAC_OVERRIDE"}
+    assert set(initializer["cap_add"]) == {"CHOWN", "DAC_OVERRIDE", "FOWNER"}
     assert "10001:10001" in " ".join(initializer["command"])
     assert "inboxpilot_data:/runtime-data" in initializer["volumes"]
     assert "inboxpilot_logs:/runtime-logs" in initializer["volumes"]
