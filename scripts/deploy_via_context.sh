@@ -34,7 +34,9 @@ compose() {
 }
 
 container_id() {
-  compose ps -q "$1"
+  # Include stopped/created containers so a deployment can recover after an
+  # interrupted `compose up` instead of losing its rollback reference.
+  compose ps -a -q "$1"
 }
 
 wait_healthy() {

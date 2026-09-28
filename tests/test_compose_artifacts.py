@@ -185,6 +185,7 @@ def test_reusable_deployment_uses_remote_context_health_checks_and_rollback():
     assert 'docker --context "$DOCKER_CONTEXT" compose' in script_text
     assert "bao-agent-frontend bao-agent-worker" in script_text
     assert "previous_image=" in script_text
+    assert 'compose ps -a -q "$1"' in script_text
     assert 'deploy_tag "$previous_tag"' in script_text
     assert "docker login" not in script_text
     assert "scp " not in script_text
