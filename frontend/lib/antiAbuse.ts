@@ -100,7 +100,9 @@ export function checkSignupAbuse(input: {
     return { allowed: false, reason: "invalid_owner_name" };
   }
 
-  if (!/[a-zÀ-ÿ]/iu.test(ownerName) || !/\s/u.test(ownerName)) {
+  // A single given name can be legitimate. Bot protection is already enforced
+  // by Turnstile, the honeypot, rate limiting and the random-identity checks.
+  if (!/[a-zÀ-ÿ]/iu.test(ownerName)) {
     return { allowed: false, reason: "owner_name_not_human_like" };
   }
 

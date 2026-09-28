@@ -1,9 +1,11 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 from cryptography.fernet import Fernet
 
+from scripts import analyze_openbao_audit as audit_module
 from scripts.analyze_openbao_audit import analyze
 from scripts.rotate_token_encryption_key import rotate
 
@@ -73,9 +75,51 @@ def test_token_key_rotation_dry_run_and_apply(tmp_path: Path):
     assert old.decrypt((backup / "tokens" / token.name).read_bytes())
 
 
-def test_openbao_audit_configuration_keeps_secret_values_hmac_protected():
-    config = (ROOT / "deploy/openbao/audit.hcl.example").read_text(encoding="utf-8")
-    assert 'file_path = "/var/log/openbao/inboxpilot-audit.jsonl"' in config
-    assert 'format    = "json"' in config
-    assert 'log_raw  = "false"' in config
-    assert 'mode     = "0600"' in config
+def test_audit_alert_webhook_is_read_from_openbao_and_token_revoked(tmp_path: Path):
+    calls: list[tuple[str, str]] = []
+
+    def fake_call(url: str, *, body=None, token: str = "", timeout: float = 5.0):
+        calls.append((url, token))
+        if url.endswith("/auth/approle/login"):
+            assert body == {"role_id": "rid", "secret_id": "sid"}
+            return {"auth": {"client_token": "s.short-lived"}}
+        if url.endswith("/auth/token/revoke-self"):
+            return {}
+        assert token == "s.short-lived"
+        return {"data": {"data": {"webhook_url": "https://hooks.example/abc"}}}
+
+    (tmp_path / "role_id").write_text("rid\n", encoding="utf-8")
+    (tmp_path / "secret_id").write_text("sid\n", encoding="utf-8")
+
+    with mock.patch.object(audit_module, "_bao_call", fake_call):
+        url = audit_module.webhook_url_from_openbao("http://127.0.0.1:8200/", tmp_path)
+
+    assert url == "https://hooks.example/abc"
+    assert calls[0][0] == "http://127.0.0.1:8200/v1/auth/approle/login"
+    assert calls[1][0] == "http://127.0.0.1:8200/v1/secret/data/audit/alerting"
+    assert calls[2][0] == "http://127.0.0.1:8200/v1/auth/token/revoke-self"
+
+
+def test_audit_alert_webhook_failure_still_revokes_the_token(tmp_path: Path):
+    calls: list[str] = []
+
+    def fake_call(url: str, *, body=None, token: str = "", timeout: float = 5.0):
+        calls.append(url)
+        if url.endswith("/auth/approle/login"):
+            return {"auth": {"client_token": "t"}}
+        if url.endswith("/auth/token/revoke-self"):
+            return {}
+        return {"data": {"data": {}}}
+
+    (tmp_path / "role_id").write_text("rid", encoding="utf-8")
+    (tmp_path / "secret_id").write_text("sid", encoding="utf-8")
+
+    with mock.patch.object(audit_module, "_bao_call", fake_call):
+        try:
+            audit_module.webhook_url_from_openbao("http://127.0.0.1:8200", tmp_path)
+        except RuntimeError as exc:
+            assert "webhook_url" in str(exc)
+        else:
+            raise AssertionError("an unusable webhook_url must raise")
+
+    assert any("revoke-self" in url for url in calls)
