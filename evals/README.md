@@ -46,3 +46,10 @@ ambiguë en vérité de référence.
 Les tests vérifient la structure, l'équilibre, l'absence d'expéditeurs réels et
 la couverture positive/négative des expressions historiques. Le calcul des
 métriques et l'appel au classifieur appartiennent à EVAL-02.
+
+## Validation du jeu initial
+
+Le jeu initial de 70 cas livré dans le commit `b1fb094` a fait l'objet d'une
+revue de constitution puis d'une validation métier indépendante par Geoffroy
+Detrousselle le 29 septembre 2026. Aucun désaccord nécessitant le retrait d'un
+cas ou une modification de `config/label_definitions.yaml` n'a été signalé.
