@@ -53,3 +53,38 @@ Le jeu initial de 70 cas livré dans le commit `b1fb094` a fait l'objet d'une
 revue de constitution puis d'une validation métier indépendante par Geoffroy
 Detrousselle le 29 septembre 2026. Aucun désaccord nécessitant le retrait d'un
 cas ou une modification de `config/label_definitions.yaml` n'a été signalé.
+
+## Lancer l'évaluation
+
+Une évaluation en direct nécessite `GROQ_API_KEY` et écrit deux rapports dans
+`evals/reports/` :
+
+```bash
+python evals/run_eval.py
+```
+
+Pour conserver les réponses brutes du modèle afin de les rejouer ensuite :
+
+```bash
+python evals/run_eval.py --record
+python evals/run_eval.py --replay evals/recordings
+```
+
+On peut changer les emplacements avec `--dataset`, `--label-settings`,
+`--output-dir` et fournir un autre dossier à `--record`. Une empreinte lie
+chaque enregistrement à son cas ; le rejeu échoue si le mail de référence a été
+modifié.
+
+Le rapport Markdown est destiné à la lecture. Le JSON est la référence
+structurée pour la détection de régressions d'EVAL-03. Les abstentions et les
+erreurs techniques sont exclues de la matrice 5x5 et exposées séparément afin
+qu'un repli vers `À lire` ne ressemble jamais à une décision normale.
+
+## Coût d'une exécution en direct
+
+Le jeu initial contient 70 cas sur un maximum prévu de 80. Les règles
+déterministes ne consomment aucun appel ; chaque autre cas consomme au plus un
+appel réussi au modèle. La configuration du classifieur est fixe :
+`max_completion_tokens=180` et `temperature=0`. Même avec 80 cas entièrement
+traités par le modèle, une exécution représente donc au maximum 80 appels et
+14 400 tokens de complétion, hors éventuelles nouvelles tentatives sur erreur.
