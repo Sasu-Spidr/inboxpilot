@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-compliment-fr-008",
+  "input_sha256": "0bd079f70aa86a0bfa6be88de06ebd1a16ca0ef863208dec75d55484a50a8940",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"Le message est une simple appréciation sans demande de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n"
+}

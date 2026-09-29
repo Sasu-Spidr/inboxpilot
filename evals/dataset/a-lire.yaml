@@ -1,0 +1,98 @@
+- id: read-project-update-fr-001
+  subject: "Point d'avancement du projet"
+  sender: "collegue@equipe.example"
+  body: "Pour information, la phase de recette est terminée et le déploiement reste prévu lundi."
+  expected: "À lire"
+  tags: [fr, information, facile]
+  note: "Mise au courant humaine sans demande."
+- id: read-comment-fr-002
+  subject: "Commentaire sur la maquette"
+  sender: "designer@studio.example"
+  body: "J'ai ajouté quelques remarques dans le document partagé. Rien d'urgent."
+  expected: "À lire"
+  tags: [fr, collaboratif, commentaire]
+  note: "Retour collaboratif sans réponse attendue."
+- id: read-mention-fr-003
+  subject: "Vous avez été mentionné dans le compte rendu"
+  sender: "collegue@equipe.example"
+  body: "Je vous ai mentionné dans la section qui résume la décision prise ensemble."
+  expected: "À lire"
+  tags: [fr, mention, limite]
+  note: "Confusion À lire/Notification : l'expéditeur est un humain."
+- id: read-document-fr-004
+  subject: "Document partagé pour information"
+  sender: "chef-projet@organisation.example"
+  body: "Voici la version finale du document. Je te la transmets simplement pour information."
+  expected: "À lire"
+  tags: [fr, document, information]
+  note: "Aucune validation ou réponse demandée."
+- id: read-english-005
+  subject: "Project update"
+  sender: "teammate@company.example"
+  body: "Just keeping you informed: the migration finished successfully this morning."
+  expected: "À lire"
+  tags: [en, information, facile]
+  note: "Mise au courant en anglais."
+- id: read-short-006
+  subject: "Pour info"
+  sender: "direction@company.example"
+  body: "Le bureau sera fermé vendredi."
+  expected: "À lire"
+  tags: [fr, court, information]
+  note: "Information humaine courte."
+- id: read-empty-subject-007
+  subject: ""
+  sender: "collegue@equipe.example"
+  body: "Je te partage mes notes de la réunion d'hier, sans action attendue."
+  expected: "À lire"
+  tags: [fr, sans-objet, note]
+  note: "Le corps explicite l'absence d'action."
+- id: read-compliment-fr-008
+  subject: "Bravo pour la présentation"
+  sender: "partenaire@cabinet.example"
+  body: "La présentation était très claire. Bravo à toute l'équipe !"
+  expected: "À lire"
+  tags: [fr, compliment, humain]
+  note: "Compliment sans véritable réponse attendue."
+- id: read-product-link-control-009
+  subject: "Outil intéressant à regarder"
+  sender: "collegue@equipe.example"
+  body: "Je te partage la page d'un nouvel outil découvert ce matin, pour information."
+  expected: "À lire"
+  tags: [fr, hardcoded-negative, rule-product-hunt-daily]
+  note: "Contre-exemple de Product Hunt Daily sans l'expression historique."
+- id: read-career-control-010
+  subject: "Archives de carrière"
+  sender: "collegue@equipe.example"
+  body: "J'ai classé vingt-cinq années d'archives dans le dossier partagé, pour mémoire."
+  expected: "À lire"
+  tags: [fr, hardcoded-negative, rule-25-ans-aupres]
+  note: "Contre-exemple éditorial sans l'expression historique."
+- id: read-research-control-011
+  subject: "Fenêtre de revue documentaire"
+  sender: "chercheur@laboratoire.example"
+  body: "La période de revue des articles est ouverte. Voici mes notes, sans action requise."
+  expected: "À lire"
+  tags: [fr, hardcoded-negative, rule-paper-heavy-window]
+  note: "Contre-exemple humain de la règle paper-heavy window."
+- id: read-store-control-012
+  subject: "Retour sur la commande de vêtements"
+  sender: "collegue@equipe.example"
+  body: "Pour information, les vêtements commandés pour l'événement sont bien arrivés."
+  expected: "À lire"
+  tags: [fr, hardcoded-negative, rule-boohooman]
+  note: "Même univers marchand, sans marque ni promotion."
+- id: read-meal-control-013
+  subject: "Compte rendu du déjeuner d'équipe"
+  sender: "collegue@equipe.example"
+  body: "Voici les notes prises pendant notre déjeuner de travail, uniquement pour information."
+  expected: "À lire"
+  tags: [fr, hardcoded-negative, rule-uber-eats]
+  note: "Même thème alimentaire, sans marque ni transaction."
+- id: read-human-share-en-014
+  subject: "Worth reading"
+  sender: "coworker@team.example"
+  body: "I found this article useful and wanted to share it with you. No response needed."
+  expected: "À lire"
+  tags: [en, humain, partage]
+  note: "Partage humain qui ne doit pas devenir Commercial."

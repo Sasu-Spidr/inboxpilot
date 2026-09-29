@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-document-fr-004",
+  "input_sha256": "df484a1707d14337c0afd18b5a9c4e9650cdb85df380dab0be88bd58a1e91abc",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message informe simplement du document final sans demander de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n}"
+}

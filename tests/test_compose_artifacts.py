@@ -185,6 +185,7 @@ def test_reusable_deployment_uses_remote_context_health_checks_and_rollback():
     assert 'docker --context "$DOCKER_CONTEXT" compose' in script_text
     assert "bao-agent-frontend bao-agent-worker" in script_text
     assert "previous_image=" in script_text
+    assert 'compose ps -a -q "$1"' in script_text
     assert 'deploy_tag "$previous_tag"' in script_text
     assert "docker login" not in script_text
     assert "scp " not in script_text
@@ -254,7 +255,7 @@ def test_all_application_services_are_hardened_and_non_root():
     services = compose["services"]
 
     expected_users = {
-        "frontend": "1000:1000",
+        "frontend": "10001:10001",
         "mail-agent": "10001:10001",
         "oauth-onboarding": "10001:10001",
     }
@@ -268,6 +269,25 @@ def test_all_application_services_are_hardened_and_non_root():
 
     assert "USER 10001:10001" in (ROOT / "Dockerfile").read_text(encoding="utf-8")
     assert "USER node" in (ROOT / "frontend/Dockerfile").read_text(encoding="utf-8")
+
+
+def test_runtime_volume_initializer_repairs_permissions_before_apps_start():
+    compose = load_compose("docker-compose.yml")
+    services = compose["services"]
+    initializer = services["runtime-data-init"]
+
+    assert initializer["restart"] == "no"
+    assert initializer["user"] == "0:0"
+    assert initializer["read_only"] is True
+    assert initializer["cap_drop"] == ["ALL"]
+    assert set(initializer["cap_add"]) == {"CHOWN", "DAC_OVERRIDE", "FOWNER"}
+    assert "10001:10001" in " ".join(initializer["command"])
+    assert "inboxpilot_data:/runtime-data" in initializer["volumes"]
+    assert "inboxpilot_logs:/runtime-logs" in initializer["volumes"]
+
+    for service_name in ("frontend", "mail-agent", "oauth-onboarding"):
+        dependency = services[service_name]["depends_on"]["runtime-data-init"]
+        assert dependency["condition"] == "service_completed_successfully"
 
 
 def test_runtime_compose_does_not_publish_host_ports():
@@ -309,12 +329,14 @@ def test_production_release_uses_the_reusable_deployer_with_guards():
 
 def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
     workflow_text = (ROOT / ".github/workflows/mailbox-smoke.yml").read_text(encoding="utf-8")
+    action_text = (ROOT / ".github/actions/openbao-ci-auth/action.yml").read_text(encoding="utf-8")
 
     assert "id-token: write" in workflow_text
     assert "environment: dev" in workflow_text
-    assert "inboxpilot-jwt-dev" in workflow_text
-    assert "X-Vault-Wrap-TTL: 300s" in workflow_text
-    assert "/v1/sys/wrapping/unwrap" in workflow_text
+    assert "uses: ./.github/actions/openbao-ci-auth" in workflow_text
+    assert "inboxpilot-jwt-dev" in action_text
+    assert "X-Vault-Wrap-TTL: 300s" in action_text
+    assert "/v1/sys/wrapping/unwrap" in action_text
     assert "vars.INBOXPILOT_ROLE_ID" in workflow_text
     assert "smoke_gmail_token_enc_b64" in workflow_text
     assert "data/tokens/smoke-gmail-main.token.enc" in workflow_text
@@ -328,6 +350,22 @@ def test_mailbox_smoke_uses_oidc_and_no_repository_business_secrets():
         "secrets.GMAIL_TOKEN_ENC_B64",
     ):
         assert obsolete_secret not in workflow_text
+
+
+def test_eval_workflow_is_nightly_manual_and_uses_openbao_without_business_secrets():
+    workflow_text = (ROOT / ".github/workflows/eval.yml").read_text(encoding="utf-8")
+
+    assert "schedule:" in workflow_text
+    assert "workflow_dispatch:" in workflow_text
+    assert "uses: ./.github/actions/openbao-ci-auth" in workflow_text
+    assert "id-token: write" in workflow_text
+    assert "python evals/run_eval.py" in workflow_text
+    assert "python evals/compare_reports.py" in workflow_text
+    assert "actions/upload-artifact@v4" in workflow_text
+    assert "GITHUB_STEP_SUMMARY" in workflow_text
+    assert "actions/github-script@v7" in workflow_text
+    for forbidden in ("secrets.GROQ_API_KEY", "GROQ_API_KEY:", "secrets.BAO_TOKEN"):
+        assert forbidden not in workflow_text
 
 
 def test_legacy_secret_exporters_are_removed():

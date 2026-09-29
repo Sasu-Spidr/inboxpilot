@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-empty-subject-007",
+  "input_sha256": "ea5cd59e45f617a416c034facf31c93d1b52ea846d7ec5a1d4325ea090b9ef39",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message contient des notes partagées sans demande de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n}"
+}

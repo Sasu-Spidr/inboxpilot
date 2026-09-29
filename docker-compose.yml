@@ -67,10 +67,33 @@ services:
       timeout: 5s
       retries: 12
       start_period: 15s
+  runtime-data-init:
+    image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:-local}
+    restart: "no"
+    user: "0:0"
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /runtime-data/clients /runtime-data/tokens /runtime-data/state /runtime-logs
+        && chown -R 10001:10001 /runtime-data /runtime-logs
+        && chmod -R u+rwX,go-rwx /runtime-data /runtime-logs
+    volumes:
+      - inboxpilot_data:/runtime-data
+      - inboxpilot_logs:/runtime-logs
   frontend:
     image: ghcr.io/sasu-spidr/inboxpilot-frontend:${IMAGE_TAG:-local}
     restart: unless-stopped
-    user: "1000:1000"
+    user: "10001:10001"
     read_only: true
     cap_drop:
       - ALL
@@ -97,12 +120,14 @@ services:
     volumes:
       - inboxpilot_data:/data
     tmpfs:
-      - /tmp:size=32m,mode=0700,uid=1000,gid=1000
-      - /app/.next/cache:size=64m,mode=0700,uid=1000,gid=1000
+      - /tmp:size=32m,mode=0700,uid=10001,gid=10001
+      - /app/.next/cache:size=64m,mode=0700,uid=10001,gid=10001
     networks:
       - default
       - bao_frontend
     depends_on:
+      runtime-data-init:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       oauth-onboarding:
@@ -140,6 +165,8 @@ services:
       - default
       - bao_worker
     depends_on:
+      runtime-data-init:
+        condition: service_completed_successfully
       bao-agent-worker:
         condition: service_healthy
     healthcheck:
@@ -174,6 +201,8 @@ services:
       - default
       - bao_worker
     depends_on:
+      runtime-data-init:
+        condition: service_completed_successfully
       bao-agent-worker:
         condition: service_healthy
     healthcheck:

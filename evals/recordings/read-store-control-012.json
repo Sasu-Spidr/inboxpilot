@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-store-control-012",
+  "input_sha256": "fa52c4dd49beabc2a350f05f2a516f9887db331bd04910ce5984f696d734bd86",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message informe simplement de la réception des vêtements, aucune réponse ni action n'est attendue.\",\n  \"expediteur_automatique\": false\n}"
+}

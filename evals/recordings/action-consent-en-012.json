@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "action-consent-en-012",
+  "input_sha256": "1263348503e2479ee93761e323898686b230ec28c0f2c8691a34236fc509d03b",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À traiter\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.96,\n  \"raison\": \"Le message demande à l'utilisateur d'effectuer une action manuelle (se connecter et renouveler le consent"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-english-005",
+  "input_sha256": "470cf8f64d2a90b268f353eb89047c39ad99dc3915e53959ef01516fe7fe0c1b",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Un humain demande de confirmer une nouvelle date, nécessitant une réponse écrite.\",\n  \"expediteur_automatique\": false\n}"
+}

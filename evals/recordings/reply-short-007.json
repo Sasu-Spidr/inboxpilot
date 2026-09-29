@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-short-007",
+  "input_sha256": "86b9c44fde79e709afabfca77c924242f6acb8d7c058b82f342273036114127b",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"Le message demande une réponse de l'utilisateur (avis sur deux versions).\",\n  \"expediteur_automatique\": false\n}"
+}

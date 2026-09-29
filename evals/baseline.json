@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "model": "openai/gpt-oss-120b",
+  "source_report": "evals/baseline/report.json",
+  "per_label": {
+    "\u00c0 r\u00e9pondre": {"f1": 0.962963},
+    "\u00c0 traiter": {"f1": 0.461538},
+    "\u00c0 lire": {"f1": 0.96},
+    "Notification": {"f1": 0.666667},
+    "Commercial": {"f1": 0.96}
+  },
+  "tolerance": {
+    "f1_absolute": 0.04,
+    "per_label_f1_absolute": {},
+    "max_technical_error_rate": 0.20
+  },
+  "calibration": {
+    "environment": "dev",
+    "method": "three consecutive live runs using the same dataset and model",
+    "runs": [
+      {
+        "generated_at": "2026-09-29T11:11:59.304297+00:00",
+        "strict_accuracy": 0.685714,
+        "technical_error_rate": 0.185714,
+        "per_label_f1": {
+          "\u00c0 r\u00e9pondre": 0.962963,
+          "\u00c0 traiter": 0.461538,
+          "\u00c0 lire": 0.96,
+          "Notification": 0.666667,
+          "Commercial": 0.96
+        }
+      },
+      {
+        "generated_at": "2026-09-29T11:44:30.951624+00:00",
+        "strict_accuracy": 0.7,
+        "technical_error_rate": 0.157143,
+        "per_label_f1": {
+          "\u00c0 r\u00e9pondre": 0.962963,
+          "\u00c0 traiter": 0.428571,
+          "\u00c0 lire": 0.962963,
+          "Notification": 0.64,
+          "Commercial": 0.96
+        }
+      },
+      {
+        "generated_at": "2026-09-29T11:47:48.290925+00:00",
+        "strict_accuracy": 0.7,
+        "technical_error_rate": 0.171429,
+        "per_label_f1": {
+          "\u00c0 r\u00e9pondre": 0.962963,
+          "\u00c0 traiter": 0.461538,
+          "\u00c0 lire": 0.962963,
+          "Notification": 0.666667,
+          "Commercial": 0.96
+        }
+      }
+    ],
+    "observed_max_f1_drop": 0.032967,
+    "status": "complete"
+  },
+  "update_policy": "Update only through a dedicated pull request containing the reviewed report and a justification."
+}

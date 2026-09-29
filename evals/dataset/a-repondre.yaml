@@ -1,0 +1,98 @@
+- id: reply-question-fr-001
+  subject: "Validation du planning"
+  sender: "collegue@equipe.example"
+  body: "Peux-tu me confirmer que le planning proposé te convient avant jeudi ?"
+  expected: "À répondre"
+  tags: [fr, question, facile]
+  note: "Une réponse écrite suffit."
+- id: reply-quote-fr-002
+  subject: "Demande de devis"
+  sender: "prospect@entreprise.example"
+  body: "Bonjour, pourriez-vous me transmettre un devis pour dix accès utilisateurs ?"
+  expected: "À répondre"
+  tags: [fr, devis, prospect]
+  note: "Demande commerciale individuelle provenant d'un humain."
+- id: reply-reminder-fr-003
+  subject: "Votre retour"
+  sender: "partenaire@cabinet.example"
+  body: "Avez-vous eu le temps de regarder ma proposition ? J'attends votre avis."
+  expected: "À répondre"
+  tags: [fr, relance, urgence-haute]
+  note: "Relance explicite adressée au destinataire."
+- id: reply-document-question-fr-004
+  subject: "Question sur la facture de septembre"
+  sender: "contact@client.example"
+  body: "Quel est le montant hors taxes indiqué sur cette facture ? Une réponse par mail me suffit."
+  expected: "À répondre"
+  tags: [fr, limite, facture]
+  note: "Confusion À répondre/À traiter : aucune opération n'est demandée."
+- id: reply-english-005
+  subject: "Could we reschedule?"
+  sender: "alex@partner.example"
+  body: "Could you tell me whether Friday at 10 works for you?"
+  expected: "À répondre"
+  tags: [en, question, calendrier]
+  note: "Question humaine en anglais."
+- id: reply-empty-subject-006
+  subject: ""
+  sender: "ami@contact.example"
+  body: "Tu peux me dire si tu seras présent demain ?"
+  expected: "À répondre"
+  tags: [fr, sans-objet, court]
+  note: "Le corps suffit à établir l'attente de réponse."
+- id: reply-short-007
+  subject: "Ton avis ?"
+  sender: "designer@studio.example"
+  body: "Tu préfères la version A ou B ?"
+  expected: "À répondre"
+  tags: [fr, tres-court, question]
+  note: "Cas très court mais non ambigu."
+- id: reply-access-info-008
+  subject: "Information nécessaire pour votre accès"
+  sender: "responsable@organisation.example"
+  body: "Quelle adresse dois-je déclarer pour créer votre accès ? Répondez-moi simplement ici."
+  expected: "À répondre"
+  tags: [fr, limite, acces]
+  note: "Le destinataire doit répondre, pas gérer lui-même l'accès."
+- id: reply-personal-009
+  subject: "Déjeuner mardi"
+  sender: "contact@reseau.example"
+  body: "Souhaites-tu déjeuner mardi prochain pour faire le point ?"
+  expected: "À répondre"
+  tags: [fr, personnel, invitation-humaine]
+  note: "Invitation écrite par un humain qui attend une réponse."
+- id: reply-deadline-en-010
+  subject: "Approval needed today"
+  sender: "manager@team.example"
+  body: "Can you confirm by 5 PM that the summary is accurate?"
+  expected: "À répondre"
+  tags: [en, urgent, question]
+  note: "Réponse écrite urgente, sans opération distincte."
+- id: reply-feedback-fr-011
+  subject: "Retour sur la maquette"
+  sender: "designer@agency.example"
+  body: "J'aimerais avoir ton retour sur la nouvelle maquette. Que faut-il modifier ?"
+  expected: "À répondre"
+  tags: [fr, feedback, question]
+  note: "Une réponse humaine est explicitement attendue."
+- id: reply-availability-en-012
+  subject: "Quick question"
+  sender: "recruiter@company.example"
+  body: "Are you available for a fifteen-minute call next week?"
+  expected: "À répondre"
+  tags: [en, court, disponibilite]
+  note: "Sollicitation individuelle réelle."
+- id: reply-choice-fr-013
+  subject: "Choix du format"
+  sender: "imprimeur@atelier.example"
+  body: "Faut-il préparer le document en A4 ou en A5 ? Merci de me répondre avant impression."
+  expected: "À répondre"
+  tags: [fr, choix, question]
+  note: "Le fournisseur attend une instruction textuelle."
+- id: reply-automatic-question-014
+  subject: "Confirmez-vous votre satisfaction ?"
+  sender: "no-reply@sondage.example"
+  body: "Êtes-vous satisfait de votre dernière interaction ? Répondez à ce questionnaire automatique."
+  expected: Notification
+  tags: [fr, limite, expediteur-automatique]
+  note: "Contre-exemple volontaire : une question automatique n'est pas À répondre."

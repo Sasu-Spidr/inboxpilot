@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-human-share-en-014",
+  "input_sha256": "12ca96a9e5a4f8c6cb54f46d2548eb01adb7efa1a9872e2f16e850e17e2a4cb3",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message provient d'un collègue humain, partage un article sans demander de réponse ni action, donc il s'agit d'une information à lire.\",\n  \"expediteur_automatique\": false\n}"
+}

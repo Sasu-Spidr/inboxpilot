@@ -1,0 +1,1391 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-29T11:11:59.304297+00:00",
+  "model": "openai/gpt-oss-120b",
+  "dataset": "/app/evals/dataset",
+  "confidence_threshold": 0.75,
+  "metrics": {
+    "summary": {
+      "total": 70,
+      "classified": 57,
+      "correct": 48,
+      "strict_accuracy": 0.685714,
+      "classified_accuracy": 0.842105,
+      "abstentions": 0,
+      "abstention_rate": 0.0,
+      "technical_errors": 13,
+      "technical_error_rate": 0.185714,
+      "technical_error_kinds": {
+        "invalid_json": 13
+      }
+    },
+    "per_path": {
+      "deterministic": {
+        "total": 34,
+        "correct": 25,
+        "accuracy": 0.735294,
+        "abstentions": 0,
+        "technical_errors": 0
+      },
+      "model": {
+        "total": 36,
+        "correct": 23,
+        "accuracy": 0.638889,
+        "abstentions": 0,
+        "technical_errors": 13
+      }
+    },
+    "per_label": {
+      "À répondre": {
+        "support": 14,
+        "classified_support": 14,
+        "precision": 1.0,
+        "recall": 0.928571,
+        "f1": 0.962963
+      },
+      "À traiter": {
+        "support": 13,
+        "classified_support": 5,
+        "precision": 0.375,
+        "recall": 0.6,
+        "f1": 0.461538
+      },
+      "À lire": {
+        "support": 14,
+        "classified_support": 12,
+        "precision": 0.923077,
+        "recall": 1.0,
+        "f1": 0.96
+      },
+      "Notification": {
+        "support": 16,
+        "classified_support": 14,
+        "precision": 0.8,
+        "recall": 0.571429,
+        "f1": 0.666667
+      },
+      "Commercial": {
+        "support": 13,
+        "classified_support": 12,
+        "precision": 0.923077,
+        "recall": 1.0,
+        "f1": 0.96
+      }
+    },
+    "confusion_matrix": {
+      "À répondre": {
+        "À répondre": 13,
+        "À traiter": 1,
+        "À lire": 0,
+        "Notification": 0,
+        "Commercial": 0
+      },
+      "À traiter": {
+        "À répondre": 0,
+        "À traiter": 3,
+        "À lire": 0,
+        "Notification": 2,
+        "Commercial": 0
+      },
+      "À lire": {
+        "À répondre": 0,
+        "À traiter": 0,
+        "À lire": 12,
+        "Notification": 0,
+        "Commercial": 0
+      },
+      "Notification": {
+        "À répondre": 0,
+        "À traiter": 4,
+        "À lire": 1,
+        "Notification": 8,
+        "Commercial": 1
+      },
+      "Commercial": {
+        "À répondre": 0,
+        "À traiter": 0,
+        "À lire": 0,
+        "Notification": 0,
+        "Commercial": 12
+      }
+    }
+  },
+  "failures": [
+    {
+      "id": "read-comment-fr-002",
+      "expected": "À lire",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 5160.336,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "read-compliment-fr-008",
+      "expected": "À lire",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9507.098,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"Le message est une simple appréciation sans demande de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n"
+      }
+    },
+    {
+      "id": "reply-document-question-fr-004",
+      "expected": "À répondre",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.135,
+      "technical_error": null
+    },
+    {
+      "id": "reply-automatic-question-014",
+      "expected": "Notification",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 17062.974,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n"
+      }
+    },
+    {
+      "id": "action-security-fr-003",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12674.429,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-access-fr-004",
+      "expected": "À traiter",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.97,
+      "reason": "Le message est une notification automatique.",
+      "duration_ms": 0.309,
+      "technical_error": null
+    },
+    {
+      "id": "action-document-en-006",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12854.968,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-tax-fr-007",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13109.902,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"Notification\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison"
+      }
+    },
+    {
+      "id": "action-short-008",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12927.387,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-empty-subject-009",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9208.81,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\":"
+      }
+    },
+    {
+      "id": "action-bank-fr-010",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9577.129,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-account-fr-011",
+      "expected": "À traiter",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.98,
+      "reason": "Le message est une notification automatique ou transactionnelle.",
+      "duration_ms": 0.238,
+      "technical_error": null
+    },
+    {
+      "id": "action-consent-en-012",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 8119.519,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"À traiter\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.96,\n  \"raison\": \"Le message demande à l'utilisateur d'effectuer une action manuelle (se connecter et renouveler le consent"
+      }
+    },
+    {
+      "id": "action-receipt-negative-013",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.165,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-no-subject-004",
+      "expected": "Commercial",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12943.468,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"Commercial\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message provient d'une adresse marketing et propose une offre promotionnelle, typique d'un"
+      }
+    },
+    {
+      "id": "notification-receipt-fr-002",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.133,
+      "technical_error": null
+    },
+    {
+      "id": "notification-receipt-promo-fr-003",
+      "expected": "Notification",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.249,
+      "technical_error": null
+    },
+    {
+      "id": "notification-short-008",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.137,
+      "technical_error": null
+    },
+    {
+      "id": "notification-automatic-question-009",
+      "expected": "Notification",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13074.131,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "notification-app-mention-010",
+      "expected": "Notification",
+      "predicted": "À lire",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.97,
+      "reason": "Le message signale une mention ou une interaction à lire.",
+      "duration_ms": 0.16,
+      "technical_error": null
+    },
+    {
+      "id": "notification-renewal-done-en-013",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.126,
+      "technical_error": null
+    },
+    {
+      "id": "notification-security-action-negative-014",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13787.444,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "read-project-update-fr-001",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Message informatif d'un collègue sans demande de réponse ni d'action.",
+      "duration_ms": 485.643,
+      "technical_error": null
+    },
+    {
+      "id": "read-comment-fr-002",
+      "expected": "À lire",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 5160.336,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "read-mention-fr-003",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.96,
+      "reason": "Le message informe simplement d'une mention dans un compte rendu, sans demande de réponse ni action requise.",
+      "duration_ms": 940.903,
+      "technical_error": null
+    },
+    {
+      "id": "read-document-fr-004",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message informe simplement du document final sans demander de réponse ni d'action.",
+      "duration_ms": 602.656,
+      "technical_error": null
+    },
+    {
+      "id": "read-english-005",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message informe simplement d'un état de projet sans demander de réponse ni d'action.",
+      "duration_ms": 371.403,
+      "technical_error": null
+    },
+    {
+      "id": "read-short-006",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Message informatif sans demande de réponse ni action requise.",
+      "duration_ms": 515.455,
+      "technical_error": null
+    },
+    {
+      "id": "read-empty-subject-007",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message contient des notes partagées sans demande de réponse ni d'action.",
+      "duration_ms": 591.542,
+      "technical_error": null
+    },
+    {
+      "id": "read-compliment-fr-008",
+      "expected": "À lire",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9507.098,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"Le message est une simple appréciation sans demande de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n"
+      }
+    },
+    {
+      "id": "read-product-link-control-009",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.96,
+      "reason": "Le message provient d'un collègue humain et sert uniquement à partager une information sans demander de réponse ni d'action.",
+      "duration_ms": 7479.628,
+      "technical_error": null
+    },
+    {
+      "id": "read-career-control-010",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message informe simplement d'un classement d'archives, aucune réponse ni action n'est attendue.",
+      "duration_ms": 6688.962,
+      "technical_error": null
+    },
+    {
+      "id": "read-research-control-011",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message fournit des informations sans demander de réponse ni d'action.",
+      "duration_ms": 6639.353,
+      "technical_error": null
+    },
+    {
+      "id": "read-store-control-012",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message informe simplement de la réception des vêtements, aucune réponse ni action n'est attendue.",
+      "duration_ms": 3618.591,
+      "technical_error": null
+    },
+    {
+      "id": "read-meal-control-013",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le mail contient des notes d'information sans demande de réponse ni action requise.",
+      "duration_ms": 6758.575,
+      "technical_error": null
+    },
+    {
+      "id": "read-human-share-en-014",
+      "expected": "À lire",
+      "predicted": "À lire",
+      "raw_model_label": "À lire",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message provient d'un collègue humain, partage un article sans demander de réponse ni action, donc il s'agit d'une information à lire.",
+      "duration_ms": 6997.472,
+      "technical_error": null
+    },
+    {
+      "id": "reply-question-fr-001",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message demande clairement une réponse écrite.",
+      "duration_ms": 0.67,
+      "technical_error": null
+    },
+    {
+      "id": "reply-quote-fr-002",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message demande clairement une réponse.",
+      "duration_ms": 0.213,
+      "technical_error": null
+    },
+    {
+      "id": "reply-reminder-fr-003",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "L'expéditeur humain attend une réponse à sa proposition.",
+      "duration_ms": 2139.781,
+      "technical_error": null
+    },
+    {
+      "id": "reply-document-question-fr-004",
+      "expected": "À répondre",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.135,
+      "technical_error": null
+    },
+    {
+      "id": "reply-english-005",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Un humain demande de confirmer une nouvelle date, nécessitant une réponse écrite.",
+      "duration_ms": 2703.999,
+      "technical_error": null
+    },
+    {
+      "id": "reply-empty-subject-006",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message demande clairement une réponse écrite.",
+      "duration_ms": 0.275,
+      "technical_error": null
+    },
+    {
+      "id": "reply-short-007",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "Le message demande une réponse de l'utilisateur (avis sur deux versions).",
+      "duration_ms": 6728.816,
+      "technical_error": null
+    },
+    {
+      "id": "reply-access-info-008",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "L'expéditeur humain demande une adresse pour créer un accès, nécessitant une réponse écrite.",
+      "duration_ms": 6620.659,
+      "technical_error": null
+    },
+    {
+      "id": "reply-personal-009",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Un humain propose un déjeuner et attend une réponse.",
+      "duration_ms": 6885.296,
+      "technical_error": null
+    },
+    {
+      "id": "reply-deadline-en-010",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message provient d'un humain et demande une confirmation écrite, donc une réponse est attendue.",
+      "duration_ms": 2781.209,
+      "technical_error": null
+    },
+    {
+      "id": "reply-feedback-fr-011",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message demande clairement une réponse écrite.",
+      "duration_ms": 0.219,
+      "technical_error": null
+    },
+    {
+      "id": "reply-availability-en-012",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message provient d'un recruteur humain demandant une disponibilité, nécessitant une réponse écrite.",
+      "duration_ms": 2646.478,
+      "technical_error": null
+    },
+    {
+      "id": "reply-choice-fr-013",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": "À répondre",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "L'expéditeur humain demande une réponse précise concernant le format du document.",
+      "duration_ms": 6651.033,
+      "technical_error": null
+    },
+    {
+      "id": "reply-automatic-question-014",
+      "expected": "Notification",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 17062.974,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n"
+      }
+    },
+    {
+      "id": "action-invoice-fr-001",
+      "expected": "À traiter",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.216,
+      "technical_error": null
+    },
+    {
+      "id": "action-contract-fr-002",
+      "expected": "À traiter",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.157,
+      "technical_error": null
+    },
+    {
+      "id": "action-security-fr-003",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12674.429,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-access-fr-004",
+      "expected": "À traiter",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.97,
+      "reason": "Le message est une notification automatique.",
+      "duration_ms": 0.309,
+      "technical_error": null
+    },
+    {
+      "id": "action-payment-en-005",
+      "expected": "À traiter",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.101,
+      "technical_error": null
+    },
+    {
+      "id": "action-document-en-006",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12854.968,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-tax-fr-007",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13109.902,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"Notification\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison"
+      }
+    },
+    {
+      "id": "action-short-008",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12927.387,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-empty-subject-009",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9208.81,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\":"
+      }
+    },
+    {
+      "id": "action-bank-fr-010",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 9577.129,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "action-account-fr-011",
+      "expected": "À traiter",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.98,
+      "reason": "Le message est une notification automatique ou transactionnelle.",
+      "duration_ms": 0.238,
+      "technical_error": null
+    },
+    {
+      "id": "action-consent-en-012",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 8119.519,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"À traiter\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.96,\n  \"raison\": \"Le message demande à l'utilisateur d'effectuer une action manuelle (se connecter et renouveler le consent"
+      }
+    },
+    {
+      "id": "action-receipt-negative-013",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.165,
+      "technical_error": null
+    },
+    {
+      "id": "action-promo-negative-014",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.441,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-newsletter-fr-001",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est clairement un envoi de masse.",
+      "duration_ms": 0.363,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-cold-email-fr-002",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.42,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-discount-en-003",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est clairement un envoi de masse.",
+      "duration_ms": 0.295,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-no-subject-004",
+      "expected": "Commercial",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 12943.468,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: {\n  \"libelle\": \"Commercial\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message provient d'une adresse marketing et propose une offre promotionnelle, typique d'un"
+      }
+    },
+    {
+      "id": "commercial-short-005",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.426,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-boohooman-positive-006",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.399,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-uber-eats-positive-007",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.393,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-product-hunt-positive-008",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est clairement un envoi de masse.",
+      "duration_ms": 0.221,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-career-positive-009",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est clairement un envoi de masse.",
+      "duration_ms": 0.233,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-paper-positive-010",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est clairement un envoi de masse.",
+      "duration_ms": 0.239,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-job-alert-fr-011",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.391,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-event-fr-012",
+      "expected": "Commercial",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.395,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-receipt-control-013",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": "Notification",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.99,
+      "reason": "Message automatique confirmant une commande, aucune action requise.",
+      "duration_ms": 7489.12,
+      "technical_error": null
+    },
+    {
+      "id": "commercial-human-prospect-control-014",
+      "expected": "À répondre",
+      "predicted": "À répondre",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message demande clairement une réponse.",
+      "duration_ms": 0.207,
+      "technical_error": null
+    },
+    {
+      "id": "notification-login-code-fr-001",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est une notification automatique ou transactionnelle.",
+      "duration_ms": 0.252,
+      "technical_error": null
+    },
+    {
+      "id": "notification-receipt-fr-002",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.133,
+      "technical_error": null
+    },
+    {
+      "id": "notification-receipt-promo-fr-003",
+      "expected": "Notification",
+      "predicted": "Commercial",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.94,
+      "reason": "Le message ressemble à du contenu commercial.",
+      "duration_ms": 0.249,
+      "technical_error": null
+    },
+    {
+      "id": "notification-calendar-fr-004",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "Le message est une notification automatique.",
+      "duration_ms": 0.222,
+      "technical_error": null
+    },
+    {
+      "id": "notification-password-changed-en-005",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est une notification automatique ou transactionnelle.",
+      "duration_ms": 0.151,
+      "technical_error": null
+    },
+    {
+      "id": "notification-delivery-fr-006",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": "Notification",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Message généré automatiquement pour informer de la livraison du colis, aucune réponse ou action manuelle requise.",
+      "duration_ms": 9368.336,
+      "technical_error": null
+    },
+    {
+      "id": "notification-empty-subject-007",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.97,
+      "reason": "Le message est une notification automatique.",
+      "duration_ms": 0.339,
+      "technical_error": null
+    },
+    {
+      "id": "notification-short-008",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.137,
+      "technical_error": null
+    },
+    {
+      "id": "notification-automatic-question-009",
+      "expected": "Notification",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13074.131,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    },
+    {
+      "id": "notification-app-mention-010",
+      "expected": "Notification",
+      "predicted": "À lire",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.97,
+      "reason": "Le message signale une mention ou une interaction à lire.",
+      "duration_ms": 0.16,
+      "technical_error": null
+    },
+    {
+      "id": "notification-booking-en-011",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.98,
+      "reason": "Le message est une notification automatique ou transactionnelle.",
+      "duration_ms": 0.138,
+      "technical_error": null
+    },
+    {
+      "id": "notification-file-ready-fr-012",
+      "expected": "Notification",
+      "predicted": "Notification",
+      "raw_model_label": "Notification",
+      "path": "model",
+      "status": "classified",
+      "correct": true,
+      "confidence": 0.99,
+      "reason": "Mail automatique informant que l'export demandé est disponible.",
+      "duration_ms": 2560.176,
+      "technical_error": null
+    },
+    {
+      "id": "notification-renewal-done-en-013",
+      "expected": "Notification",
+      "predicted": "À traiter",
+      "raw_model_label": null,
+      "path": "deterministic",
+      "status": "classified",
+      "correct": false,
+      "confidence": 0.99,
+      "reason": "Le message concerne une facture, un paiement, un document ou un sujet administratif à traiter.",
+      "duration_ms": 0.126,
+      "technical_error": null
+    },
+    {
+      "id": "notification-security-action-negative-014",
+      "expected": "À traiter",
+      "predicted": null,
+      "raw_model_label": null,
+      "path": "model",
+      "status": "technical_error",
+      "correct": false,
+      "confidence": null,
+      "reason": "",
+      "duration_ms": 13787.444,
+      "technical_error": {
+        "kind": "invalid_json",
+        "message": "No JSON object found in model response: "
+      }
+    }
+  ]
+}

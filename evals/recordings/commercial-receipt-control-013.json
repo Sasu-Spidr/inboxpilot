@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "commercial-receipt-control-013",
+  "input_sha256": "acb79668ea59507751749cade2e65409d0ea98757cedfe5f23c712dd13b5efc8",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"Notification\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.99,\n  \"raison\": \"Message automatique confirmant une commande, aucune action requise.\",\n  \"expediteur_automatique\": true\n}"
+}

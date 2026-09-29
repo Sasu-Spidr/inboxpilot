@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "action-empty-subject-009",
+  "input_sha256": "a1afe68be14f6c41f5b2dc737ea980271b00e6cca251605d5f18cf2b31b558f0",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\":"
+}

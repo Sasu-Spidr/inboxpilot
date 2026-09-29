@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-project-update-fr-001",
+  "input_sha256": "63936a87a3552b4a3e59782abbd0420b939ee05da1cd533378e53f6bb9558bc2",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Message informatif d'un collègue sans demande de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n}"
+}
