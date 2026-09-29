@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-product-link-control-009",
+  "input_sha256": "2501f2fc6c8ba07d02e00377621a7ca1c9eb58f7c0e8cd97b04f7503f6521fa9",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.96,\n  \"raison\": \"Le message provient d'un collègue humain et sert uniquement à partager une information sans demander de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n}"
+}

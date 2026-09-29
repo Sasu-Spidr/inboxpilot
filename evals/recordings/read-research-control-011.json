@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-research-control-011",
+  "input_sha256": "0a5cc3def86c8027c5730120053845fa0b91246ae51ee8829d4c45bdd1326afc",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message fournit des informations sans demander de réponse ni d'action.\",\n  \"expediteur_automatique\": false\n}"
+}

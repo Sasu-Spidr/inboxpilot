@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-personal-009",
+  "input_sha256": "04082baa2c711b60756d9fed54cc26085a655680aaf72c790a964ffd5c80d5d9",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Un humain propose un déjeuner et attend une réponse.\",\n  \"expediteur_automatique\": false\n}"
+}

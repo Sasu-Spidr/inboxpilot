@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-meal-control-013",
+  "input_sha256": "83c023affe63e1b330da964b5100cad1678eaca34075bbda96587c8793e37d29",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le mail contient des notes d'information sans demande de réponse ni action requise.\",\n  \"expediteur_automatique\": false\n}"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-career-control-010",
+  "input_sha256": "ae1f6748d2a153b3f09f0ae3cf91efc1b05ea8166c29ea2f06e88c1611c5c6f9",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message informe simplement d'un classement d'archives, aucune réponse ni action n'est attendue.\",\n  \"expediteur_automatique\": false\n}"
+}

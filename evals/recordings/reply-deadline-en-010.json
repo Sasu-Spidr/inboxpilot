@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-deadline-en-010",
+  "input_sha256": "04c6b5701dd3e99063ef0452f2f214b6f7fed4c7de94ac325c0dc4674ae0900d",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"haute\",\n  \"confiance\": 0.98,\n  \"raison\": \"Le message provient d'un humain et demande une confirmation écrite, donc une réponse est attendue.\",\n  \"expediteur_automatique\": false\n}"
+}

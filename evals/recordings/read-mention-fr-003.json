@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-mention-fr-003",
+  "input_sha256": "2d73837aba28052b46804c80a98597128a2b91b4ae92e39fe4e734117b60514f",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.96,\n  \"raison\": \"Le message informe simplement d'une mention dans un compte rendu, sans demande de réponse ni action requise.\",\n  \"expediteur_automatique\": false\n}"
+}

@@ -90,3 +90,12 @@ appel réussi au modèle. La configuration du classifieur est fixe :
 `max_completion_tokens=180` et `temperature=0`. Même avec 80 cas entièrement
 traités par le modèle, une exécution représente donc au maximum 80 appels et
 14 400 tokens de complétion, hors éventuelles nouvelles tentatives sur erreur.
+
+## Première référence
+
+La première exécution réelle est conservée dans `baseline/` et les 70
+enregistrements rejouables dans `recordings/`. Elle a traité 34 cas par les
+règles déterministes et 36 par le modèle. Le rapport a correctement isolé 13
+réponses JSON invalides comme erreurs techniques ; elles ne sont ni comptées
+comme des décisions `À lire`, ni intégrées à la matrice de confusion. Le rejeu
+hors ligne produit exactement les mêmes métriques que cette exécution.

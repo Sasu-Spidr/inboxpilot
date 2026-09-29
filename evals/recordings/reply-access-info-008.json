@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-access-info-008",
+  "input_sha256": "f75919258326ce37377118bbe8ca669ea81c45911ff960d7f7bca16c5df43666",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"L'expéditeur humain demande une adresse pour créer un accès, nécessitant une réponse écrite.\",\n  \"expediteur_automatique\": false\n}"
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "read-short-006",
+  "input_sha256": "0399aad4b93dfbef219edb6d9ad24a3ac72d59509e01af3154232d7edb37dbcb",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À lire\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.98,\n  \"raison\": \"Message informatif sans demande de réponse ni action requise.\",\n  \"expediteur_automatique\": false\n}"
+}

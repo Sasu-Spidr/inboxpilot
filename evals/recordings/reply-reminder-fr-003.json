@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "reply-reminder-fr-003",
+  "input_sha256": "86dc59817e1e894c04119034769a81a1f022cc834183f38d9f672c8bad2fa396",
+  "path": "model",
+  "raw_model_response": "{\n  \"libelle\": \"À répondre\",\n  \"urgence\": \"normale\",\n  \"confiance\": 0.97,\n  \"raison\": \"L'expéditeur humain attend une réponse à sa proposition.\",\n  \"expediteur_automatique\": false\n}"
+}
