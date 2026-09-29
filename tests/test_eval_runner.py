@@ -9,6 +9,7 @@ from evals.run_eval import (
     compute_metrics,
     deterministic_classify,
     evaluate_cases,
+    load_groq_api_key,
     load_cases,
     main,
     render_markdown,
@@ -199,3 +200,14 @@ def test_cli_replay_writes_markdown_and_json_without_api_key(tmp_path, monkeypat
     payload = json.loads((output / "report.json").read_text(encoding="utf-8"))
     assert payload["metrics"]["summary"]["total"] == 70
     assert "Matrice de confusion" in (output / "report.md").read_text(encoding="utf-8")
+
+
+def test_live_api_key_is_read_from_openbao(monkeypatch):
+    class FakeBaoSecrets:
+        def get(self, name):
+            assert name == "GROQ_API_KEY"
+            return "bao-eval-key"
+
+    monkeypatch.setattr("evals.run_eval.BaoSecrets", FakeBaoSecrets)
+    monkeypatch.setenv("GROQ_API_KEY", "environment-key-must-not-win")
+    assert load_groq_api_key() == "bao-eval-key"

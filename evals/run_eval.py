@@ -27,6 +27,7 @@ from classifier import (  # noqa: E402
     deterministic_classify,
     parse_json_object,
 )
+from bao_secrets import BaoSecrets  # noqa: E402
 
 
 SCHEMA_VERSION = 1
@@ -422,6 +423,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return args
 
 
+def load_groq_api_key() -> str:
+    """Read the live-evaluation key through the worker OpenBao agent."""
+
+    value = str(BaoSecrets().get("GROQ_API_KEY")).strip()
+    if not value:
+        raise RuntimeError("OpenBao returned an empty GROQ_API_KEY")
+    return value
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     cases = load_cases(args.dataset)
@@ -431,9 +441,7 @@ def main(argv: list[str] | None = None) -> int:
         client: Any = ReplayClient(args.replay)
         classifier = EmailClassifier("", model=args.model, client=client)
     else:
-        api_key = os.getenv("GROQ_API_KEY", "").strip()
-        if not api_key:
-            raise SystemExit("GROQ_API_KEY is required for a live evaluation; use --replay for offline mode")
+        api_key = load_groq_api_key()
         live_classifier = EmailClassifier(api_key, model=args.model)
         client = CapturingClient(live_classifier.client)
         classifier = EmailClassifier("", model=args.model, client=client)

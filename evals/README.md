@@ -56,8 +56,10 @@ cas ou une modification de `config/label_definitions.yaml` n'a été signalé.
 
 ## Lancer l'évaluation
 
-Une évaluation en direct nécessite `GROQ_API_KEY` et écrit deux rapports dans
-`evals/reports/` :
+Une évaluation en direct lit `GROQ_API_KEY` auprès de l'agent OpenBao worker
+(`BAO_AGENT_ADDR`, ou `http://bao-agent-worker:8100` par défaut) et écrit deux
+rapports dans `evals/reports/`. La clé n'est jamais passée au processus par une
+variable d'environnement :
 
 ```bash
 python evals/run_eval.py
