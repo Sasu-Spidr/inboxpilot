@@ -1,0 +1,98 @@
+- id: commercial-newsletter-fr-001
+  subject: "Découvrez nos nouveautés de la semaine"
+  sender: "news@marque.example"
+  body: "Notre sélection éditoriale et nos nouvelles collections sont disponibles. Se désabonner en bas de page."
+  expected: Commercial
+  tags: [fr, masse, newsletter]
+  note: "Envoi éditorial récurrent avec désabonnement."
+- id: commercial-cold-email-fr-002
+  subject: "Réduisez vos coûts de traitement"
+  sender: "sales@vendor.example"
+  body: "Nous aidons les entreprises à économiser du temps. Souhaitez-vous découvrir notre offre ?"
+  expected: Commercial
+  tags: [fr, prospection, acquisition]
+  note: "Prospection commerciale non sollicitée."
+- id: commercial-discount-en-003
+  subject: "Last chance: 40% off"
+  sender: "offers@store.example"
+  body: "Shop today and enjoy forty percent off selected products. Unsubscribe at any time."
+  expected: Commercial
+  tags: [en, promotion, masse]
+  note: "Promotion en anglais."
+- id: commercial-no-subject-004
+  subject: ""
+  sender: "marketing@software.example"
+  body: "Try our premium plan free for thirty days and unlock every feature."
+  expected: Commercial
+  tags: [en, sans-objet, offre]
+  note: "Le caractère commercial vient du corps."
+- id: commercial-short-005
+  subject: "Livraison gratuite"
+  sender: "promo@shop.example"
+  body: "Aujourd'hui seulement."
+  expected: Commercial
+  tags: [fr, tres-court, promotion]
+  note: "Cas promotionnel très court."
+- id: commercial-boohooman-positive-006
+  subject: "boohooMAN : à vous de jouer"
+  sender: "campaign@fashion.example"
+  body: "Découvrez la nouvelle collection et profitez d'une remise réservée aux abonnés."
+  expected: Commercial
+  tags: [fr, hardcoded-positive, rule-boohooman]
+  note: "Déclencheur historique boohooman."
+- id: commercial-uber-eats-positive-007
+  subject: "Uber Eats : vos plats favoris en promotion"
+  sender: "offers@delivery.example"
+  body: "Commandez ce soir et obtenez une réduction sur une sélection de restaurants."
+  expected: Commercial
+  tags: [fr, hardcoded-positive, rule-uber-eats]
+  note: "Déclencheur historique uber eats."
+- id: commercial-product-hunt-positive-008
+  subject: "Product Hunt Daily"
+  sender: "daily@products.example"
+  body: "Your daily editorial digest of newly launched products. Unsubscribe here."
+  expected: Commercial
+  tags: [en, hardcoded-positive, rule-product-hunt-daily]
+  note: "Déclencheur historique product hunt daily."
+- id: commercial-career-positive-009
+  subject: "25 ans auprès d'une maison de création"
+  sender: "newsletter@business.example"
+  body: "Ce qu'une légende du secteur nous a appris. Retrouvez notre chronique hebdomadaire."
+  expected: Commercial
+  tags: [fr, hardcoded-positive, rule-25-ans-aupres]
+  note: "Déclencheur historique 25 ans auprès."
+- id: commercial-paper-positive-010
+  subject: "Agent Hub Security"
+  sender: "digest@technology.example"
+  body: "A paper-heavy window with practical lessons and a high learning rate. Weekly digest."
+  expected: Commercial
+  tags: [en, hardcoded-positive, rule-paper-heavy-window]
+  note: "Déclencheur historique paper-heavy window."
+- id: commercial-job-alert-fr-011
+  subject: "12 nouvelles offres d'emploi"
+  sender: "alerts@jobs.example"
+  body: "Votre alerte quotidienne contient de nouvelles offres correspondant à vos critères."
+  expected: Commercial
+  tags: [fr, alerte-emploi, masse]
+  note: "Alerte d'acquisition récurrente."
+- id: commercial-event-fr-012
+  subject: "Inscrivez-vous à notre prochain webinaire"
+  sender: "events@vendor.example"
+  body: "Découvrez notre solution pendant une démonstration et profitez d'une offre de lancement."
+  expected: Commercial
+  tags: [fr, evenement, acquisition]
+  note: "Invitation marketing à un événement de vente."
+- id: commercial-receipt-control-013
+  subject: "Commande confirmée"
+  sender: "no-reply@store.example"
+  body: "Votre commande est confirmée et sera expédiée demain. Aucune action n'est nécessaire."
+  expected: Notification
+  tags: [fr, limite, transactionnel]
+  note: "Contre-exemple : transaction légitime sans promotion."
+- id: commercial-human-prospect-control-014
+  subject: "Question sur votre prestation"
+  sender: "prospect@small-business.example"
+  body: "Bonjour, votre service m'intéresse. Pouvez-vous me rappeler pour discuter de mon besoin précis ?"
+  expected: "À répondre"
+  tags: [fr, limite, prospect-humain]
+  note: "Contre-exemple : prospect individuel attendant une réponse."

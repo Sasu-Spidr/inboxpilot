@@ -1,0 +1,98 @@
+- id: notification-login-code-fr-001
+  subject: "Votre code de connexion"
+  sender: "no-reply@identity.example"
+  body: "Votre code à usage unique est 000000. Il expire dans dix minutes."
+  expected: Notification
+  tags: [fr, code, automatique]
+  note: "Code synthétique sans donnée réelle."
+- id: notification-receipt-fr-002
+  subject: "Reçu de votre commande"
+  sender: "receipts@merchant.example"
+  body: "Votre paiement est confirmé. Total d'exemple : 10,00 €. Aucune action requise."
+  expected: Notification
+  tags: [fr, recu, transactionnel]
+  note: "Confirmation d'une opération terminée."
+- id: notification-receipt-promo-fr-003
+  subject: "Reçu de commande et avantage fidélité"
+  sender: "no-reply@merchant.example"
+  body: "Votre commande est confirmée. Un code promotionnel pour une prochaine commande figure en bas du reçu."
+  expected: Notification
+  tags: [fr, limite, commercial-vs-notification]
+  note: "Le but principal reste le reçu malgré la promotion secondaire."
+- id: notification-calendar-fr-004
+  subject: "Invitation : réunion de suivi"
+  sender: "calendar-notification@calendar.example"
+  body: "Une invitation calendrier automatique est jointe pour mardi à 14 h."
+  expected: Notification
+  tags: [fr, calendrier, automatique]
+  note: "Événement généré par une application."
+- id: notification-password-changed-en-005
+  subject: "Your password was changed"
+  sender: "no-reply@account.example"
+  body: "This is a confirmation that your password was successfully changed. No action is required."
+  expected: Notification
+  tags: [en, securite, confirmation]
+  note: "Confirmation de sécurité non actionnable."
+- id: notification-delivery-fr-006
+  subject: "Votre colis a été livré"
+  sender: "tracking@delivery.example"
+  body: "La livraison a été effectuée à l'adresse enregistrée dans votre compte."
+  expected: Notification
+  tags: [fr, livraison, automatique]
+  note: "Statut transactionnel généré par un système."
+- id: notification-empty-subject-007
+  subject: ""
+  sender: "notifications@monitoring.example"
+  body: "Le traitement automatique s'est terminé avec succès."
+  expected: Notification
+  tags: [fr, sans-objet, automatique]
+  note: "L'expéditeur et le contenu suffisent."
+- id: notification-short-008
+  subject: "Paiement reçu"
+  sender: "no-reply@billing.example"
+  body: "Merci."
+  expected: Notification
+  tags: [fr, tres-court, transactionnel]
+  note: "Confirmation très courte."
+- id: notification-automatic-question-009
+  subject: "Comment évaluez-vous votre livraison ?"
+  sender: "no-reply@survey.example"
+  body: "Cliquez sur une note pour répondre à ce questionnaire automatique facultatif."
+  expected: Notification
+  tags: [fr, limite, question-automatique]
+  note: "Une machine pose une question, aucun humain n'attend de mail."
+- id: notification-app-mention-010
+  subject: "Une application vous a mentionné"
+  sender: "notifications@collaboration.example"
+  body: "Le système vous signale automatiquement une mention dans un espace collaboratif."
+  expected: Notification
+  tags: [fr, limite, mention-automatique]
+  note: "Confusion À lire/Notification : message généré par l'application."
+- id: notification-booking-en-011
+  subject: "Booking confirmed"
+  sender: "confirmations@booking.example"
+  body: "Your reservation is confirmed for the selected date."
+  expected: Notification
+  tags: [en, confirmation, automatique]
+  note: "Confirmation transactionnelle en anglais."
+- id: notification-file-ready-fr-012
+  subject: "Votre export est prêt"
+  sender: "no-reply@reports.example"
+  body: "L'export demandé est désormais disponible dans votre espace."
+  expected: Notification
+  tags: [fr, systeme, information]
+  note: "État d'un traitement automatique."
+- id: notification-renewal-done-en-013
+  subject: "Subscription renewed"
+  sender: "billing@service.example"
+  body: "Your subscription has renewed successfully. This email is your confirmation."
+  expected: Notification
+  tags: [en, abonnement, transactionnel]
+  note: "Opération déjà réalisée, sans promotion."
+- id: notification-security-action-negative-014
+  subject: "Action requise : connexion suspecte"
+  sender: "security@account.example"
+  body: "Secure your account now by changing the password and revoking unknown sessions."
+  expected: "À traiter"
+  tags: [fr, limite, securite-actionnable]
+  note: "Contre-exemple : l'alerte automatique exige une action réelle."

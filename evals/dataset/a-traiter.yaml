@@ -1,0 +1,98 @@
+- id: action-invoice-fr-001
+  subject: "Facture à régler avant vendredi"
+  sender: "facturation@prestataire.example"
+  body: "La facture synthétique F-EXEMPLE est disponible. Merci d'effectuer le paiement avant vendredi."
+  expected: "À traiter"
+  tags: [fr, facture, paiement]
+  note: "Le paiement est une action manuelle."
+- id: action-contract-fr-002
+  subject: "Contrat à signer"
+  sender: "juridique@partenaire.example"
+  body: "Veuillez ouvrir le document joint, le signer puis le déposer dans votre espace."
+  expected: "À traiter"
+  tags: [fr, contrat, signature]
+  note: "Répondre par texte ne suffit pas."
+- id: action-security-fr-003
+  subject: "Connexion suspecte détectée"
+  sender: "security@service.example"
+  body: "Une connexion inconnue a été détectée. Changez immédiatement votre mot de passe."
+  expected: "À traiter"
+  tags: [fr, securite, urgent]
+  note: "Alerte automatique exigeant une véritable action."
+- id: action-access-fr-004
+  subject: "Validez la demande d'accès"
+  sender: "notifications@identity.example"
+  body: "Une demande d'accès administrateur attend votre validation dans le portail."
+  expected: "À traiter"
+  tags: [fr, acces, notification-actionnable]
+  note: "L'action doit être réalisée dans un outil."
+- id: action-payment-en-005
+  subject: "Payment method expired"
+  sender: "billing@software.example"
+  body: "Update your payment method to prevent the subscription from being suspended."
+  expected: "À traiter"
+  tags: [en, paiement, compte]
+  note: "Modification manuelle nécessaire."
+- id: action-document-en-006
+  subject: "Document awaiting approval"
+  sender: "workflow@documents.example"
+  body: "Review the attached policy and approve it in the document portal."
+  expected: "À traiter"
+  tags: [en, validation, document]
+  note: "Une validation dans le portail est requise."
+- id: action-tax-fr-007
+  subject: "Déclaration à compléter"
+  sender: "no-reply@administration.example"
+  body: "Votre déclaration est incomplète. Connectez-vous pour renseigner les champs manquants."
+  expected: "À traiter"
+  tags: [fr, administratif, formulaire]
+  note: "Une opération manuelle est demandée."
+- id: action-short-008
+  subject: "Signature requise"
+  sender: "signature@documents.example"
+  body: "Signez le document."
+  expected: "À traiter"
+  tags: [fr, tres-court, signature]
+  note: "Cas très court et actionnable."
+- id: action-empty-subject-009
+  subject: ""
+  sender: "support@hosting.example"
+  body: "Votre domaine expire demain. Renouvelez-le depuis votre tableau de bord."
+  expected: "À traiter"
+  tags: [fr, sans-objet, urgent]
+  note: "Action requise malgré l'absence d'objet."
+- id: action-bank-fr-010
+  subject: "Virement en attente"
+  sender: "alertes@banque.example"
+  body: "Un virement préparé doit être validé avec votre dispositif de sécurité."
+  expected: "À traiter"
+  tags: [fr, finance, validation]
+  note: "Validation bancaire manuelle."
+- id: action-account-fr-011
+  subject: "Récupération de votre compte"
+  sender: "no-reply@compte.example"
+  body: "Téléversez un justificatif dans les sept jours pour conserver l'accès au compte."
+  expected: "À traiter"
+  tags: [fr, compte, justificatif]
+  note: "Le téléversement ne peut pas être remplacé par un mail."
+- id: action-consent-en-012
+  subject: "Consent renewal required"
+  sender: "admin@platform.example"
+  body: "Sign in and renew the data-processing consent before it expires."
+  expected: "À traiter"
+  tags: [en, compte, conformite]
+  note: "Action dans la plateforme requise."
+- id: action-receipt-negative-013
+  subject: "Paiement confirmé"
+  sender: "receipts@merchant.example"
+  body: "Votre paiement a bien été reçu. Aucune action n'est nécessaire."
+  expected: Notification
+  tags: [fr, limite, recu]
+  note: "Contre-exemple : opération déjà effectuée, donc pas À traiter."
+- id: action-promo-negative-014
+  subject: "Dernière chance : économisez 50 %"
+  sender: "offers@shop.example"
+  body: "Achetez aujourd'hui pour profiter de cette remise exceptionnelle."
+  expected: Commercial
+  tags: [fr, limite, fausse-urgence]
+  note: "Contre-exemple : urgence promotionnelle, aucune action légitime requise."

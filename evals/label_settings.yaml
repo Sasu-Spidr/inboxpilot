@@ -1,0 +1,57 @@
+labels:
+  - key: "À répondre"
+    name: "À répondre"
+    description: >-
+      Un humain identifiable attend une réponse écrite. Une réponse textuelle
+      règle le message. Les factures, signatures et opérations manuelles vont
+      dans À traiter ; les messages automatiques vont dans Notification.
+    priority: 100
+    prepareDraft: true
+    autoReply: false
+    autoDelete: false
+    markAsRead: false
+    autoDeleteUnreadAfterDays: null
+  - key: "À traiter"
+    name: "À traiter"
+    description: >-
+      Le message exige une action manuelle autre qu'une simple réponse : payer,
+      signer, valider un document, gérer un accès ou effectuer une opération.
+    priority: 90
+    prepareDraft: false
+    autoReply: false
+    autoDelete: false
+    markAsRead: false
+    autoDeleteUnreadAfterDays: null
+  - key: "À lire"
+    name: "À lire"
+    description: >-
+      Information écrite par un humain, à lire ou conserver, sans réponse ni
+      action attendue : mise au courant, note, mention ou retour collaboratif.
+    priority: 70
+    prepareDraft: false
+    autoReply: false
+    autoDelete: false
+    markAsRead: false
+    autoDeleteUnreadAfterDays: null
+  - key: Notification
+    name: Notification
+    description: >-
+      Message généré par une machine : alerte, code, confirmation
+      transactionnelle, reçu ou événement calendaire sans action manuelle.
+    priority: 50
+    prepareDraft: false
+    autoReply: false
+    autoDelete: false
+    markAsRead: false
+    autoDeleteUnreadAfterDays: null
+  - key: Commercial
+    name: Commercial
+    description: >-
+      Contenu d'abonnement éditorial, promotion, prospection, publicité, offre
+      commerciale, acquisition ou envoi de masse.
+    priority: 30
+    prepareDraft: false
+    autoReply: false
+    autoDelete: false
+    markAsRead: false
+    autoDeleteUnreadAfterDays: null
