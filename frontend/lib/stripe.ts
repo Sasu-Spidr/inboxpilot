@@ -88,6 +88,7 @@ export async function createCheckoutSession(input: {
     "automatic_tax[enabled]": "true",
     "customer_update[address]": "auto",
     "tax_id_collection[enabled]": "true",
+    allow_promotion_codes: "true",
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
   });

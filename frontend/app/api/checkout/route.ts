@@ -9,7 +9,7 @@ import {
   priceIdFor,
   siteBaseUrl,
 } from "@/lib/stripe";
-import { isBillingCycle, isPaidPlan } from "@/lib/stripeCore";
+import { isBillingCycle, isEntitledStatus, isPaidPlan } from "@/lib/stripeCore";
 
 export async function POST(request: NextRequest) {
   const form = await request.formData();
@@ -25,6 +25,12 @@ export async function POST(request: NextRequest) {
   // ponytail: the chosen plan is not resumed after login — the dashboard offers
   // the same buttons. Carry it through the session if the drop-off matters.
   if (!user) return NextResponse.redirect(`${base}/connexion`, 303);
+
+  // A second Checkout Session on a subscribed customer creates a second
+  // subscription instead of changing the plan, so the customer portal handles it.
+  if (user.subscriptionTier !== "free" && isEntitledStatus(user.subscriptionStatus)) {
+    return NextResponse.redirect(`${base}/dashboard?billing=deja_abonne`, 303);
+  }
 
   const priceId = checkoutEnabled() ? priceIdFor(plan, cycle) : undefined;
   if (!priceId) {

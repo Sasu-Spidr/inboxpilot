@@ -4,7 +4,7 @@ import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
 import { checkoutEnabled } from "@/lib/stripe";
-import type { SubscriptionStatus, SubscriptionTier } from "@/lib/stripeCore";
+import { isEntitledStatus, type SubscriptionStatus, type SubscriptionTier } from "@/lib/stripeCore";
 
 export default async function Dashboard({
   searchParams,
@@ -81,7 +81,7 @@ export default async function Dashboard({
           Offre <strong>{TIER_LABELS[user.subscriptionTier]}</strong> · état {STATUS_LABELS[user.subscriptionStatus]}
         </p>
         {checkoutEnabled() ? (
-          user.stripeCustomerId ? (
+          user.subscriptionTier !== "free" && isEntitledStatus(user.subscriptionStatus) ? (
             <form action="/api/billing/portal" method="post">
               <button className="ghost-button" type="submit">Gérer mon abonnement</button>
             </form>
@@ -142,6 +142,7 @@ const BILLING_NOTICES: Record<string, string> = {
   annule: "Paiement annulé, aucun montant n'a été prélevé.",
   erreur: "Stripe n'a pas pu traiter la demande. Réessayez dans un instant.",
   indisponible: "La facturation n'est pas activée sur cet environnement.",
+  deja_abonne: "Un abonnement est déjà actif. Utilisez « Gérer mon abonnement » pour changer d'offre.",
 };
 
 function MailCard({
