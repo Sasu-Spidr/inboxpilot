@@ -198,7 +198,7 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     assert "FROM openbao/openbao:" in dockerfile
     assert "openbao/openbao:latest" not in dockerfile
     assert "COPY deploy/agent.hcl /etc/bao/agent.hcl" in dockerfile
-    assert 'CMD ["agent", "-config=/etc/bao/agent.hcl"]' in dockerfile
+    assert 'CMD ["proxy", "-config=/etc/bao/agent.hcl"]' in dockerfile
     assert 'method "approle"' in agent_config
     assert 'role_id_file_path                   = "/bootstrap/role_id"' in agent_config
     assert 'secret_id_file_path                 = "/bootstrap/secret_id"' in agent_config
@@ -210,6 +210,11 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     # in the config would override it.
     config_lines = [line for line in agent_config.splitlines() if not line.lstrip().startswith("#")]
     assert not any(line.lstrip().startswith("vault") for line in config_lines)
+
+    compose = load_compose("docker-compose.yml")
+    expected_command = ["proxy", "-config=/etc/bao/agent.hcl"]
+    assert compose["services"]["bao-agent-frontend"]["command"] == expected_command
+    assert compose["services"]["bao-agent-worker"]["command"] == expected_command
 
 
 def test_bao_agents_are_network_isolated_and_not_published():
