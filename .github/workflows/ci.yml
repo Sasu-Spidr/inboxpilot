@@ -35,6 +35,15 @@ jobs:
       - name: Run tests
         run: pytest -q
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm test
+
       - name: Prepare non-secret runtime files for Docker config check
         run: |
           mkdir -p secrets/exuvie data/tokens data/state logs

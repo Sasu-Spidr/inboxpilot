@@ -3,10 +3,18 @@ import { redirect } from "next/navigation";
 import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
+import { checkoutEnabled } from "@/lib/stripe";
+import type { SubscriptionStatus, SubscriptionTier } from "@/lib/stripeCore";
 
-export default async function Dashboard() {
+export default async function Dashboard({
+  searchParams,
+}: {
+  searchParams: Promise<{ billing?: string }>;
+}) {
   const user = await currentUser();
   if (!user) redirect("/");
+
+  const billingNotice = BILLING_NOTICES[(await searchParams).billing || ""];
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
@@ -67,6 +75,36 @@ export default async function Dashboard() {
       </section>
 
       <section className="info-panel">
+        <h2>Abonnement</h2>
+        {billingNotice && <p>{billingNotice}</p>}
+        <p>
+          Offre <strong>{TIER_LABELS[user.subscriptionTier]}</strong> · état {STATUS_LABELS[user.subscriptionStatus]}
+        </p>
+        {checkoutEnabled() ? (
+          user.stripeCustomerId ? (
+            <form action="/api/billing/portal" method="post">
+              <button className="ghost-button" type="submit">Gérer mon abonnement</button>
+            </form>
+          ) : (
+            <div className="billing-actions">
+              <form action="/api/checkout" method="post">
+                <input type="hidden" name="plan" value="pro" />
+                <input type="hidden" name="cycle" value="monthly" />
+                <button className="ghost-button" type="submit">Passer au plan Pro</button>
+              </form>
+              <form action="/api/checkout" method="post">
+                <input type="hidden" name="plan" value="business" />
+                <input type="hidden" name="cycle" value="monthly" />
+                <button className="ghost-button" type="submit">Passer au plan Business</button>
+              </form>
+            </div>
+          )
+        ) : (
+          <p>La facturation n'est pas encore activée sur cet environnement.</p>
+        )}
+      </section>
+
+      <section className="info-panel">
         <h2>Ce que fait l'agent</h2>
         <ul>
           <li>Analyse uniquement les nouveaux emails non lus, sans les marquer comme lus.</li>
@@ -80,6 +118,31 @@ export default async function Dashboard() {
     </main>
   );
 }
+
+const TIER_LABELS: Record<SubscriptionTier, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+};
+
+const STATUS_LABELS: Record<SubscriptionStatus, string> = {
+  inactive: "aucun abonnement",
+  trialing: "période d'essai",
+  active: "actif",
+  past_due: "paiement en retard",
+  unpaid: "impayé",
+  incomplete: "en attente de paiement",
+  incomplete_expired: "expiré",
+  paused: "en pause",
+  canceled: "résilié",
+};
+
+const BILLING_NOTICES: Record<string, string> = {
+  succes: "Paiement enregistré. L'abonnement est mis à jour dès la confirmation de Stripe.",
+  annule: "Paiement annulé, aucun montant n'a été prélevé.",
+  erreur: "Stripe n'a pas pu traiter la demande. Réessayez dans un instant.",
+  indisponible: "La facturation n'est pas activée sur cet environnement.",
+};
 
 function MailCard({
   providerKey,

@@ -2,11 +2,15 @@ type FrontendSecretName =
   | "DATABASE_URL"
   | "AUTH_SECRET"
   | "TURNSTILE_SECRET_KEY"
-  | "SIGNUP_ACCESS_CODE";
+  | "SIGNUP_ACCESS_CODE"
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET";
 
 type SecretLocation = {
   path: string;
   field: string;
+  /** Missing optional secrets disable the feature that needs them instead of blocking startup. */
+  optional?: boolean;
 };
 
 type BaoPayload = {
@@ -37,6 +41,16 @@ const SECRET_LOCATIONS: Record<FrontendSecretName, SecretLocation> = {
   SIGNUP_ACCESS_CODE: {
     path: "secret/data/inboxpilot/frontend",
     field: "signup_access_code",
+  },
+  STRIPE_SECRET_KEY: {
+    path: "secret/data/inboxpilot/frontend",
+    field: "stripe_secret_key",
+    optional: true,
+  },
+  STRIPE_WEBHOOK_SECRET: {
+    path: "secret/data/inboxpilot/frontend",
+    field: "stripe_webhook_secret",
+    optional: true,
   },
 };
 
@@ -75,22 +89,34 @@ async function readPath(path: string): Promise<Record<string, unknown>> {
 }
 
 async function loadSecrets(): Promise<void> {
-  const pathCache = new Map<string, Record<string, unknown>>();
+  const pathCache = new Map<string, Record<string, unknown> | null>();
   const loaded: Partial<Record<FrontendSecretName, string>> = {};
 
   for (const [name, location] of Object.entries(SECRET_LOCATIONS) as [FrontendSecretName, SecretLocation][]) {
     let values = pathCache.get(location.path);
-    if (!values) {
-      values = await readPath(location.path);
+    if (values === undefined) {
+      try {
+        values = await readPath(location.path);
+      } catch (error) {
+        if (!location.optional) throw error;
+        values = null;
+      }
       pathCache.set(location.path, values);
     }
+    if (values === null) {
+      if (location.optional) continue;
+      throw new Error(`Required OpenBao frontend secret is unreachable: ${name} (${location.path})`);
+    }
     if (!Object.prototype.hasOwnProperty.call(values, location.field)) {
+      if (location.optional) continue;
       throw new Error(`Required OpenBao frontend secret is missing: ${name} (${location.path} field ${location.field})`);
     }
     const value = values[location.field];
     if (typeof value !== "string") {
+      if (location.optional) continue;
       throw new Error(`Required OpenBao frontend secret has an invalid type: ${name}`);
     }
+    if (location.optional && !value) continue;
     loaded[name] = value;
   }
 
@@ -117,5 +143,12 @@ export function secret(name: FrontendSecretName): string {
     throw new Error(`OpenBao frontend secret was not preloaded: ${name}`);
   }
   return current.values[name] as string;
+}
+
+/** Same as `secret`, but returns undefined for an optional secret that OpenBao does not hold. */
+export function optionalSecret(name: FrontendSecretName): string | undefined {
+  const current = state();
+  if (!current.loaded) return undefined;
+  return current.values[name];
 }
 

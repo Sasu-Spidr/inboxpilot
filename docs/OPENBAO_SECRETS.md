@@ -7,7 +7,7 @@ Un secret de production ne doit jamais être copié dans l'instance dev.
 
 | Chemin CLI | Champs | Zone autorisée |
 |---|---|---|
-| `secret/inboxpilot/frontend` | `auth_secret`, `turnstile_secret_key`, `signup_access_code` | frontend |
+| `secret/inboxpilot/frontend` | `auth_secret`, `turnstile_secret_key`, `signup_access_code`, `stripe_secret_key`, `stripe_webhook_secret` | frontend |
 | `secret/inboxpilot/database` | `database_url` | frontend |
 | `secret/inboxpilot/crypto` | `token_encryption_key` | worker |
 | `secret/inboxpilot/groq` | `api_key` | worker |
@@ -22,6 +22,33 @@ n'est pas un jeton client de production.
 Les URLs, identifiants publics et réglages fonctionnels restent des variables
 GitHub d'environment. `TURNSTILE_SITE_KEY` est public ;
 `turnstile_secret_key` reste dans OpenBao.
+
+## Stripe
+
+`stripe_secret_key` et `stripe_webhook_secret` sont **optionnels** : tant qu'ils
+sont absents du coffre, le frontend démarre normalement et la facturation reste
+désactivée (les boutons d'abonnement disparaissent, `/api/webhooks/stripe`
+rejette tout appel). Les identifiants de tarif ne sont pas des secrets : ils
+restent des variables GitHub d'environment `STRIPE_PRICE_PRO_MONTHLY`,
+`STRIPE_PRICE_PRO_YEARLY`, `STRIPE_PRICE_BUSINESS_MONTHLY` et
+`STRIPE_PRICE_BUSINESS_YEARLY`.
+
+Activation sur un environnement :
+
+```bash
+bao kv patch secret/inboxpilot/frontend \
+  stripe_secret_key='<CLE_API_STRIPE>' \
+  stripe_webhook_secret='<SECRET_DU_ENDPOINT_WEBHOOK>'
+```
+
+Le endpoint à déclarer côté Stripe est `<FRONTEND_BASE_URL>/api/webhooks/stripe`,
+abonné à `customer.subscription.created`, `customer.subscription.updated`,
+`customer.subscription.deleted` et `invoice.payment_failed`. Ne pas s'abonner à
+`invoice.payment_succeeded` : le handler l'ignore, car `customer.subscription.updated`
+porte déjà le statut faisant foi et la facture à 0 € d'une période d'essai écraserait
+`trialing` par `active`. Chaque environnement a son propre endpoint, donc son
+propre `stripe_webhook_secret`. Le Customer Portal doit être activé dans le
+tableau de bord Stripe pour que `/api/billing/portal` réponde.
 
 ## Mise à jour sûre
 
