@@ -63,6 +63,24 @@ def load_label_settings(path: Path) -> list[dict[str, Any]]:
     return labels
 
 
+def validate_recordings(cases: Iterable[dict[str, Any]], recordings_dir: Path) -> None:
+    """Require a current recording for every dataset case before replay starts."""
+
+    missing = [
+        str(case["id"])
+        for case in cases
+        if not (recordings_dir / f"{case['id']}.json").is_file()
+    ]
+    if missing:
+        preview = ", ".join(missing[:10])
+        suffix = " ..." if len(missing) > 10 else ""
+        raise FileNotFoundError(
+            f"Missing {len(missing)} evaluation recording(s): {preview}{suffix}. "
+            "Run 'python evals/run_eval.py --record evals/recordings' "
+            "and commit the new recordings."
+        )
+
+
 class CapturingCompletions:
     def __init__(self, owner: "CapturingClient", delegate: Any) -> None:
         self.owner = owner
@@ -438,6 +456,7 @@ def main(argv: list[str] | None = None) -> int:
     label_settings = load_label_settings(args.label_settings)
 
     if args.replay:
+        validate_recordings(cases, args.replay)
         client: Any = ReplayClient(args.replay)
         classifier = EmailClassifier("", model=args.model, client=client)
     else:

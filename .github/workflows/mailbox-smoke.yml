@@ -34,57 +34,19 @@ jobs:
         run: pytest -q
 
       - name: Authenticate to OpenBao with GitHub OIDC
+        uses: ./.github/actions/openbao-ci-auth
+        with:
+          bao_addr: ${{ vars.BAO_ADDR }}
+          role_id: ${{ vars.INBOXPILOT_ROLE_ID }}
+
+      - name: Validate smoke secrets and prepare the mailbox fixture
         env:
           BAO_ADDR: ${{ vars.BAO_ADDR }}
-          INBOXPILOT_ROLE_ID: ${{ vars.INBOXPILOT_ROLE_ID }}
-          OIDC_AUDIENCE: https://github.com/Sasu-Spidr/inboxpilot
           RUN_ONCE: ${{ inputs.run_once }}
         run: |
           set -Eeuo pipefail
-          test -n "$BAO_ADDR"
-          test -n "$INBOXPILOT_ROLE_ID"
-          install -d -m 700 .runtime data/tokens data/state data/clients logs
-
-          oidc_response="$(curl --fail --silent --show-error \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$OIDC_AUDIENCE")"
-          oidc_token="$(jq -er '.value' <<<"$oidc_response")"
-          echo "::add-mask::$oidc_token"
-
-          jwt_response="$(curl --fail --silent --show-error \
-            --request POST \
-            --header 'Content-Type: application/json' \
-            --data "$(jq -cn --arg role inboxpilot-jwt-dev --arg jwt "$oidc_token" \
-              '{role:$role,jwt:$jwt}')" \
-            "$BAO_ADDR/v1/auth/jwt/login")"
-          jwt_token="$(jq -er '.auth.client_token' <<<"$jwt_response")"
-          echo "::add-mask::$jwt_token"
-
-          wrapped_response="$(curl --fail --silent --show-error \
-            --request POST \
-            --header "X-Vault-Token: $jwt_token" \
-            --header 'X-Vault-Wrap-TTL: 300s' \
-            "$BAO_ADDR/v1/auth/approle/role/inboxpilot-dev/secret-id")"
-          wrapping_token="$(jq -er '.wrap_info.token' <<<"$wrapped_response")"
-          echo "::add-mask::$wrapping_token"
-
-          unwrap_response="$(curl --fail --silent --show-error \
-            --request POST \
-            --header "X-Vault-Token: $wrapping_token" \
-            "$BAO_ADDR/v1/sys/wrapping/unwrap")"
-          secret_id="$(jq -er '.data.secret_id' <<<"$unwrap_response")"
-          echo "::add-mask::$secret_id"
-
-          approle_response="$(curl --fail --silent --show-error \
-            --request POST \
-            --header 'Content-Type: application/json' \
-            --data "$(jq -cn --arg role_id "$INBOXPILOT_ROLE_ID" --arg secret_id "$secret_id" \
-              '{role_id:$role_id,secret_id:$secret_id}')" \
-            "$BAO_ADDR/v1/auth/approle/login")"
-          bao_token="$(jq -er '.auth.client_token' <<<"$approle_response")"
-          echo "::add-mask::$bao_token"
-          install -m 600 /dev/null .runtime/bao-token
-          printf '%s' "$bao_token" > .runtime/bao-token
+          bao_token="$(cat .runtime/bao-token)"
+          install -d -m 700 data/tokens data/state data/clients logs
 
           require_field() {
             local path="$1" field="$2"

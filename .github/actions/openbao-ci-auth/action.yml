@@ -1,0 +1,94 @@
+name: Authenticate to OpenBao
+description: Exchange GitHub OIDC for a short-lived InboxPilot AppRole token.
+
+inputs:
+  bao_addr:
+    description: OpenBao API address.
+    required: true
+  role_id:
+    description: AppRole role ID exposed as a GitHub environment variable.
+    required: true
+  jwt_role:
+    description: OpenBao JWT role allowed for this repository.
+    required: false
+    default: inboxpilot-jwt-dev
+  approle:
+    description: Runtime AppRole whose wrapped secret ID is requested.
+    required: false
+    default: inboxpilot-dev
+  oidc_audience:
+    description: Audience bound to the OpenBao JWT role.
+    required: false
+    default: https://github.com/Sasu-Spidr/inboxpilot
+  token_file:
+    description: Destination for the short-lived token.
+    required: false
+    default: .runtime/bao-token
+
+outputs:
+  token_file:
+    description: Path containing the short-lived AppRole token.
+    value: ${{ steps.auth.outputs.token_file }}
+
+runs:
+  using: composite
+  steps:
+    - id: auth
+      shell: bash
+      env:
+        BAO_ADDR: ${{ inputs.bao_addr }}
+        ROLE_ID: ${{ inputs.role_id }}
+        JWT_ROLE: ${{ inputs.jwt_role }}
+        APPROLE: ${{ inputs.approle }}
+        OIDC_AUDIENCE: ${{ inputs.oidc_audience }}
+        TOKEN_FILE: ${{ inputs.token_file }}
+      run: |
+        set -Eeuo pipefail
+        test -n "$BAO_ADDR"
+        test -n "$ROLE_ID"
+        test -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+        test -n "$ACTIONS_ID_TOKEN_REQUEST_URL"
+
+        oidc_response="$(curl --fail --silent --show-error \
+          -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$OIDC_AUDIENCE")"
+        oidc_token="$(jq -er '.value' <<<"$oidc_response")"
+        echo "::add-mask::$oidc_token"
+
+        jwt_response="$(curl --fail --silent --show-error \
+          --request POST \
+          --header 'Content-Type: application/json' \
+          --data "$(jq -cn --arg role "$JWT_ROLE" --arg jwt "$oidc_token" \
+            '{role:$role,jwt:$jwt}')" \
+          "$BAO_ADDR/v1/auth/jwt/login")"
+        jwt_token="$(jq -er '.auth.client_token' <<<"$jwt_response")"
+        echo "::add-mask::$jwt_token"
+
+        wrapped_response="$(curl --fail --silent --show-error \
+          --request POST \
+          --header "X-Vault-Token: $jwt_token" \
+          --header 'X-Vault-Wrap-TTL: 300s' \
+          "$BAO_ADDR/v1/auth/approle/role/$APPROLE/secret-id")"
+        wrapping_token="$(jq -er '.wrap_info.token' <<<"$wrapped_response")"
+        echo "::add-mask::$wrapping_token"
+
+        unwrap_response="$(curl --fail --silent --show-error \
+          --request POST \
+          --header "X-Vault-Token: $wrapping_token" \
+          "$BAO_ADDR/v1/sys/wrapping/unwrap")"
+        secret_id="$(jq -er '.data.secret_id' <<<"$unwrap_response")"
+        echo "::add-mask::$secret_id"
+
+        approle_response="$(curl --fail --silent --show-error \
+          --request POST \
+          --header 'Content-Type: application/json' \
+          --data "$(jq -cn --arg role_id "$ROLE_ID" --arg secret_id "$secret_id" \
+            '{role_id:$role_id,secret_id:$secret_id}')" \
+          "$BAO_ADDR/v1/auth/approle/login")"
+        bao_token="$(jq -er '.auth.client_token' <<<"$approle_response")"
+        echo "::add-mask::$bao_token"
+
+        install -d -m 700 "$(dirname "$TOKEN_FILE")"
+        install -m 600 /dev/null "$TOKEN_FILE"
+        printf '%s' "$bao_token" > "$TOKEN_FILE"
+        echo "token_file=$TOKEN_FILE" >> "$GITHUB_OUTPUT"

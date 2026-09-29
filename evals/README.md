@@ -99,3 +99,24 @@ règles déterministes et 36 par le modèle. Le rapport a correctement isolé 13
 réponses JSON invalides comme erreurs techniques ; elles ne sont ni comptées
 comme des décisions `À lire`, ni intégrées à la matrice de confusion. Le rejeu
 hors ligne produit exactement les mêmes métriques que cette exécution.
+
+## Automatisation CI
+
+Le rejeu de `evals/recordings/` fait partie de `pytest -q` et s'exécute donc sur
+chaque pull request, sans réseau ni coût. Tout nouveau cas sans enregistrement
+fait échouer explicitement la CI avec la commande à relancer. Une modification
+des règles déterministes, du parsing, de la normalisation ou du seuil qui change
+le résultat enregistré est ainsi signalée avant fusion.
+
+Le workflow `.github/workflows/eval.yml` exécute en plus une évaluation réelle
+chaque nuit et à la demande. Il obtient un jeton OpenBao temporaire par OIDC,
+expose uniquement la zone worker sur une boucle locale, puis lit la clé Groq
+dans `secret/data/inboxpilot/groq`. Aucun secret métier GitHub n'est utilisé.
+Le rapport Markdown est ajouté au résumé du run et le rapport JSON avec les
+enregistrements est conservé comme artefact pendant 30 jours. Une régression
+ouvre ou actualise une issue GitHub visible de l'équipe.
+
+`evals/baseline.json` contient la référence et les tolérances calibrées. Sa mise
+à jour est volontaire : elle passe par une pull request dédiée, accompagnée du
+rapport réel relu et d'une justification. Il ne faut jamais réaligner cette
+référence simplement pour rendre un run vert.
