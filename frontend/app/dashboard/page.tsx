@@ -77,8 +77,29 @@ export default async function Dashboard() {
           <li>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</li>
         </ul>
       </section>
+
+      <section className="info-panel billing-panel">
+        <h2>Abonnement</h2>
+        <p>
+          Offre actuelle : <strong>{subscriptionName(user.subscriptionTier)}</strong>
+          {user.subscriptionTier !== "free" && <> · Statut : <strong>{user.subscriptionStatus}</strong></>}
+        </p>
+        {user.stripeCustomerId ? (
+          <form action="/api/billing/portal" method="post">
+            <button className="primary-link" type="submit">Gérer mon abonnement</button>
+          </form>
+        ) : (
+          <a className="primary-link" href="/#tarifs">Voir les offres</a>
+        )}
+      </section>
     </main>
   );
+}
+
+function subscriptionName(tier: "free" | "pro" | "business"): string {
+  if (tier === "pro") return "Pro";
+  if (tier === "business") return "Business";
+  return "Free";
 }
 
 function MailCard({

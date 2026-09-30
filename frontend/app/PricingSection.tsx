@@ -92,7 +92,15 @@ function PricingCard({ plan, billingCycle }: { plan: (typeof PLANS)[number]; bil
       <ul>
         {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
       </ul>
-      <a href="#tarifs">{plan.cta}</a>
+      {plan.name === "Free" ? (
+        <a href="/connexion">{plan.cta}</a>
+      ) : (
+        <form action="/api/checkout" method="post">
+          <input name="tier" type="hidden" value={plan.name.toLowerCase()} />
+          <input name="cycle" type="hidden" value={billingCycle} />
+          <button type="submit">{plan.cta}</button>
+        </form>
+      )}
     </article>
   );
 }

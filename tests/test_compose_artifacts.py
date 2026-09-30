@@ -52,6 +52,8 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
         "TOKEN_ENCRYPTION_KEY",
         "TURNSTILE_SECRET_KEY",
         "SIGNUP_ACCESS_CODE",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
     } & set(frontend["environment"])
 
 
@@ -77,7 +79,14 @@ def test_frontend_runtime_preloads_openbao_secrets_without_worker_key():
     abuse_text = (ROOT / "frontend/lib/antiAbuse.ts").read_text(encoding="utf-8")
     labels_route_text = (ROOT / "frontend/app/api/settings/labels/route.ts").read_text(encoding="utf-8")
 
-    for name in ("DATABASE_URL", "AUTH_SECRET", "TURNSTILE_SECRET_KEY", "SIGNUP_ACCESS_CODE"):
+    for name in (
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "TURNSTILE_SECRET_KEY",
+        "SIGNUP_ACCESS_CODE",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+    ):
         assert name in resolver_text
     assert "TOKEN_ENCRYPTION_KEY" not in resolver_text
     assert "bao-agent-frontend:8100" in resolver_text
