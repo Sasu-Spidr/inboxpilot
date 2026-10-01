@@ -126,18 +126,37 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
       </section>
 
       <section className="info-panel billing-panel">
-        <h2>Abonnement</h2>
-        <p>
-          Offre actuelle : <strong>{subscriptionName(user.subscriptionTier)}</strong>
-          {user.subscriptionTier !== "free" && <> · Statut : <strong>{user.subscriptionStatus}</strong></>}
-        </p>
-        {user.stripeCustomerId ? (
-          <form action="/api/billing/portal" method="post">
-            <button className="primary-link" type="submit">Gérer mon abonnement</button>
-          </form>
-        ) : (
-          <a className="primary-link" href="/#tarifs">Voir les offres</a>
-        )}
+        <div className="billing-panel-heading">
+          <div>
+            <span className="billing-kicker">Votre formule</span>
+            <h2>Abonnement</h2>
+          </div>
+          <span className={`subscription-status subscription-status-${subscriptionStatusTone(user.subscriptionStatus)}`}>
+            <span className="subscription-status-dot" aria-hidden="true" />
+            {subscriptionStatusName(user.subscriptionStatus)}
+          </span>
+        </div>
+        <div className="billing-summary">
+          <div className={`billing-plan-icon billing-plan-icon-${user.subscriptionTier}`} aria-hidden="true">
+            {subscriptionName(user.subscriptionTier).slice(0, 1)}
+          </div>
+          <div className="billing-plan-copy">
+            <span>Offre actuelle</span>
+            <strong className={`billing-plan-name billing-plan-name-${user.subscriptionTier}`}>
+              {subscriptionName(user.subscriptionTier)}
+            </strong>
+            <small>{subscriptionDescription(user.subscriptionTier)}</small>
+          </div>
+          <div className="billing-action">
+            {user.stripeCustomerId ? (
+              <form action="/api/billing/portal" method="post">
+                <button className="primary-link" type="submit">Gérer mon abonnement</button>
+              </form>
+            ) : (
+              <a className="primary-link" href="/#tarifs">Voir les offres</a>
+            )}
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -147,6 +166,26 @@ function subscriptionName(tier: "free" | "pro" | "business"): string {
   if (tier === "pro") return "Pro";
   if (tier === "business") return "Business";
   return "Free";
+}
+
+function subscriptionDescription(tier: "free" | "pro" | "business"): string {
+  if (tier === "pro") return "Actions automatiques et brouillons IA inclus";
+  if (tier === "business") return "Toutes les fonctionnalités avancées incluses";
+  return "Classement intelligent avec une boîte connectée";
+}
+
+function subscriptionStatusName(status: string): string {
+  if (status === "active") return "Actif";
+  if (status === "trialing") return "Période d’essai";
+  if (status === "past_due") return "Paiement à régulariser";
+  if (status === "canceled") return "Résilié";
+  return status.replaceAll("_", " ");
+}
+
+function subscriptionStatusTone(status: string): "active" | "warning" | "inactive" {
+  if (["active", "trialing"].includes(status)) return "active";
+  if (status === "past_due") return "warning";
+  return "inactive";
 }
 
 function MailCard({

@@ -1343,6 +1343,154 @@ input {
   color: var(--accent-deep);
 }
 
+.dashboard-shell .billing-panel {
+  margin-top: 1.25rem;
+  overflow: hidden;
+  background:
+    radial-gradient(90% 180% at 100% 0%, rgba(13, 148, 136, 0.1), transparent 58%),
+    var(--surface);
+}
+
+.dashboard-shell .billing-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.dashboard-shell .billing-panel-heading h2 {
+  margin: 0.22rem 0 0;
+}
+
+.dashboard-shell .billing-kicker,
+.dashboard-shell .billing-plan-copy > span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-shell .subscription-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 34px;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dashboard-shell .subscription-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.72);
+}
+
+.dashboard-shell .subscription-status-active {
+  border-color: rgba(5, 150, 105, 0.16);
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.dashboard-shell .subscription-status-warning {
+  border-color: rgba(217, 119, 6, 0.18);
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.dashboard-shell .subscription-status-inactive {
+  border-color: rgba(100, 116, 139, 0.16);
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.dashboard-shell .billing-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.15rem;
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.dashboard-shell .billing-plan-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.18);
+}
+
+.dashboard-shell .billing-plan-icon-free {
+  background: linear-gradient(145deg, #64748b, #475569);
+}
+
+.dashboard-shell .billing-plan-icon-pro {
+  background: linear-gradient(145deg, #14b8a6, #0f766e);
+}
+
+.dashboard-shell .billing-plan-icon-business {
+  background: linear-gradient(145deg, #7c3aed, #4f46e5);
+}
+
+.dashboard-shell .billing-plan-copy {
+  min-width: 0;
+}
+
+.dashboard-shell .billing-plan-name {
+  display: block;
+  margin: 0.12rem 0 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  line-height: 1.15;
+}
+
+.dashboard-shell .billing-plan-name-free {
+  color: #475569;
+}
+
+.dashboard-shell .billing-plan-name-pro {
+  color: #0f766e;
+}
+
+.dashboard-shell .billing-plan-name-business {
+  color: #6d28d9;
+}
+
+.dashboard-shell .billing-plan-copy small {
+  display: block;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-shell .billing-action form {
+  margin: 0;
+}
+
+.dashboard-shell .billing-action .primary-link {
+  margin: 0;
+  white-space: nowrap;
+}
+
 .upgrade-banner,
 .upgrade-notice {
   border: 1px solid rgba(245, 158, 11, 0.28);
@@ -1839,6 +1987,20 @@ input {
 
   .dashboard-shell .info-panel ul {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell .billing-summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dashboard-shell .billing-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .dashboard-shell .billing-action form,
+  .dashboard-shell .billing-action .primary-link {
+    width: 100%;
   }
 
   .settings-shell .settings-row,
