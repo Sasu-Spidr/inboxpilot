@@ -12,8 +12,8 @@ import {
   stripeObjectId,
   stripeWebhookSecret,
   subscriptionIdFromInvoice,
-  subscriptionTierForPrice,
 } from "@/lib/stripe";
+import { synchronizeCheckoutSession, synchronizeStripeSubscription } from "@/lib/stripeSubscriptionSync";
 
 export const runtime = "nodejs";
 
@@ -31,9 +31,12 @@ export async function POST(request: Request) {
 
   try {
     switch (event.type) {
+      case "checkout.session.completed":
+        await synchronizeCheckoutSession(event.data.object);
+        break;
       case "customer.subscription.created":
       case "customer.subscription.updated":
-        await synchronizeSubscription(event.data.object);
+        await synchronizeStripeSubscription(event.data.object);
         break;
       case "customer.subscription.deleted":
         await cancelSubscription(event.data.object);
@@ -57,21 +60,6 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ received: true });
-}
-
-async function synchronizeSubscription(subscription: Stripe.Subscription): Promise<void> {
-  const customerId = stripeObjectId(subscription.customer);
-  const clientId = subscription.metadata.client_id || (customerId && (await findUserByStripeCustomerId(customerId))?.client_id);
-  if (!clientId) throw new Error(`No InboxPilot account matches Stripe subscription ${subscription.id}`);
-  const priceId = subscription.items.data[0]?.price.id;
-  if (!priceId) throw new Error(`Stripe subscription ${subscription.id} has no price`);
-  await updateSubscription({
-    clientId,
-    tier: subscriptionTierForPrice(priceId),
-    status: subscription.status,
-    customerId,
-    subscriptionId: subscription.id,
-  });
 }
 
 async function cancelSubscription(subscription: Stripe.Subscription): Promise<void> {

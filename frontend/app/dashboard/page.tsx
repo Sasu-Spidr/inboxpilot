@@ -4,13 +4,39 @@ import { currentUser, isAdmin } from "@/lib/auth";
 import { mailboxLimit } from "@/lib/features";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
+import { reconcileCheckoutSession, reconcileStripeCustomerSubscription } from "@/lib/stripeSubscriptionSync";
 
-type DashboardSearchParams = { upsell?: string; billing?: string };
+type DashboardSearchParams = { upsell?: string; billing?: string; session_id?: string };
 
 export default async function Dashboard({ searchParams }: { searchParams?: Promise<DashboardSearchParams> }) {
-  const user = await currentUser();
+  let user = await currentUser();
   if (!user) redirect("/");
   const params = await searchParams;
+  let billingSync: "updated" | "pending" | null = null;
+
+  if (params?.billing === "success" && params.session_id) {
+    try {
+      await reconcileCheckoutSession(user.clientId, params.session_id);
+      user = (await currentUser()) || user;
+      billingSync = "updated";
+    } catch (error) {
+      console.error("Stripe Checkout return synchronization failed", {
+        clientId: user.clientId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      billingSync = "pending";
+    }
+  } else if (user.subscriptionTier === "free" && user.stripeCustomerId) {
+    try {
+      const updated = await reconcileStripeCustomerSubscription(user.clientId, user.stripeCustomerId);
+      if (updated) user = (await currentUser()) || user;
+    } catch (error) {
+      console.error("Stripe customer subscription reconciliation failed", {
+        clientId: user.clientId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
@@ -61,7 +87,16 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
           Passez à l'offre supérieure pour en ajouter une autre. <a href="/#tarifs">Voir les offres</a>
         </div>
       )}
-      {params?.billing === "success" && <div className="success-banner">Paiement validé. Votre offre sera actualisée dans quelques instants.</div>}
+      {billingSync === "updated" && (
+        <div className="success-banner">
+          Paiement validé. Votre offre {subscriptionName(user.subscriptionTier)} est maintenant active.
+        </div>
+      )}
+      {billingSync === "pending" && (
+        <div className="success-banner">
+          Paiement validé. Stripe finalise encore l'activation de votre offre ; actualisez cette page dans quelques instants.
+        </div>
+      )}
 
       <section className="mail-grid">
         <MailCard
