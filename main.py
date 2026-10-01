@@ -18,6 +18,7 @@ from client_settings import active_label_keys_for_client, action_for_client, can
 from client_registry import merge_registered_clients, update_registered_account
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
+from entitlements import allows_advanced_rules, allows_automatic_actions
 from gmail_connector import GmailConnector, LEGACY_USER_LABELS
 from hotmail_connector import HotmailConnector, LEGACY_CATEGORIES
 from json_logging import configure_logging
@@ -163,9 +164,10 @@ class MailWorker:
         if connector_name not in {"gmail", "hotmail"} or not hasattr(connector, "sync_label_color"):
             return
         connector_labels = self.labels.get(connector_name, {})
+        advanced_rules_enabled = allows_advanced_rules(client_id)
         allowed_label_names = {
             _normalized_name(setting["name"] or connector_labels.get(setting["key"], setting["key"]))
-            for setting in label_color_settings_for_client(client_id, connector_name, account)
+            for setting in label_color_settings_for_client(client_id, connector_name, account, include_advanced=advanced_rules_enabled)
         }
         if hasattr(connector, "delete_label"):
             existing_labels = []
@@ -196,7 +198,7 @@ class MailWorker:
                         existing_label,
                         exc,
                     )
-        for setting in label_color_settings_for_client(client_id, connector_name, account):
+        for setting in label_color_settings_for_client(client_id, connector_name, account, include_advanced=advanced_rules_enabled):
             label_name = setting["name"] or connector_labels.get(setting["key"], setting["key"])
             try:
                 connector.sync_label_color(label_name, setting["color"])
@@ -242,7 +244,13 @@ class MailWorker:
                 )
                 log_event("email_skipped_before_activation", client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
                 return False
-            client_label_settings = label_settings_for_classifier(client_id, connector_name, account)
+            automatic_actions_enabled = allows_automatic_actions(client_id)
+            client_label_settings = label_settings_for_classifier(
+                client_id,
+                connector_name,
+                account,
+                include_advanced=allows_advanced_rules(client_id),
+            )
             result = self.classifier.safe_classify(email["subject"], email["sender"], email["body"], client_label_settings or None)
             original_label = result["label"]
             label = normalize_active_label(client_id, original_label, connector_name, account)
@@ -250,14 +258,19 @@ class MailWorker:
                 result["action"] = "keep"
             action = self.rules.action_for(label, result["action"])
             action = action_for_client(client_id, label, action, connector_name, account)
-            if action != "trash" and unread_delete_due(client_id, label, email, connector_name, account):
-                action = "trash"
-            if action == "trash" and not auto_delete_allowed(result, email):
-                if unread_delete_due(client_id, label, email, connector_name, account):
-                    log_event("unread_expired_delete_allowed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash", status="ok")
-                else:
-                    log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
-                    action = "keep"
+            if not automatic_actions_enabled:
+                if action != "keep":
+                    log_event("subscription_action_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, status="upgrade_required")
+                action = "keep"
+            else:
+                if action != "trash" and unread_delete_due(client_id, label, email, connector_name, account):
+                    action = "trash"
+                if action == "trash" and not auto_delete_allowed(result, email):
+                    if unread_delete_due(client_id, label, email, connector_name, account):
+                        log_event("unread_expired_delete_allowed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="trash", status="ok")
+                    else:
+                        log_event("auto_delete_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action="keep", status="guarded")
+                        action = "keep"
             priority = result.get("priority", "medium")
             target = self.rules.target_for(label)
             log_event("email_classified", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
@@ -265,7 +278,7 @@ class MailWorker:
             self.state.begin(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=False, received_at=email.get("received_at"))
             self._apply_label(connector, connector_name, message_id, label, client_id, account, action, priority, email=email)
             draft_created = self._apply_action(connector, connector_name, account, email, label, action, priority, target, client_id, entry.get("sender_name", ""))
-            if action != "trash" and mark_as_read_for_client(client_id, label, connector_name, account):
+            if automatic_actions_enabled and action != "trash" and mark_as_read_for_client(client_id, label, connector_name, account):
                 log_event("email_left_unread", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="guarded")
             self.state.complete(client_id=client_id, connector=connector_name, account=account, message_id=message_id, thread_id=email.get("thread_id"), label=label, action=action, draft_created=draft_created, received_at=email.get("received_at"))
             record_email_activity(client_id=client_id, connector=connector_name, account=account, email=email, label=label, action=action, draft_created=draft_created)
@@ -276,6 +289,8 @@ class MailWorker:
             return False
 
     def _delete_processed_unread_if_expired(self, connector, client_id: str, connector_name: str, account: str, message_id: str, email: dict, record: dict) -> bool:
+        if not allows_automatic_actions(client_id):
+            return False
         label = str(record.get("label") or "")
         if not label or not unread_delete_due(client_id, label, email, connector_name, account):
             return False
@@ -339,7 +354,7 @@ class MailWorker:
     def _apply_label(self, connector, connector_name: str, message_id: str, label: str, client_id: str, account: str, action: str, priority: str, email: dict | None = None) -> None:
         connector_labels = self.labels.get(connector_name, {})
         label_name = label_name_for_client(client_id, label, connector_labels.get(label, label), connector_name, account)
-        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account)]))
+        managed_labels = list(dict.fromkeys([*connector_labels.values(), *managed_label_names_for_client(client_id, connector_name, account, include_advanced=allows_advanced_rules(client_id))]))
         if hasattr(connector, "replace_label"):
             if connector_name == "gmail":
                 try:
@@ -361,6 +376,9 @@ class MailWorker:
 
     def _apply_action(self, connector, connector_name: str, account: str, email: dict, label: str, action: str, priority: str, target: str | None, client_id: str, sender_name: str = "") -> bool:
         message_id = email["id"]
+        if action != "keep" and not allows_automatic_actions(client_id):
+            log_event("subscription_action_guarded", client_id=client_id, connector=connector_name, account=account, message_id=message_id, label=label, action=action, priority=priority, status="upgrade_required")
+            return False
         if action == "trash":
             connector.trash(message_id)
             log_event("email_trashed", client_id=client_id, connector=connector_name, account=account, message_id=message_id, subject=email.get("subject"), sender=email.get("sender"), label=label, action=action, priority=priority, status="ok")
@@ -444,7 +462,12 @@ def bool_setting(value, default: bool = False) -> bool:
 
 
 def normalize_active_label(client_id: str, label: str, connector: str | None = None, account: str | None = None) -> str:
-    active_keys = active_label_keys_for_client(client_id, connector, account)
+    active_keys = active_label_keys_for_client(
+        client_id,
+        connector,
+        account,
+        include_advanced=allows_advanced_rules(client_id),
+    )
     mapped_label = canonical_label_key(label)
     if mapped_label in active_keys:
         return mapped_label

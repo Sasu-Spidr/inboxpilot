@@ -5,9 +5,9 @@ import AgentActivityMonitor from "./AgentActivityMonitor";
 import LabelSettingsForm from "./LabelSettingsForm";
 import { currentUser, isAdmin } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
-import { getClientSettings } from "@/lib/clientSettings";
+import { DEFAULT_LABEL_SETTINGS, getClientSettings } from "@/lib/clientSettings";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
-import { mfaFeatureEnabled } from "@/lib/features";
+import { entitlement, mfaFeatureEnabled } from "@/lib/features";
 import { tokenFileExists } from "@/lib/paths";
 
 type SettingsSearchParams = {
@@ -35,6 +35,12 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
     accounts[0] ||
     null;
   const settings = getClientSettings(user.clientId, selectedMailbox?.provider, selectedMailbox?.account);
+  const automaticActionsEnabled = entitlement(user.subscriptionTier, user.subscriptionStatus, "automatic_actions");
+  const advancedRulesEnabled = entitlement(user.subscriptionTier, user.subscriptionStatus, "advanced_rules");
+  const advancedStatisticsEnabled = entitlement(user.subscriptionTier, user.subscriptionStatus, "advanced_statistics");
+  const visibleSettings = advancedRulesEnabled
+    ? settings
+    : { ...settings, labels: settings.labels.filter((label) => DEFAULT_LABEL_SETTINGS.some((item) => item.key === label.key)) };
   const activity = getDashboardActivity(user.clientId);
   const saved = params?.saved === "1";
 
@@ -84,11 +90,15 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
       {mfaFeatureEnabled() && params?.mfa === "disabled" && <div className="success-banner">Double authentification d&eacute;sactiv&eacute;e.</div>}
       {mfaFeatureEnabled() && params?.mfa === "disable-error" && <div className="error-banner">Code MFA invalide. La double authentification reste active.</div>}
 
-      <AgentActivityMonitor
-        initialActivity={activity}
-        initialConnectedMailboxes={connectedMailboxes}
-        labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
-      />
+      {advancedStatisticsEnabled ? (
+        <AgentActivityMonitor
+          initialActivity={activity}
+          initialConnectedMailboxes={connectedMailboxes}
+          labelColors={Object.fromEntries(settings.labels.map((label) => [label.key, label.color]))}
+        />
+      ) : (
+        <UpgradeNotice feature="Les statistiques avancées" requiredPlan="Business" />
+      )}
 
       {mfaFeatureEnabled() && <MfaSecurityCard enabled={user.mfaEnabled} />}
 
@@ -122,12 +132,27 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 
       <LabelSettingsForm
         key={`${selectedMailbox?.provider || "global"}:${selectedMailbox?.account || "global"}`}
-        initialLabels={settings.labels}
+        initialLabels={visibleSettings.labels}
         selectedProvider={selectedMailbox?.provider}
         selectedAccount={selectedMailbox?.account}
         selectedMailboxLabel={selectedMailbox ? selectedMailbox.email_address || mailboxLabel(selectedMailbox.provider, selectedMailbox.account) : "Configuration globale"}
+        automaticActionsEnabled={automaticActionsEnabled}
+        advancedRulesEnabled={advancedRulesEnabled}
       />
     </main>
+  );
+}
+
+function UpgradeNotice({ feature, requiredPlan }: { feature: string; requiredPlan: "Pro" | "Business" }) {
+  return (
+    <section className="upgrade-notice">
+      <div>
+        <p className="eyebrow">Fonctionnalité {requiredPlan}</p>
+        <h2>{feature}</h2>
+        <p>Passez à l'offre {requiredPlan} pour activer cette fonctionnalité.</p>
+      </div>
+      <a className="primary-link" href="/#tarifs">Voir les offres</a>
+    </section>
   );
 }
 

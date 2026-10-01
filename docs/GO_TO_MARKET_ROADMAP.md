@@ -51,23 +51,28 @@ ALTER TABLE users ADD COLUMN subscription_tier VARCHAR(20) DEFAULT 'free';
 ALTER TABLE users ADD COLUMN subscription_status VARCHAR(20) DEFAULT 'active';
 ALTER TABLE users ADD COLUMN stripe_customer_id VARCHAR(255);
 ALTER TABLE users ADD COLUMN stripe_subscription_id VARCHAR(255);
-ALTER TABLE users ADD COLUMN quota_emails_month INTEGER DEFAULT 200;
-ALTER TABLE users ADD COLUMN quota_reset_date TIMESTAMP;
 ```
 
-#### Enforcement des quotas
-- [ ] Middleware de vérification quota avant traitement email
-- [ ] Compteur mensuel d'emails traités par client
-- [ ] Reset automatique chaque mois
-- [ ] UI pour afficher consommation quota
-- [ ] Email notification à 80% et 100% du quota
+#### Limites fonctionnelles des offres
+
+Les volumes d'emails sont illimités sur toutes les offres. Le bridage porte sur les fonctionnalités :
+
+| Fonction | Free | Pro | Business |
+|---|---:|---:|---:|
+| Boîtes connectées | 1 | 3 | 10 |
+| Classement intelligent | oui | oui | oui |
+| Actions automatiques et brouillons | non | oui | oui |
+| Règles avancées et statistiques avancées | non | non | oui |
+
+Les statuts Stripe `active`, `trialing` et `past_due` conservent les droits de l'offre. Tout autre statut ramène aux droits Free.
 
 **Fichiers à modifier:**
 - `frontend/app/api/checkout/route.ts` (nouveau)
 - `frontend/app/api/webhooks/stripe/route.ts` (nouveau)
 - `frontend/lib/db.ts` (ajout fonctions subscription)
-- `main.py` (check quota avant `process_email()`)
-- `frontend/app/dashboard/page.tsx` (affichage quota)
+- `main.py` (gating des actions et règles avant leur exécution)
+- `frontend/lib/features.ts` et `frontend/lib/stripeCore.ts` (droits par offre)
+- `frontend/app/dashboard/page.tsx` (limites et messages d'upsell)
 
 ---
 

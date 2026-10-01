@@ -28,6 +28,7 @@ from client_settings import (
     restore_scoped_settings_for_email,
 )
 from client_registry import merge_registered_clients, update_registered_account
+from entitlements import MailboxLimitError, allows_advanced_rules, ensure_mailbox_slot
 from gmail_connector import GmailConnector, SCOPES as GMAIL_SCOPES, json_credentials
 from hotmail_connector import HotmailConnector, SCOPES as HOTMAIL_SCOPES
 from token_store import TokenStore
@@ -73,6 +74,8 @@ class OAuthOnboardingServer:
                         self._html(200, server.finish_hotmail(parsed.query))
                     else:
                         self._html(404, page("Lien introuvable", "Cette page n'existe pas."))
+                except MailboxLimitError as exc:
+                    self._html(403, upgrade_required_page(str(exc)))
                 except Exception as exc:
                     LOG.exception("OAuth onboarding failed")
                     self._html(500, page("Connexion impossible", f"Erreur : {escape(str(exc))}"))
@@ -187,8 +190,21 @@ class OAuthOnboardingServer:
                     skipped += 1
                     continue
                 try:
-                    labels = label_color_settings_for_client(client_id, current_provider, account_name)
-                    managed_names = set(managed_label_names_for_client(client_id, current_provider, account_name))
+                    advanced_rules_enabled = allows_advanced_rules(client_id)
+                    labels = label_color_settings_for_client(
+                        client_id,
+                        current_provider,
+                        account_name,
+                        include_advanced=advanced_rules_enabled,
+                    )
+                    managed_names = set(
+                        managed_label_names_for_client(
+                            client_id,
+                            current_provider,
+                            account_name,
+                            include_advanced=advanced_rules_enabled,
+                        )
+                    )
                     connector = self._label_sync_connector(current_provider, account_cfg, token_file)
                     stale_processed_labels = self._stale_processed_label_names(client_id, current_provider, account_name, managed_names)
                     existing_labels = []
@@ -346,6 +362,7 @@ class OAuthOnboardingServer:
             if account_name == account:
                 if not account_cfg.get("enabled", True):
                     raise ValueError(f"Compte {connector}/{account} désactivé")
+                ensure_mailbox_slot(client_id, client_cfg, account_cfg)
                 return client_id, account, account_cfg
         raise ValueError(f"Compte {connector}/{account} introuvable pour le client {client_id}")
 
@@ -434,6 +451,20 @@ def b64decode(value: str) -> bytes:
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def upgrade_required_page(message: str) -> str:
+    return page(
+        "Offre à mettre à niveau",
+        f"""
+        <div class="panel">
+          <p class="eyebrow">Limite de votre offre</p>
+          <h1>Une offre supérieure est nécessaire.</h1>
+          <p>{escape(message)}</p>
+          <p><a class="button primary" href="{escape(frontend_url().rstrip('/') + '/#tarifs')}">Voir les offres</a></p>
+        </div>
+        """,
+    )
 
 
 def render_home(settings: dict) -> str:

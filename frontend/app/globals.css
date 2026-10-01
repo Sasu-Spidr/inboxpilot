@@ -1318,6 +1318,50 @@ input {
   color: var(--accent-deep);
 }
 
+.upgrade-banner,
+.upgrade-notice {
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 18px;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.upgrade-banner {
+  margin-bottom: 1.4rem;
+  padding: 1rem 1.2rem;
+  line-height: 1.6;
+}
+
+.upgrade-banner a,
+.upgrade-notice a,
+.settings-actions a {
+  color: #0f766e;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.upgrade-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  padding: 1.4rem;
+}
+
+.upgrade-notice h2,
+.upgrade-notice p {
+  margin: 0.25rem 0;
+}
+
+.toggle-grid input:disabled,
+.unread-delay-field input:disabled,
+.description-field textarea:read-only {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 /* Settings page */
 
 .settings-shell {

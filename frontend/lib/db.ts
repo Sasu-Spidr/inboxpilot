@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 
 import { secret } from "./baoSecrets";
+import { syncEntitlementState } from "./entitlementState";
 
 let pool: Pool | null = null;
 let initialized = false;
@@ -157,6 +158,7 @@ export async function updateSubscription(input: {
   `,
     [input.clientId, input.tier, input.status, input.customerId || null, input.subscriptionId || null],
   );
+  syncEntitlementState(input.clientId, input.tier, input.status);
 }
 
 export async function updateSubscriptionStatusByStripeReference(input: {
@@ -166,15 +168,19 @@ export async function updateSubscriptionStatusByStripeReference(input: {
 }): Promise<void> {
   await ensureSchema();
   if (!input.customerId && !input.subscriptionId) return;
-  await getPool().query(
+  const result = await getPool().query<Pick<DbUser, "client_id" | "subscription_tier" | "subscription_status">>(
     `
     update users
     set subscription_status = $3
     where ($1::text is not null and stripe_customer_id = $1)
        or ($2::text is not null and stripe_subscription_id = $2)
+    returning client_id, subscription_tier, subscription_status
   `,
     [input.customerId || null, input.subscriptionId || null, input.status],
   );
+  for (const row of result.rows) {
+    syncEntitlementState(row.client_id, row.subscription_tier, row.subscription_status);
+  }
 }
 
 export async function listUsers(): Promise<DbUser[]> {
@@ -334,4 +340,5 @@ export async function createUser(input: {
       input.passwordSalt,
     ],
   );
+  syncEntitlementState(input.clientId, "free", "active");
 }

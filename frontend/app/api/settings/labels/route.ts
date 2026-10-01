@@ -3,12 +3,20 @@ import { NextResponse, type NextRequest } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts, type Provider } from "@/lib/clientRegistry";
 import { archiveSavedClientSettingsForEmail, DEFAULT_LABEL_SETTINGS, getClientSettings, saveClientSettings, type LabelSetting } from "@/lib/clientSettings";
+import { entitlement } from "@/lib/features";
 import { oauthInternalBase } from "@/lib/oauthProxy";
 
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  return NextResponse.json(getClientSettings(user.clientId));
+  const settings = getClientSettings(user.clientId);
+  if (entitlement(user.subscriptionTier, user.subscriptionStatus, "advanced_rules")) {
+    return NextResponse.json(settings);
+  }
+  return NextResponse.json({
+    ...settings,
+    labels: settings.labels.filter((label) => DEFAULT_LABEL_SETTINGS.some((item) => item.key === label.key)),
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -20,6 +28,8 @@ export async function POST(request: NextRequest) {
   const account = String(form.get("account") || "").trim();
   const labels: LabelSetting[] = [];
   const previousSettings = getClientSettings(user.clientId, provider, account || undefined);
+  const automaticActionsEnabled = entitlement(user.subscriptionTier, user.subscriptionStatus, "automatic_actions");
+  const advancedRulesEnabled = entitlement(user.subscriptionTier, user.subscriptionStatus, "advanced_rules");
 
   const labelCount = Math.max(DEFAULT_LABEL_SETTINGS.length, Math.min(50, Number(form.get("labelCount") || DEFAULT_LABEL_SETTINGS.length)));
   for (let index = 0; index < labelCount; index += 1) {
@@ -27,21 +37,31 @@ export async function POST(request: NextRequest) {
     const key = String(form.get(`labels.${index}.key`) || defaults?.key || "").trim();
     const name = String(form.get(`labels.${index}.name`) || defaults?.name || key).trim();
     if (!key || !name) continue;
+    const isDefault = DEFAULT_LABEL_SETTINGS.some((item) => item.key === key);
+    if (!advancedRulesEnabled && !isDefault) continue;
+    const previous = previousSettings.labels.find((item) => item.key === key);
     labels.push({
       key,
       name,
-      description: String(form.get(`labels.${index}.description`) || ""),
+      description: advancedRulesEnabled
+        ? String(form.get(`labels.${index}.description`) || "")
+        : previous?.description || defaults?.description || "",
       color: String(form.get(`labels.${index}.color`) || ""),
       priority: Number(form.get(`labels.${index}.priority`) || defaults?.priority || 10),
-      prepareDraft: form.get(`labels.${index}.prepareDraft`) === "on",
-      autoReply: form.get(`labels.${index}.autoReply`) === "on",
-      autoDelete: form.get(`labels.${index}.autoDelete`) === "on",
+      prepareDraft: automaticActionsEnabled && form.get(`labels.${index}.prepareDraft`) === "on",
+      autoReply: automaticActionsEnabled && form.get(`labels.${index}.autoReply`) === "on",
+      autoDelete: automaticActionsEnabled && form.get(`labels.${index}.autoDelete`) === "on",
       markAsRead: false,
-      autoDeleteUnreadAfterDays: parseUnreadDeleteDays(form.get(`labels.${index}.autoDeleteUnreadAfterDays`)),
+      autoDeleteUnreadAfterDays: automaticActionsEnabled
+        ? parseUnreadDeleteDays(form.get(`labels.${index}.autoDeleteUnreadAfterDays`))
+        : null,
     });
   }
 
-  const savedSettings = saveClientSettings(user.clientId, labels, provider, account || undefined);
+  const preservedAdvancedLabels = advancedRulesEnabled
+    ? []
+    : previousSettings.labels.filter((label) => !DEFAULT_LABEL_SETTINGS.some((item) => item.key === label.key));
+  const savedSettings = saveClientSettings(user.clientId, [...labels, ...preservedAdvancedLabels], provider, account || undefined);
   const mailbox = provider && account ? getClientMailAccounts(user.clientId, provider as Provider).find((item) => item.account === account) : undefined;
   if (provider && mailbox?.email_address) {
     archiveSavedClientSettingsForEmail(user.clientId, provider, mailbox.email_address, savedSettings);

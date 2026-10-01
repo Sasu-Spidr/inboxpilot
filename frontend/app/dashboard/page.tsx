@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
 
 import { currentUser, isAdmin } from "@/lib/auth";
+import { mailboxLimit } from "@/lib/features";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
 
-export default async function Dashboard() {
+type DashboardSearchParams = { upsell?: string; billing?: string };
+
+export default async function Dashboard({ searchParams }: { searchParams?: Promise<DashboardSearchParams> }) {
   const user = await currentUser();
   if (!user) redirect("/");
+  const params = await searchParams;
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
@@ -50,6 +54,14 @@ export default async function Dashboard() {
           <div className="hero-check">✓</div>
         </div>
       </section>
+
+      {params?.upsell === "mailbox-limit" && (
+        <div className="upgrade-banner">
+          Votre offre {subscriptionName(user.subscriptionTier)} permet jusqu'à {mailboxLimit(user.subscriptionTier, user.subscriptionStatus)} boîte(s) connectée(s).
+          Passez à l'offre supérieure pour en ajouter une autre. <a href="/#tarifs">Voir les offres</a>
+        </div>
+      )}
+      {params?.billing === "success" && <div className="success-banner">Paiement validé. Votre offre sera actualisée dans quelques instants.</div>}
 
       <section className="mail-grid">
         <MailCard
