@@ -4,6 +4,8 @@ import { signupAccessCodeRequired } from "@/lib/antiAbuse";
 import { currentUser } from "@/lib/auth";
 import { signupEmailAllowed } from "@/lib/features";
 
+import AuthError from "../AuthError";
+
 export default async function InscriptionPage({
   searchParams,
 }: {
@@ -34,7 +36,7 @@ export default async function InscriptionPage({
       </section>
 
       <section className="auth-panel">
-        {params?.error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
+        <AuthError code={params?.error} email={email} />
         <div className="forms">
           <form action="/api/auth/register" method="post" className="form-card">
             <h2>Créer mon espace</h2>

@@ -4,16 +4,19 @@ import { signupAccessCodeRequired } from "@/lib/antiAbuse";
 import { currentUser } from "@/lib/auth";
 import { publicSignupEnabled, signupEmailAllowed } from "@/lib/features";
 
+import AuthError from "../AuthError";
+
 export default async function ConnexionPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; signup?: string }>;
+  searchParams?: Promise<{ error?: string; signup?: string; login?: string }>;
 }) {
   if (await currentUser()) redirect("/dashboard");
 
   const params = await searchParams;
   const error = params?.error;
   const invitedEmail = String(params?.signup || "").trim().toLowerCase();
+  const loginEmail = String(params?.login || "").trim().toLowerCase();
   const invitedSignup = signupEmailAllowed(invitedEmail);
   const signupEnabled = publicSignupEnabled() || invitedSignup;
   const accessCodeRequired = signupAccessCodeRequired();
@@ -49,7 +52,7 @@ export default async function ConnexionPage({
       </section>
 
       <section className="auth-panel">
-        {error && <div className="error">Vérifiez les informations saisies puis réessayez.</div>}
+        <AuthError code={error} email={loginEmail || invitedEmail} />
         <div className="forms">
           {signupEnabled ? (
             <form action="/api/auth/register" method="post" className="form-card">
@@ -97,7 +100,13 @@ export default async function ConnexionPage({
           <form id="connexion" action="/api/auth/login" method="post" className="form-card secondary">
             <h2>Se connecter</h2>
             <label>Email</label>
-            <input name="email" type="email" placeholder="jean@entreprise.fr" required />
+            <input
+              name="email"
+              type="email"
+              placeholder="jean@entreprise.fr"
+              defaultValue={loginEmail}
+              required
+            />
             <label>Mot de passe</label>
             <input name="password" type="password" required />
             <button type="submit">Se connecter</button>

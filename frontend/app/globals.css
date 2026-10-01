@@ -261,6 +261,31 @@ input {
   font-weight: 500;
 }
 
+.auth-shell .auth-error {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.auth-shell .auth-error strong,
+.auth-shell .auth-error span {
+  display: block;
+}
+
+.auth-shell .auth-error-action {
+  justify-self: start;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  background: #b42318;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.auth-shell .auth-error-action:hover {
+  background: #8f1c13;
+}
+
 .auth-shell .forms {
   display: flex;
   flex-direction: column;
