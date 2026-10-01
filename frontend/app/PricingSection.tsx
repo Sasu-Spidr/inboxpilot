@@ -10,7 +10,7 @@ const PLANS = [
     monthlyPrice: 0,
     subtitle: "Pour découvrir InboxPilot",
     cta: "Commencer gratuitement",
-    features: ["1 boîte connectée", "200 emails / mois", "Classement intelligent", "Brouillons manuels"],
+    features: ["1 boîte connectée", "Emails illimités", "Classement intelligent", "Actions automatiques non incluses"],
   },
   {
     name: "Pro",
@@ -18,14 +18,14 @@ const PLANS = [
     subtitle: "Pour les professionnels",
     cta: "Démarrer mon abonnement",
     popular: true,
-    features: ["5 boîtes connectées", "5 000 emails / mois", "Actions automatiques", "Brouillons & réponses auto", "Support prioritaire"],
+    features: ["3 boîtes connectées", "Emails illimités", "Actions automatiques", "Brouillons & réponses auto", "Support prioritaire"],
   },
   {
     name: "Business",
-    monthlyPrice: 49,
+    monthlyPrice: 99,
     subtitle: "Pour les équipes",
-    cta: "Nous contacter",
-    features: ["Boîtes illimitées", "Emails illimités", "Règles avancées & IA", "Statistiques avancées", "Support dédié"],
+    cta: "Démarrer mon abonnement",
+    features: ["10 boîtes connectées", "Emails illimités", "Règles avancées & IA", "Statistiques avancées", "Support dédié"],
   },
 ];
 
@@ -92,7 +92,15 @@ function PricingCard({ plan, billingCycle }: { plan: (typeof PLANS)[number]; bil
       <ul>
         {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
       </ul>
-      <a href="#tarifs">{plan.cta}</a>
+      {plan.name === "Free" ? (
+        <a href="/connexion">{plan.cta}</a>
+      ) : (
+        <form action="/api/checkout" method="post">
+          <input name="tier" type="hidden" value={plan.name.toLowerCase()} />
+          <input name="cycle" type="hidden" value={billingCycle} />
+          <button type="submit">{plan.cta}</button>
+        </form>
+      )}
     </article>
   );
 }

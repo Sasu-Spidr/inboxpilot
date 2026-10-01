@@ -3,11 +3,15 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/auth";
 import { getClientMailAccounts } from "@/lib/clientRegistry";
 import { getDashboardActivity } from "@/lib/dashboardActivity";
+import { entitlement } from "@/lib/features";
 import { tokenFileExists } from "@/lib/paths";
 
 export async function GET() {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!entitlement(user.subscriptionTier, user.subscriptionStatus, "advanced_statistics")) {
+    return NextResponse.json({ error: "upgrade_required", requiredPlan: "business" }, { status: 403 });
+  }
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");

@@ -2,7 +2,9 @@ type FrontendSecretName =
   | "DATABASE_URL"
   | "AUTH_SECRET"
   | "TURNSTILE_SECRET_KEY"
-  | "SIGNUP_ACCESS_CODE";
+  | "SIGNUP_ACCESS_CODE"
+  | "STRIPE_SECRET_KEY"
+  | "STRIPE_WEBHOOK_SECRET";
 
 type SecretLocation = {
   path: string;
@@ -37,6 +39,14 @@ const SECRET_LOCATIONS: Record<FrontendSecretName, SecretLocation> = {
   SIGNUP_ACCESS_CODE: {
     path: "secret/data/inboxpilot/frontend",
     field: "signup_access_code",
+  },
+  STRIPE_SECRET_KEY: {
+    path: "secret/data/inboxpilot/frontend",
+    field: "stripe_secret_key",
+  },
+  STRIPE_WEBHOOK_SECRET: {
+    path: "secret/data/inboxpilot/frontend",
+    field: "stripe_webhook_secret",
   },
 };
 

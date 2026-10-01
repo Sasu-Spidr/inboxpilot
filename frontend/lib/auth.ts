@@ -2,7 +2,8 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 
 import { secret } from "./baoSecrets";
-import { findUserByClientId, type DbUser } from "./db";
+import { findUserByClientId, type DbUser, type SubscriptionTier } from "./db";
+import { syncEntitlementState } from "./entitlementState";
 
 const SESSION_COOKIE = "spidr_session";
 const MFA_PENDING_COOKIE = "spidr_mfa_pending";
@@ -19,6 +20,9 @@ export type User = {
   passwordSalt: string;
   mfaEnabled: boolean;
   mfaSecret: string | null;
+  subscriptionTier: SubscriptionTier;
+  subscriptionStatus: string;
+  stripeCustomerId: string | null;
   createdAt: Date;
 };
 
@@ -35,6 +39,9 @@ export function toUser(row: DbUser): User {
     passwordSalt: row.password_salt,
     mfaEnabled: Boolean(row.mfa_enabled),
     mfaSecret: row.mfa_secret ? readMfaSecretFromStorage(row.mfa_secret) : null,
+    subscriptionTier: row.subscription_tier || "free",
+    subscriptionStatus: row.subscription_status || "active",
+    stripeCustomerId: row.stripe_customer_id || null,
     createdAt: row.created_at,
   };
 }
@@ -203,6 +210,7 @@ export async function currentUser(): Promise<User | null> {
   if (!isAccountUsable(user)) return null;
   const activeUser = user as User;
   if (activeUser.sessionVersion !== session.sessionVersion) return null;
+  syncEntitlementState(activeUser.clientId, activeUser.subscriptionTier, activeUser.subscriptionStatus);
   return activeUser;
 }
 

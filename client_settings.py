@@ -190,10 +190,17 @@ def label_color_for_client(client_id: str, label: str, connector: str | None = N
     return color if re.fullmatch(r"#[0-9a-fA-F]{6}", color) else None
 
 
-def label_color_settings_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[dict[str, str]]:
+def label_color_settings_for_client(
+    client_id: str,
+    connector: str | None = None,
+    account: str | None = None,
+    include_advanced: bool = True,
+) -> list[dict[str, str]]:
     settings: list[dict[str, str]] = []
     for setting in normalized_labels_for_client(client_id, connector, account):
         key = str(setting.get("key", "")).strip()
+        if not include_advanced and key not in DEFAULT_LABEL_KEYS:
+            continue
         name = str(setting.get("name", "")).strip()
         color = str(setting.get("color", "")).strip()
         if key and name and re.fullmatch(r"#[0-9a-fA-F]{6}", color):
@@ -201,10 +208,17 @@ def label_color_settings_for_client(client_id: str, connector: str | None = None
     return settings
 
 
-def label_settings_for_classifier(client_id: str, connector: str | None = None, account: str | None = None) -> list[dict[str, str]]:
+def label_settings_for_classifier(
+    client_id: str,
+    connector: str | None = None,
+    account: str | None = None,
+    include_advanced: bool = True,
+) -> list[dict[str, str]]:
     labels: list[dict[str, str]] = []
     for setting in normalized_labels_for_client(client_id, connector, account):
         key = str(setting.get("key", "")).strip()
+        if not include_advanced and key not in DEFAULT_LABEL_KEYS:
+            continue
         name = str(setting.get("name", "")).strip()
         description = str(setting.get("description", "")).strip()
         priority = _int_setting(setting.get("priority"), 10)
@@ -213,13 +227,29 @@ def label_settings_for_classifier(client_id: str, connector: str | None = None, 
     return labels
 
 
-def active_label_keys_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[str]:
-    return [str(setting["key"]) for setting in normalized_labels_for_client(client_id, connector, account)]
+def active_label_keys_for_client(
+    client_id: str,
+    connector: str | None = None,
+    account: str | None = None,
+    include_advanced: bool = True,
+) -> list[str]:
+    return [
+        str(setting["key"])
+        for setting in normalized_labels_for_client(client_id, connector, account)
+        if include_advanced or str(setting.get("key", "")) in DEFAULT_LABEL_KEYS
+    ]
 
 
-def managed_label_names_for_client(client_id: str, connector: str | None = None, account: str | None = None) -> list[str]:
+def managed_label_names_for_client(
+    client_id: str,
+    connector: str | None = None,
+    account: str | None = None,
+    include_advanced: bool = True,
+) -> list[str]:
     names: list[str] = []
     for setting in normalized_labels_for_client(client_id, connector, account):
+        if not include_advanced and str(setting.get("key", "")) not in DEFAULT_LABEL_KEYS:
+            continue
         name = str(setting.get("name", "")).strip()
         if name and name not in names:
             names.append(name)

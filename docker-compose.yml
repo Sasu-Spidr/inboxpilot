@@ -16,7 +16,7 @@ services:
   bao-agent-frontend:
     image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
     restart: unless-stopped
-    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    command: ["proxy", "-config=/etc/bao/agent.hcl"]
     user: "100:1000"
     read_only: true
     cap_drop:
@@ -43,7 +43,7 @@ services:
   bao-agent-worker:
     image: ghcr.io/sasu-spidr/inboxpilot-bao-agent:${IMAGE_TAG:-local}
     restart: unless-stopped
-    command: ["agent", "-config=/etc/bao/agent.hcl"]
+    command: ["proxy", "-config=/etc/bao/agent.hcl"]
     user: "100:1000"
     read_only: true
     cap_drop:
@@ -117,6 +117,10 @@ services:
       PUBLIC_SIGNUP_ENABLED: ${PUBLIC_SIGNUP_ENABLED:-false}
       SIGNUP_ALLOWED_EMAILS: ${SIGNUP_ALLOWED_EMAILS:-}
       ADMIN_MFA_REQUIRED: ${ADMIN_MFA_REQUIRED:-true}
+      STRIPE_PRICE_PRO_MONTHLY: ${STRIPE_PRICE_PRO_MONTHLY:-}
+      STRIPE_PRICE_PRO_YEARLY: ${STRIPE_PRICE_PRO_YEARLY:-}
+      STRIPE_PRICE_BUSINESS_MONTHLY: ${STRIPE_PRICE_BUSINESS_MONTHLY:-}
+      STRIPE_PRICE_BUSINESS_YEARLY: ${STRIPE_PRICE_BUSINESS_YEARLY:-}
     volumes:
       - inboxpilot_data:/data
     tmpfs:

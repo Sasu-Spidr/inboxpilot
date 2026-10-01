@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
 
 import { currentUser, isAdmin } from "@/lib/auth";
+import { mailboxLimit } from "@/lib/features";
 import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/clientRegistry";
 import { tokenFileExists } from "@/lib/paths";
 
-export default async function Dashboard() {
+type DashboardSearchParams = { upsell?: string; billing?: string };
+
+export default async function Dashboard({ searchParams }: { searchParams?: Promise<DashboardSearchParams> }) {
   const user = await currentUser();
   if (!user) redirect("/");
+  const params = await searchParams;
 
   const gmailAccounts = getClientMailAccounts(user.clientId, "gmail");
   const hotmailAccounts = getClientMailAccounts(user.clientId, "hotmail");
@@ -51,6 +55,14 @@ export default async function Dashboard() {
         </div>
       </section>
 
+      {params?.upsell === "mailbox-limit" && (
+        <div className="upgrade-banner">
+          Votre offre {subscriptionName(user.subscriptionTier)} permet jusqu'à {mailboxLimit(user.subscriptionTier, user.subscriptionStatus)} boîte(s) connectée(s).
+          Passez à l'offre supérieure pour en ajouter une autre. <a href="/#tarifs">Voir les offres</a>
+        </div>
+      )}
+      {params?.billing === "success" && <div className="success-banner">Paiement validé. Votre offre sera actualisée dans quelques instants.</div>}
+
       <section className="mail-grid">
         <MailCard
           providerKey="gmail"
@@ -77,8 +89,29 @@ export default async function Dashboard() {
           <li>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</li>
         </ul>
       </section>
+
+      <section className="info-panel billing-panel">
+        <h2>Abonnement</h2>
+        <p>
+          Offre actuelle : <strong>{subscriptionName(user.subscriptionTier)}</strong>
+          {user.subscriptionTier !== "free" && <> · Statut : <strong>{user.subscriptionStatus}</strong></>}
+        </p>
+        {user.stripeCustomerId ? (
+          <form action="/api/billing/portal" method="post">
+            <button className="primary-link" type="submit">Gérer mon abonnement</button>
+          </form>
+        ) : (
+          <a className="primary-link" href="/#tarifs">Voir les offres</a>
+        )}
+      </section>
     </main>
   );
+}
+
+function subscriptionName(tier: "free" | "pro" | "business"): string {
+  if (tier === "pro") return "Pro";
+  if (tier === "business") return "Business";
+  return "Free";
 }
 
 function MailCard({

@@ -1,6 +1,16 @@
 from pathlib import Path
 
+import pytest
+
 from main import MailWorker, filter_settings
+
+
+@pytest.fixture(autouse=True)
+def entitled_worker(monkeypatch):
+    """Legacy worker cases exercise the paid action path explicitly."""
+
+    monkeypatch.setattr("main.allows_automatic_actions", lambda _client_id: True)
+    monkeypatch.setattr("main.allows_advanced_rules", lambda _client_id: True)
 
 
 class Connector:

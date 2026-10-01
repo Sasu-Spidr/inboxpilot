@@ -34,3 +34,22 @@ export function adminMfaRequired(): boolean {
 export function publicEntryPath(): string {
   return landingEnabled() ? "/" : "/connexion";
 }
+import type { SubscriptionTier } from "./db";
+import {
+  hasSubscriptionFeature,
+  mailboxLimitFor,
+  type SubscriptionFeature,
+} from "./stripeCore";
+
+
+export function entitlement(
+  tier: SubscriptionTier,
+  status: string,
+  feature: SubscriptionFeature,
+): boolean {
+  return hasSubscriptionFeature(tier, status, feature);
+}
+
+export function mailboxLimit(tier: SubscriptionTier, status: string): number {
+  return mailboxLimitFor(tier, status);
+}

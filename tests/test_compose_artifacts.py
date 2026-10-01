@@ -52,6 +52,8 @@ def test_runtime_compose_uses_images_and_named_volumes_only():
         "TOKEN_ENCRYPTION_KEY",
         "TURNSTILE_SECRET_KEY",
         "SIGNUP_ACCESS_CODE",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
     } & set(frontend["environment"])
 
 
@@ -77,7 +79,14 @@ def test_frontend_runtime_preloads_openbao_secrets_without_worker_key():
     abuse_text = (ROOT / "frontend/lib/antiAbuse.ts").read_text(encoding="utf-8")
     labels_route_text = (ROOT / "frontend/app/api/settings/labels/route.ts").read_text(encoding="utf-8")
 
-    for name in ("DATABASE_URL", "AUTH_SECRET", "TURNSTILE_SECRET_KEY", "SIGNUP_ACCESS_CODE"):
+    for name in (
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "TURNSTILE_SECRET_KEY",
+        "SIGNUP_ACCESS_CODE",
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+    ):
         assert name in resolver_text
     assert "TOKEN_ENCRYPTION_KEY" not in resolver_text
     assert "bao-agent-frontend:8100" in resolver_text
@@ -198,7 +207,7 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     assert "FROM openbao/openbao:" in dockerfile
     assert "openbao/openbao:latest" not in dockerfile
     assert "COPY deploy/agent.hcl /etc/bao/agent.hcl" in dockerfile
-    assert 'CMD ["agent", "-config=/etc/bao/agent.hcl"]' in dockerfile
+    assert 'CMD ["proxy", "-config=/etc/bao/agent.hcl"]' in dockerfile
     assert 'method "approle"' in agent_config
     assert 'role_id_file_path                   = "/bootstrap/role_id"' in agent_config
     assert 'secret_id_file_path                 = "/bootstrap/secret_id"' in agent_config
@@ -210,6 +219,11 @@ def test_bao_agent_image_is_version_pinned_and_packages_its_config():
     # in the config would override it.
     config_lines = [line for line in agent_config.splitlines() if not line.lstrip().startswith("#")]
     assert not any(line.lstrip().startswith("vault") for line in config_lines)
+
+    compose = load_compose("docker-compose.yml")
+    expected_command = ["proxy", "-config=/etc/bao/agent.hcl"]
+    assert compose["services"]["bao-agent-frontend"]["command"] == expected_command
+    assert compose["services"]["bao-agent-worker"]["command"] == expected_command
 
 
 def test_bao_agents_are_network_isolated_and_not_published():

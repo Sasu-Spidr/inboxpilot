@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 
 import { secret } from "./baoSecrets";
+import { syncEntitlementState } from "./entitlementState";
 
 let pool: Pool | null = null;
 let initialized = false;
@@ -20,8 +21,14 @@ export type DbUser = {
   password_salt: string;
   mfa_enabled: boolean;
   mfa_secret: string | null;
+  subscription_tier: SubscriptionTier;
+  subscription_status: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   created_at: Date;
 };
+
+export type SubscriptionTier = "free" | "pro" | "business";
 
 export function getPool(): Pool {
   const connectionString = secret("DATABASE_URL");
@@ -53,6 +60,10 @@ export async function ensureSchema(): Promise<void> {
   await getPool().query("alter table users add column if not exists security_suspended_at timestamptz");
   await getPool().query("alter table users add column if not exists security_suspended_reason text");
   await getPool().query("alter table users add column if not exists last_login_at timestamptz");
+  await getPool().query("alter table users add column if not exists subscription_tier text not null default 'free'");
+  await getPool().query("alter table users add column if not exists subscription_status text not null default 'active'");
+  await getPool().query("alter table users add column if not exists stripe_customer_id text");
+  await getPool().query("alter table users add column if not exists stripe_subscription_id text");
   await getPool().query(`
     update users
     set status = 'ACTIVE',
@@ -62,6 +73,12 @@ export async function ensureSchema(): Promise<void> {
   `);
   await getPool().query("create index if not exists users_role_idx on users(role)");
   await getPool().query("create index if not exists users_status_idx on users(status)");
+  await getPool().query(
+    "create unique index if not exists users_stripe_customer_idx on users(stripe_customer_id) where stripe_customer_id is not null",
+  );
+  await getPool().query(
+    "create unique index if not exists users_stripe_subscription_idx on users(stripe_subscription_id) where stripe_subscription_id is not null",
+  );
   await getPool().query(`
     create table if not exists email_verification_tokens (
       id text primary key,
@@ -101,6 +118,69 @@ export async function findUserByClientId(clientId: string): Promise<DbUser | nul
   await ensureSchema();
   const result = await getPool().query<DbUser>("select * from users where client_id = $1 limit 1", [clientId]);
   return result.rows[0] || null;
+}
+
+export async function findUserByStripeCustomerId(customerId: string): Promise<DbUser | null> {
+  await ensureSchema();
+  const result = await getPool().query<DbUser>("select * from users where stripe_customer_id = $1 limit 1", [customerId]);
+  return result.rows[0] || null;
+}
+
+export async function findUserByStripeSubscriptionId(subscriptionId: string): Promise<DbUser | null> {
+  await ensureSchema();
+  const result = await getPool().query<DbUser>("select * from users where stripe_subscription_id = $1 limit 1", [
+    subscriptionId,
+  ]);
+  return result.rows[0] || null;
+}
+
+export async function updateStripeCustomer(clientId: string, customerId: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("update users set stripe_customer_id = $2 where client_id = $1", [clientId, customerId]);
+}
+
+export async function updateSubscription(input: {
+  clientId: string;
+  tier: SubscriptionTier;
+  status: string;
+  customerId?: string | null;
+  subscriptionId?: string | null;
+}): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    update users
+    set subscription_tier = $2,
+        subscription_status = $3,
+        stripe_customer_id = coalesce($4, stripe_customer_id),
+        stripe_subscription_id = $5
+    where client_id = $1
+  `,
+    [input.clientId, input.tier, input.status, input.customerId || null, input.subscriptionId || null],
+  );
+  syncEntitlementState(input.clientId, input.tier, input.status);
+}
+
+export async function updateSubscriptionStatusByStripeReference(input: {
+  customerId?: string | null;
+  subscriptionId?: string | null;
+  status: string;
+}): Promise<void> {
+  await ensureSchema();
+  if (!input.customerId && !input.subscriptionId) return;
+  const result = await getPool().query<Pick<DbUser, "client_id" | "subscription_tier" | "subscription_status">>(
+    `
+    update users
+    set subscription_status = $3
+    where ($1::text is not null and stripe_customer_id = $1)
+       or ($2::text is not null and stripe_subscription_id = $2)
+    returning client_id, subscription_tier, subscription_status
+  `,
+    [input.customerId || null, input.subscriptionId || null, input.status],
+  );
+  for (const row of result.rows) {
+    syncEntitlementState(row.client_id, row.subscription_tier, row.subscription_status);
+  }
 }
 
 export async function listUsers(): Promise<DbUser[]> {
@@ -260,4 +340,5 @@ export async function createUser(input: {
       input.passwordSalt,
     ],
   );
+  syncEntitlementState(input.clientId, "free", "active");
 }

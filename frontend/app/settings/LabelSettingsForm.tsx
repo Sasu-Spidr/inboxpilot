@@ -10,11 +10,20 @@ type Props = {
   selectedProvider?: "gmail" | "hotmail";
   selectedAccount?: string;
   selectedMailboxLabel: string;
+  automaticActionsEnabled: boolean;
+  advancedRulesEnabled: boolean;
 };
 
 const DEFAULT_LABEL_KEYS = new Set<string>(ALLOWED_LABELS);
 
-export default function LabelSettingsForm({ initialLabels, selectedProvider, selectedAccount, selectedMailboxLabel }: Props) {
+export default function LabelSettingsForm({
+  initialLabels,
+  selectedProvider,
+  selectedAccount,
+  selectedMailboxLabel,
+  automaticActionsEnabled,
+  advancedRulesEnabled,
+}: Props) {
   const [labels, setLabels] = useState<LabelSetting[]>(initialLabels);
   const labelCount = labels.length;
   const defaultName = useMemo(() => nextCustomLabelName(labels), [labels]);
@@ -58,9 +67,13 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
           <span>Ajoutez, modifiez ou supprimez les libellés de cette boîte, puis enregistrez pour synchroniser Gmail ou Outlook.</span>
         </div>
         <div className="settings-toolbar-actions">
-          <button type="button" className="secondary-settings-button" onClick={addLabel}>
-            Ajouter un libellé
-          </button>
+          {advancedRulesEnabled ? (
+            <button type="button" className="secondary-settings-button" onClick={addLabel}>
+              Ajouter un libellé
+            </button>
+          ) : (
+            <a className="secondary-settings-button" href="/#tarifs">Libellés personnalisés · Business</a>
+          )}
           <button type="submit">Enregistrer les paramètres</button>
         </div>
       </div>
@@ -124,6 +137,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                     maxLength={2000}
                     rows={2}
                     required
+                    readOnly={!advancedRulesEnabled}
                     onChange={(event) => updateLabel(index, { description: event.target.value })}
                   />
                 </label>
@@ -134,6 +148,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                       name={`labels.${index}.prepareDraft`}
                       type="checkbox"
                       checked={label.prepareDraft}
+                      disabled={!automaticActionsEnabled}
                       onChange={(event) => updateLabel(index, { prepareDraft: event.target.checked })}
                     />
                     Préparer un brouillon
@@ -143,6 +158,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                       name={`labels.${index}.autoReply`}
                       type="checkbox"
                       checked={label.autoReply}
+                      disabled={!automaticActionsEnabled}
                       onChange={(event) => updateLabel(index, { autoReply: event.target.checked })}
                     />
                     Réponse auto
@@ -152,6 +168,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                       name={`labels.${index}.autoDelete`}
                       type="checkbox"
                       checked={label.autoDelete}
+                      disabled={!automaticActionsEnabled}
                       onChange={(event) => updateLabel(index, { autoDelete: event.target.checked })}
                     />
                     Suppression auto
@@ -168,6 +185,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                       max={365}
                       placeholder="Désactivé"
                       value={label.autoDeleteUnreadAfterDays || ""}
+                      disabled={!automaticActionsEnabled}
                       onChange={(event) =>
                         updateLabel(index, {
                           autoDeleteUnreadAfterDays: event.target.value ? Number(event.target.value) : null,
@@ -178,7 +196,7 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
                   </span>
                 </label>
 
-                {!isDefault && (
+                {!isDefault && advancedRulesEnabled && (
                   <button type="button" className="danger-settings-button" onClick={() => removeLabel(index)}>
                     Supprimer ce libellé
                   </button>
@@ -190,7 +208,12 @@ export default function LabelSettingsForm({ initialLabels, selectedProvider, sel
       </div>
 
       <div className="settings-actions">
-        <p>Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous.</p>
+        <p>
+          {automaticActionsEnabled
+            ? "Les réponses et suppressions automatiques suivent uniquement les paramètres définis par vous."
+            : "Les actions automatiques et les brouillons sont disponibles avec l'offre Pro."}
+        </p>
+        {!automaticActionsEnabled && <a href="/#tarifs">Découvrir l'offre Pro</a>}
       </div>
     </form>
   );
