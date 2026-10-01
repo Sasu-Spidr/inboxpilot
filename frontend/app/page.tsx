@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { currentUser } from "@/lib/auth";
 import { landingEnabled } from "@/lib/features";
+import { checkoutEnabled } from "@/lib/stripe";
 import { PricingSection } from "./PricingSection";
 import type { ReactNode } from "react";
 
@@ -130,7 +131,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <PricingSection />
+      <PricingSection signupHref={user ? "/dashboard" : "/inscription"} checkoutEnabled={checkoutEnabled()} />
 
       <footer id="ressources" className="landing-footer">
         <div>

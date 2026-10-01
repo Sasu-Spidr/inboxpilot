@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 
 import { secret } from "./baoSecrets";
+import type { SubscriptionStatus, SubscriptionTier } from "./stripeCore";
 
 let pool: Pool | null = null;
 let initialized = false;
@@ -20,6 +21,10 @@ export type DbUser = {
   password_salt: string;
   mfa_enabled: boolean;
   mfa_secret: string | null;
+  subscription_tier: SubscriptionTier;
+  subscription_status: SubscriptionStatus;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
   created_at: Date;
 };
 
@@ -60,6 +65,11 @@ export async function ensureSchema(): Promise<void> {
         session_version = session_version + 1
     where status = 'PENDING_EMAIL_VERIFICATION'
   `);
+  await getPool().query("alter table users add column if not exists subscription_tier text not null default 'free'");
+  await getPool().query("alter table users add column if not exists subscription_status text not null default 'inactive'");
+  await getPool().query("alter table users add column if not exists stripe_customer_id text");
+  await getPool().query("alter table users add column if not exists stripe_subscription_id text");
+  await getPool().query("create unique index if not exists users_stripe_customer_idx on users(stripe_customer_id)");
   await getPool().query("create index if not exists users_role_idx on users(role)");
   await getPool().query("create index if not exists users_status_idx on users(status)");
   await getPool().query(`
@@ -101,6 +111,46 @@ export async function findUserByClientId(clientId: string): Promise<DbUser | nul
   await ensureSchema();
   const result = await getPool().query<DbUser>("select * from users where client_id = $1 limit 1", [clientId]);
   return result.rows[0] || null;
+}
+
+export async function findUserByStripeCustomerId(customerId: string): Promise<DbUser | null> {
+  await ensureSchema();
+  const result = await getPool().query<DbUser>("select * from users where stripe_customer_id = $1 limit 1", [customerId]);
+  return result.rows[0] || null;
+}
+
+export async function setStripeCustomerId(clientId: string, customerId: string): Promise<void> {
+  await ensureSchema();
+  await getPool().query("update users set stripe_customer_id = $2 where client_id = $1", [clientId, customerId]);
+}
+
+/**
+ * Write the subscription state a Stripe webhook just reported.
+ * ponytail: last write wins — Stripe can deliver events out of order; add an
+ * event ledger keyed on the subscription's `created` timestamp if that bites.
+ */
+export async function applySubscriptionState(input: {
+  clientId: string;
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  stripeSubscriptionId: string | null;
+}): Promise<void> {
+  await ensureSchema();
+  await getPool().query(
+    `
+    update users
+    set subscription_tier = $2,
+        subscription_status = $3,
+        stripe_subscription_id = $4
+    where client_id = $1
+  `,
+    [input.clientId, input.tier, input.status, input.stripeSubscriptionId],
+  );
+}
+
+export async function updateSubscriptionStatus(clientId: string, status: SubscriptionStatus): Promise<void> {
+  await ensureSchema();
+  await getPool().query("update users set subscription_status = $2 where client_id = $1", [clientId, status]);
 }
 
 export async function listUsers(): Promise<DbUser[]> {

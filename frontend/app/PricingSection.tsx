@@ -2,34 +2,37 @@
 
 import { useState } from "react";
 
-type BillingCycle = "monthly" | "yearly";
+import type { BillingCycle, PaidPlan } from "@/lib/stripeCore";
 
 const PLANS = [
   {
     name: "Free",
+    plan: null as PaidPlan | null,
     monthlyPrice: 0,
     subtitle: "Pour découvrir InboxPilot",
     cta: "Commencer gratuitement",
-    features: ["1 boîte connectée", "200 emails / mois", "Classement intelligent", "Brouillons manuels"],
+    features: ["1 boîte connectée", "Emails illimités", "Classement intelligent", "Brouillons manuels"],
   },
   {
     name: "Pro",
+    plan: "pro" as PaidPlan | null,
     monthlyPrice: 19,
     subtitle: "Pour les professionnels",
     cta: "Démarrer mon abonnement",
     popular: true,
-    features: ["5 boîtes connectées", "5 000 emails / mois", "Actions automatiques", "Brouillons & réponses auto", "Support prioritaire"],
+    features: ["3 boîtes connectées", "Emails illimités", "Actions automatiques", "Brouillons & réponses auto", "Support prioritaire"],
   },
   {
     name: "Business",
-    monthlyPrice: 49,
-    subtitle: "Pour les équipes",
-    cta: "Nous contacter",
-    features: ["Boîtes illimitées", "Emails illimités", "Règles avancées & IA", "Statistiques avancées", "Support dédié"],
+    plan: "business" as PaidPlan | null,
+    monthlyPrice: 99,
+    subtitle: "Pour les gros volumes",
+    cta: "Démarrer mon abonnement",
+    features: ["Jusqu'à 10 boîtes connectées", "Emails illimités", "Règles avancées & IA", "Statistiques avancées", "Support dédié"],
   },
 ];
 
-export function PricingSection() {
+export function PricingSection({ signupHref, checkoutEnabled }: { signupHref: string; checkoutEnabled: boolean }) {
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const isYearly = billingCycle === "yearly";
 
@@ -55,23 +58,38 @@ export function PricingSection() {
           >
             Annuel
           </button>
-          <em>-20%</em>
+          <em>2 mois offerts</em>
         </div>
       </div>
       <div className="pricing-grid">
         {PLANS.map((plan) => (
-          <PricingCard key={plan.name} plan={plan} billingCycle={billingCycle} />
+          <PricingCard
+            key={plan.name}
+            plan={plan}
+            billingCycle={billingCycle}
+            signupHref={signupHref}
+            checkoutEnabled={checkoutEnabled}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function PricingCard({ plan, billingCycle }: { plan: (typeof PLANS)[number]; billingCycle: BillingCycle }) {
+function PricingCard({
+  plan,
+  billingCycle,
+  signupHref,
+  checkoutEnabled,
+}: {
+  plan: (typeof PLANS)[number];
+  billingCycle: BillingCycle;
+  signupHref: string;
+  checkoutEnabled: boolean;
+}) {
   const isYearly = billingCycle === "yearly";
-  const yearlyPrice = Math.round(plan.monthlyPrice * 12 * 0.8);
-  const regularYearlyPrice = plan.monthlyPrice * 12;
-  const savings = regularYearlyPrice - yearlyPrice;
+  const yearlyPrice = plan.monthlyPrice * 10;
+  const savings = plan.monthlyPrice * 2;
   const displayedPrice = isYearly ? yearlyPrice : plan.monthlyPrice;
   const period = isYearly ? "/ an" : "/ mois";
 
@@ -86,13 +104,21 @@ function PricingCard({ plan, billingCycle }: { plan: (typeof PLANS)[number]; bil
       </div>
       {isYearly && plan.monthlyPrice > 0 && (
         <p className="pricing-saving">
-          Soit {Math.round(yearlyPrice / 12)}€/mois · Économisez {savings}€/an
+          Soit {Math.round(yearlyPrice / 12)}€/mois · Économisez {savings}€/an (2 mois offerts)
         </p>
       )}
       <ul>
         {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
       </ul>
-      <a href="#tarifs">{plan.cta}</a>
+      {plan.plan && checkoutEnabled ? (
+        <form action="/api/checkout" method="post">
+          <input type="hidden" name="plan" value={plan.plan} />
+          <input type="hidden" name="cycle" value={billingCycle} />
+          <button type="submit">{plan.cta}</button>
+        </form>
+      ) : (
+        <a href={signupHref}>{plan.cta}</a>
+      )}
     </article>
   );
 }

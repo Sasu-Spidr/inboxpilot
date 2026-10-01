@@ -1,0 +1,26 @@
+{
+  "boardId": "6a8ed6374059497a123b59a9",
+  "boardName": "InboxPilot",
+  "boardUrl": "https://trello.com/b/kI3s9Nis/inboxpilot",
+  "workspaceId": "6666cb6912a097b8be22ea92",
+  "ticketPrefix": "[InboxPilot] : ",
+  "lists": {
+    "ideas": "6a8ed6374059497a123b59a3",
+    "backlog": "6a8ed6374059497a123b59a4",
+    "in_progress": "6a8ed6374059497a123b59a5",
+    "in_review": "6a8ed6374059497a123b59a6",
+    "to_deploy": "6a8ed6374059497a123b59a7",
+    "done": "6a8ed6374059497a123b59a8"
+  },
+  "listNames": {
+    "ideas": "Idées",
+    "backlog": "Backlog",
+    "in_progress": "En cours",
+    "in_review": "Revue",
+    "to_deploy": "A déployer",
+    "done": "Livré"
+  },
+  "labels": {
+    "Incident": "6a8f237f1f08d0fcb91bf19b"
+  }
+}
