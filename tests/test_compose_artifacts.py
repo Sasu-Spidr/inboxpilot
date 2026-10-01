@@ -124,6 +124,23 @@ def test_traefik_overrides_are_versioned_without_embedded_basic_auth():
             assert "IMAGE_TAG is required" in override["services"][service_name]["image"]
 
 
+def test_dev_webhook_path_bypasses_basic_auth():
+    labels = load_compose("docker-compose.dev.yml")["services"]["frontend"]["labels"]
+    routers = {}
+    for label in labels:
+        key, _, value = label.partition("=")
+        routers[key] = value
+
+    webhook = "traefik.http.routers.inboxpilot-dev-webhook"
+    assert "/api/webhooks/" in routers[f"{webhook}.rule"]
+    # Stripe signs each call and the handler verifies the HMAC, so Basic Auth here would
+    # only make Traefik answer 401 before Next.js sees the delivery.
+    assert f"{webhook}.middlewares" not in routers
+    # Must outrank the host-only router, which does carry Basic Auth.
+    assert int(routers[f"{webhook}.priority"]) > 0
+    assert routers[f"{webhook}.service"] == "inboxpilot-dev"
+
+
 def test_ci_publishes_all_images_after_tests_on_main_and_dev():
     workflow_text = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
     workflow = yaml.safe_load(workflow_text)

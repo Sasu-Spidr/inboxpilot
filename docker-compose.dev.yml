@@ -14,6 +14,12 @@ services:
       - "traefik.http.routers.inboxpilot-dev.middlewares=inboxpilot-dev-auth"
       - "traefik.http.middlewares.inboxpilot-dev-auth.basicauth.users=${TRAEFIK_BASIC_AUTH_HASH:?TRAEFIK_BASIC_AUTH_HASH is required}"
       - "traefik.http.services.inboxpilot-dev.loadbalancer.server.port=3000"
+      - "traefik.http.routers.inboxpilot-dev-webhook.rule=Host(`inboxpilot-dev.mallow-hub.tech`) && PathPrefix(`/api/webhooks/`)"
+      - "traefik.http.routers.inboxpilot-dev-webhook.entrypoints=websecure"
+      - "traefik.http.routers.inboxpilot-dev-webhook.tls=true"
+      - "traefik.http.routers.inboxpilot-dev-webhook.tls.certresolver=le"
+      - "traefik.http.routers.inboxpilot-dev-webhook.priority=100"
+      - "traefik.http.routers.inboxpilot-dev-webhook.service=inboxpilot-dev"
 
   mail-agent:
     image: ghcr.io/sasu-spidr/inboxpilot:${IMAGE_TAG:?IMAGE_TAG is required}
