@@ -157,10 +157,14 @@ function UpgradeNotice({ feature, requiredPlan }: { feature: string; requiredPla
         <h2>Débloquez {feature.toLocaleLowerCase("fr-FR")}</h2>
         <p>Suivez les performances de l’agent et visualisez l’activité de vos boîtes en un coup d’œil.</p>
       </div>
-      <a className="upgrade-notice-action" href="/#tarifs">
-        Découvrir {requiredPlan}
-        <span aria-hidden="true">→</span>
-      </a>
+      <form action="/api/checkout" method="post" className="upgrade-notice-form">
+        <input name="tier" type="hidden" value={requiredPlan.toLowerCase()} />
+        <input name="cycle" type="hidden" value="monthly" />
+        <button className="upgrade-notice-action" type="submit">
+          Passer à {requiredPlan}
+          <span aria-hidden="true">→</span>
+        </button>
+      </form>
     </section>
   );
 }

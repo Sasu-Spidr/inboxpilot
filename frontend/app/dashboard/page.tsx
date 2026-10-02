@@ -26,6 +26,18 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
       });
       billingSync = "pending";
     }
+  } else if (params?.billing === "upgrade-complete" && user.stripeCustomerId) {
+    try {
+      const updated = await reconcileStripeCustomerSubscription(user.clientId, user.stripeCustomerId);
+      if (updated) user = (await currentUser()) || user;
+      billingSync = updated ? "updated" : "pending";
+    } catch (error) {
+      console.error("Stripe upgrade return synchronization failed", {
+        clientId: user.clientId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      billingSync = "pending";
+    }
   } else if (user.subscriptionTier === "free" && user.stripeCustomerId) {
     try {
       const updated = await reconcileStripeCustomerSubscription(user.clientId, user.stripeCustomerId);
@@ -95,6 +107,11 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
       {billingSync === "pending" && (
         <div className="success-banner">
           Paiement validé. Stripe finalise encore l'activation de votre offre ; actualisez cette page dans quelques instants.
+        </div>
+      )}
+      {params?.billing === "portal-config-error" && (
+        <div className="error-banner">
+          Le changement d’offre n’a pas pu être ouvert. La configuration du portail Stripe doit autoriser le passage à l’offre Business.
         </div>
       )}
 

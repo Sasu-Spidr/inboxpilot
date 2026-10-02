@@ -1595,6 +1595,10 @@ input {
   transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.upgrade-notice-form {
+  margin: 0 0 0 auto;
+}
+
 .upgrade-notice-action:hover {
   background: #0f766e;
   box-shadow: 0 10px 24px rgba(13, 148, 136, 0.24);
@@ -2891,6 +2895,11 @@ input {
   }
 
   .upgrade-notice-action {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .upgrade-notice-form {
     width: 100%;
     margin-left: 0;
   }

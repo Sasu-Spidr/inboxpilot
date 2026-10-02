@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { currentUser } from "@/lib/auth";
-import { findUserByClientId, updateStripeCustomer } from "@/lib/db";
+import { findUserByClientId, updateStripeCustomer, type DbUser } from "@/lib/db";
 import {
   publicFrontendUrl,
   stripeClient,
@@ -20,10 +20,7 @@ export async function POST(request: Request) {
   const row = await findUserByClientId(user.clientId);
   if (!row) return NextResponse.json({ error: "Account not found" }, { status: 404 });
   if (row.stripe_subscription_id && !["canceled", "incomplete_expired"].includes(row.subscription_status)) {
-    return NextResponse.json(
-      { error: "An active subscription already exists. Use the customer portal to manage it." },
-      { status: 409 },
-    );
+    return openSubscriptionChange(row, selection);
   }
 
   const stripe = stripeClient();
@@ -55,6 +52,57 @@ export async function POST(request: Request) {
 
   if (!session.url) return NextResponse.json({ error: "Stripe did not return a Checkout URL" }, { status: 502 });
   return NextResponse.redirect(session.url, 303);
+}
+
+async function openSubscriptionChange(
+  row: DbUser,
+  selection: { tier: PaidSubscriptionTier; cycle: BillingCycle },
+) {
+  const stripe = stripeClient();
+  const baseUrl = publicFrontendUrl();
+  const customerId = row.stripe_customer_id;
+  const subscriptionId = row.stripe_subscription_id;
+  if (!customerId || !subscriptionId) {
+    return NextResponse.redirect(`${baseUrl}/dashboard?billing=subscription-error`, 303);
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscriptionItem = subscription.items.data[0];
+  if (!subscriptionItem) {
+    return NextResponse.redirect(`${baseUrl}/dashboard?billing=subscription-error`, 303);
+  }
+
+  const isUpgrade = row.subscription_tier === "pro" && selection.tier === "business";
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: `${baseUrl}/dashboard`,
+      ...(isUpgrade
+        ? {
+            flow_data: {
+              type: "subscription_update_confirm" as const,
+              subscription_update_confirm: {
+                subscription: subscriptionId,
+                items: [{ id: subscriptionItem.id, price: stripePriceId(selection.tier, selection.cycle), quantity: 1 }],
+              },
+              after_completion: {
+                type: "redirect" as const,
+                redirect: { return_url: `${baseUrl}/dashboard?billing=upgrade-complete` },
+              },
+            },
+          }
+        : {}),
+    });
+    return NextResponse.redirect(session.url, 303);
+  } catch (error) {
+    console.error("Stripe subscription change session failed", {
+      clientId: row.client_id,
+      subscriptionId,
+      targetTier: selection.tier,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.redirect(`${baseUrl}/dashboard?billing=portal-config-error`, 303);
+  }
 }
 
 async function readSelection(
