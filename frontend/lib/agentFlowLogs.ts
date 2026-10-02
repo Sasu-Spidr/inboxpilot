@@ -75,7 +75,7 @@ export function getAgentFlowGroups(limit = 80): AgentFlowGroup[] {
     .slice(0, limit);
 }
 
-function readAgentFlowLogs(limit: number): AgentFlowLog[] {
+export function readAgentFlowLogs(limit: number): AgentFlowLog[] {
   try {
     const raw = fs.readFileSync(dataPath("agent-flow", "events.jsonl"), "utf-8");
     return raw
@@ -88,6 +88,18 @@ function readAgentFlowLogs(limit: number): AgentFlowLog[] {
       .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
   } catch {
     return [];
+  }
+}
+
+export function deleteAgentFlowLogs(clientId: string): void {
+  const file = dataPath("agent-flow", "events.jsonl");
+  try {
+    const retained = fs.readFileSync(file, "utf-8").split("\n").filter(Boolean).filter((line) => {
+      try { return (JSON.parse(line) as AgentFlowLog).client_id !== clientId; } catch { return true; }
+    });
+    fs.writeFileSync(file, retained.length ? `${retained.join("\n")}\n` : "", "utf-8");
+  } catch {
+    // No flow log means there is nothing to delete.
   }
 }
 

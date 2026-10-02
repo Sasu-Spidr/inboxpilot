@@ -77,6 +77,19 @@ export function getClientMailAccounts(clientId: string, provider: Provider): Mai
   return registry.clients[clientId]?.connectors?.[provider]?.accounts || [];
 }
 
+export function getClientRegistryExport(clientId: string): Record<string, unknown> | null {
+  const client = readRegistry(registryPath()).clients[clientId];
+  if (!client) return null;
+  const connectors = Object.fromEntries(Object.entries(client.connectors || {}).map(([provider, connector]) => [
+    provider,
+    {
+      enabled: connector?.enabled ?? false,
+      accounts: (connector?.accounts || []).map(({ token_file: _tokenFile, client_secret_env: _secret, ...account }) => account),
+    },
+  ]));
+  return { enabled: client.enabled, owner_name: client.owner_name, email: client.email, connectors };
+}
+
 export function deleteClientMailRegistry(clientId: string): void {
   const file = registryPath();
   const registry = readRegistry(file);

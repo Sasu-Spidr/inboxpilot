@@ -27,6 +27,8 @@ export type DbUser = {
   stripe_subscription_id: string | null;
   legal_accepted_at: Date | null;
   legal_version: string | null;
+  ai_processing_consent_at: Date | null;
+  ai_processing_consent_version: string | null;
   created_at: Date;
 };
 
@@ -68,6 +70,20 @@ export async function ensureSchema(): Promise<void> {
   await getPool().query("alter table users add column if not exists stripe_subscription_id text");
   await getPool().query("alter table users add column if not exists legal_accepted_at timestamptz");
   await getPool().query("alter table users add column if not exists legal_version text");
+  await getPool().query("alter table users add column if not exists ai_processing_consent_at timestamptz");
+  await getPool().query("alter table users add column if not exists ai_processing_consent_version text");
+  await getPool().query(`
+    create table if not exists billing_retention_records (
+      id bigserial primary key,
+      client_id text not null,
+      email text not null,
+      stripe_customer_id text,
+      stripe_subscription_id text,
+      subscription_tier text not null,
+      subscription_status text not null,
+      account_deleted_at timestamptz not null default now()
+    )
+  `);
   await getPool().query(`
     update users
     set status = 'ACTIVE',
@@ -196,6 +212,51 @@ export async function listUsers(): Promise<DbUser[]> {
 export async function deleteUserByClientId(clientId: string): Promise<void> {
   await ensureSchema();
   await getPool().query("delete from users where client_id = $1", [clientId]);
+}
+
+export async function recordAiProcessingConsent(clientId: string, version: string): Promise<DbUser | null> {
+  await ensureSchema();
+  const result = await getPool().query<DbUser>(
+    `update users
+     set ai_processing_consent_at = now(), ai_processing_consent_version = $2
+     where client_id = $1
+     returning *`,
+    [clientId, version],
+  );
+  return result.rows[0] || null;
+}
+
+export async function accountSecurityEvents(clientId: string, email: string): Promise<Record<string, unknown>[]> {
+  await ensureSchema();
+  const result = await getPool().query<Record<string, unknown>>(
+    `select event_type, client_id, email, ip, user_agent, metadata, created_at
+     from security_events where client_id = $1 or (client_id is null and email = $2)
+     order by created_at asc`,
+    [clientId, email],
+  );
+  return result.rows;
+}
+
+export async function retainBillingRecordAndDeleteUser(user: DbUser): Promise<void> {
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query("begin");
+    await client.query(
+      `insert into billing_retention_records (
+         client_id, email, stripe_customer_id, stripe_subscription_id, subscription_tier, subscription_status
+       ) values ($1, $2, $3, $4, $5, $6)`,
+      [user.client_id, user.email, user.stripe_customer_id, user.stripe_subscription_id, user.subscription_tier, user.subscription_status],
+    );
+    await client.query("delete from security_events where client_id = $1 or (client_id is null and email = $2)", [user.client_id, user.email]);
+    await client.query("delete from users where client_id = $1", [user.client_id]);
+    await client.query("commit");
+  } catch (error) {
+    await client.query("rollback");
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateUserMfa(
@@ -327,15 +388,18 @@ export async function createUser(input: {
   passwordHash: string;
   passwordSalt: string;
   legalVersion?: string | null;
+  aiConsentVersion?: string | null;
 }): Promise<void> {
   await ensureSchema();
   await getPool().query(
     `
     insert into users (
       client_id, owner_name, email, role, status, email_verified, password_hash, password_salt,
-      legal_accepted_at, legal_version
+      legal_accepted_at, legal_version, ai_processing_consent_at, ai_processing_consent_version
     )
-    values ($1, $2, $3, $4, $5, $6, $7, $8, case when $9::text is null then null else now() end, $9)
+    values ($1, $2, $3, $4, $5, $6, $7, $8,
+      case when $9::text is null then null else now() end, $9,
+      case when $10::text is null then null else now() end, $10)
   `,
     [
       input.clientId,
@@ -347,6 +411,7 @@ export async function createUser(input: {
       input.passwordHash,
       input.passwordSalt,
       input.legalVersion || null,
+      input.aiConsentVersion || null,
     ],
   );
   syncEntitlementState(input.clientId, "free", "active");

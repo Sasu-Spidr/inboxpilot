@@ -5612,3 +5612,42 @@ input {
   }
 }
 
+.consent-banner,
+.privacy-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.consent-banner {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid #99e2d8;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #effcf9, #f8fffd);
+  box-shadow: 0 14px 36px rgba(13, 148, 136, 0.1);
+}
+
+.consent-banner h2,
+.privacy-panel h2,
+.privacy-card h1 { margin: 6px 0 8px; }
+.consent-banner p,
+.privacy-panel p,
+.privacy-card p { color: #667085; line-height: 1.65; }
+.privacy-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.danger-link,
+.danger-button { color: #b42318; border: 1px solid #f5b8b2; background: #fff5f4; }
+.danger-link { padding: 12px 16px; border-radius: 14px; text-decoration: none; font-weight: 700; }
+.account-privacy-page { min-height: 100vh; padding-top: 36px; }
+.privacy-card { max-width: 760px; margin: 48px auto; }
+.danger-zone { border-color: #f5b8b2; }
+.delete-account-form { display: grid; gap: 10px; margin-top: 26px; }
+.delete-account-form input { min-height: 48px; border: 1px solid #d0d5dd; border-radius: 12px; padding: 0 14px; }
+.danger-button { min-height: 48px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+
+@media (max-width: 720px) {
+  .consent-banner,
+  .privacy-panel { align-items: stretch; flex-direction: column; }
+  .privacy-actions { flex-direction: column; }
+}

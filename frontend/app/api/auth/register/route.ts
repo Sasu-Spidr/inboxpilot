@@ -10,6 +10,8 @@ import {
 } from "@/lib/antiAbuse";
 import { createUser, findUserByEmail, logSecurityEvent, touchLastLogin } from "@/lib/db";
 import { publicEntryPath, publicSignupEnabled, signupEmailAllowed } from "@/lib/features";
+import { AI_CONSENT_VERSION } from "@/lib/privacy";
+import { syncConsentState } from "@/lib/consentState";
 import { checkRateLimit, rateLimitKey } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
@@ -39,6 +41,8 @@ export async function POST(request: Request) {
   const turnstileToken = String(form.get("cf-turnstile-response") || "");
   const legalAccepted = form.get("legalAccepted") === "on";
   const legalVersion = String(form.get("legalVersion") || "").trim();
+  const aiProcessingConsent = form.get("aiProcessingConsent") === "on";
+  const aiConsentVersion = String(form.get("aiConsentVersion") || "").trim();
   const clientId = clientIdFromEmail(email);
   const limit = checkRateLimit({
     bucket: "register",
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
     return redirectWithError(request, failurePath, "register");
   }
 
-  if (!ownerName || !email || !password || password.length < 8 || !legalAccepted || legalVersion !== "2026-10-02") {
+  if (!ownerName || !email || !password || password.length < 8 || !legalAccepted || legalVersion !== "2026-10-02" || !aiProcessingConsent || aiConsentVersion !== AI_CONSENT_VERSION) {
     await logSecurityEvent({
       eventType: "signup_invalid",
       email,
@@ -125,7 +129,9 @@ export async function POST(request: Request) {
     passwordHash: hash,
     passwordSalt: salt,
     legalVersion,
+    aiConsentVersion,
   });
+  syncConsentState(clientId, new Date(), aiConsentVersion);
   await setSession(clientId);
   await touchLastLogin(clientId);
   await logSecurityEvent({

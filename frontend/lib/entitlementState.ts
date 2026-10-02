@@ -29,6 +29,14 @@ export function syncEntitlementState(clientId: string, tier: SubscriptionTier, s
   fs.renameSync(temporary, file);
 }
 
+export function deleteEntitlementState(clientId: string): void {
+  try {
+    fs.unlinkSync(entitlementPath(clientId));
+  } catch {
+    // Missing state needs no cleanup.
+  }
+}
+
 function entitlementPath(clientId: string): string {
   const safeClientId = clientId.replace(/[^a-zA-Z0-9._-]/g, "-");
   return dataPath("entitlements", `${safeClientId}.json`);

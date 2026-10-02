@@ -98,6 +98,15 @@ class ProcessedState:
         self.records.pop(self.key(client_id, connector, account, message_id), None)
         self.save()
 
+    def remove_client(self, client_id: str) -> int:
+        prefix = f"{client_id}:"
+        matching = [key for key in self.records if key.startswith(prefix)]
+        for key in matching:
+            self.records.pop(key, None)
+        if matching:
+            self.save()
+        return len(matching)
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()

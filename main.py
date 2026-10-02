@@ -16,6 +16,7 @@ from bao_secrets import gmail_client_config, load_yaml_settings, runtime_secret
 from calendar_sync import CalendarAvailabilitySync
 from client_settings import active_label_keys_for_client, action_for_client, canonical_label_key, is_legacy_label_name, label_color_for_client, label_color_settings_for_client, label_name_for_client, label_settings_for_classifier, managed_label_names_for_client, mark_as_read_for_client, unread_delete_after_days_for_client
 from client_registry import merge_registered_clients, update_registered_account
+from consent_state import ai_processing_consent_granted
 from classifier import EmailClassifier
 from draft_generator import DraftGenerator
 from entitlements import allows_advanced_rules, allows_automatic_actions
@@ -67,6 +68,9 @@ class MailWorker:
         built: dict[str, dict[str, dict[str, Any]]] = {}
         for client_id, client_cfg in self._clients().items():
             if not client_cfg.get("enabled", True):
+                continue
+            if not ai_processing_consent_granted(client_id):
+                LOG.warning("Client skipped because AI processing consent is missing: client=%s", client_id)
                 continue
             built[client_id] = {}
             for connector_name, connector_cfg in client_cfg.get("connectors", {}).items():
@@ -131,12 +135,30 @@ class MailWorker:
         self.connectors = self._build_connectors()
 
     def run_cycle(self) -> None:
+        self._apply_deletion_requests()
         self.reload_dynamic_clients()
         self.rules.reload()
         self.calendar_sync.run_if_due(self.connectors)
         for client_id, entries in self.connectors.items():
             for entry in entries.values():
                 self._poll_account(client_id, entry["name"], entry["account"], entry["connector"], entry)
+
+    def _apply_deletion_requests(self) -> None:
+        directory = Path(os.getenv("DATA_DIR", "./data")) / "deletion-requests"
+        if not directory.exists():
+            return
+        for request in directory.glob("*.json"):
+            try:
+                import json
+                payload = json.loads(request.read_text(encoding="utf-8"))
+                client_id = str(payload.get("client_id") or "")
+                if not client_id:
+                    raise ValueError("client_id missing")
+                removed = self.state.remove_client(client_id)
+                request.unlink()
+                LOG.info("Account processing state deleted: client=%s records=%s", client_id, removed)
+            except Exception as exc:
+                LOG.error("Account deletion request failed: file=%s error=%s", request, exc)
 
     def _poll_account(self, client_id: str, connector_name: str, account: str, connector, entry: dict | None = None) -> None:
         try:
@@ -211,6 +233,9 @@ class MailWorker:
         This method is the future webhook entrypoint: webhook handlers can call
         it with only the ids, while polling passes the already fetched email.
         """
+        if not self._connectors_injected and not ai_processing_consent_granted(client_id):
+            log_event("email_skipped_without_ai_consent", logging.WARNING, client_id=client_id, connector=connector_name, account=account, message_id=message_id, status="skipped")
+            return False
         entry = self._entry(client_id, connector_name, account)
         connector = entry["connector"]
         if self.state.is_processed(client_id, connector_name, account, message_id):

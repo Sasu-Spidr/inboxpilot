@@ -6,7 +6,7 @@ import { getClientMailAccounts, type MailAccount, type Provider } from "@/lib/cl
 import { tokenFileExists } from "@/lib/paths";
 import { reconcileCheckoutSession, reconcileStripeCustomerSubscription } from "@/lib/stripeSubscriptionSync";
 
-type DashboardSearchParams = { upsell?: string; billing?: string; session_id?: string };
+type DashboardSearchParams = { upsell?: string; billing?: string; session_id?: string; privacy?: string };
 
 export default async function Dashboard({ searchParams }: { searchParams?: Promise<DashboardSearchParams> }) {
   let user = await currentUser();
@@ -114,6 +114,21 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
           Le changement d’offre n’a pas pu être ouvert. La configuration du portail Stripe doit autoriser le passage à l’offre Business.
         </div>
       )}
+      {params?.privacy === "consent-recorded" && (
+        <div className="success-banner">Votre consentement au traitement par IA a bien été enregistré.</div>
+      )}
+      {!user.aiProcessingConsentAt && (
+        <section className="consent-banner">
+          <div>
+            <span className="billing-kicker">Action requise</span>
+            <h2>Autoriser le traitement par IA</h2>
+            <p>L'agent reste arrêté tant que vous n'avez pas autorisé l'accès au contenu des emails et sa transmission à Groq pour le classement et les brouillons.</p>
+          </div>
+          <form action="/api/account/ai-consent" method="post">
+            <button className="primary-link" type="submit">Donner mon consentement</button>
+          </form>
+        </section>
+      )}
 
       <section className="mail-grid">
         <MailCard
@@ -173,6 +188,18 @@ export default async function Dashboard({ searchParams }: { searchParams?: Promi
               <a className="primary-link" href="/#tarifs">Voir les offres</a>
             )}
           </div>
+        </div>
+      </section>
+
+      <section className="info-panel privacy-panel">
+        <div>
+          <span className="billing-kicker">Vos droits</span>
+          <h2>Données et confidentialité</h2>
+          <p>Consultez une copie de vos données ou demandez leur suppression définitive.</p>
+        </div>
+        <div className="privacy-actions">
+          <a className="ghost-button" href="/account/export-data">Exporter mes données</a>
+          <a className="danger-link" href="/account/delete-account">Supprimer mon compte</a>
         </div>
       </section>
     </main>

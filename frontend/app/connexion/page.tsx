@@ -90,6 +90,13 @@ export default async function ConnexionPage({
                   et j’ai lu la <a href="/legal/privacy" target="_blank" rel="noreferrer">politique de confidentialité</a>.
                 </span>
               </label>
+              <input type="hidden" name="aiConsentVersion" value="2026-10-02" />
+              <label className="legal-consent">
+                <input name="aiProcessingConsent" type="checkbox" required />
+                <span>
+                  J&apos;autorise InboxPilot à accéder au contenu de mes emails et à transmettre à Groq les données strictement nécessaires à leur classement et à la préparation de brouillons. Je peux retirer mon consentement en supprimant mon compte.
+                </span>
+              </label>
               <button type="submit">Créer et continuer →</button>
               <p className="form-switch">
                 Déjà inscrit ? <a href="#connexion">Se connecter</a>

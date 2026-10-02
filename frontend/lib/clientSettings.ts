@@ -116,11 +116,13 @@ export function archiveSavedClientSettingsForEmail(clientId: string, provider: s
 }
 
 export function deleteClientSettings(clientId: string): void {
+  const directory = dataPath("client-settings", clientId.replace(/[^a-zA-Z0-9._-]/g, "-"));
   try {
     fs.unlinkSync(settingsFile(clientId));
   } catch {
     // The user may still be on default settings, so there may be no file to remove.
   }
+  fs.rmSync(directory, { recursive: true, force: true });
 }
 
 function sanitizeLabels(labels: LabelSetting[]): LabelSetting[] {

@@ -36,7 +36,7 @@ export function getDashboardActivity(clientId: string): DashboardActivity {
   };
 }
 
-function readActivityEvents(clientId: string): ActivityEvent[] {
+export function readActivityEvents(clientId: string): ActivityEvent[] {
   try {
     const raw = fs.readFileSync(dataPath("activity", "events.jsonl"), "utf-8");
     return raw
@@ -49,6 +49,22 @@ function readActivityEvents(clientId: string): ActivityEvent[] {
       .sort((a, b) => eventTimestamp(b) - eventTimestamp(a));
   } catch {
     return [];
+  }
+}
+
+export function deleteActivityEvents(clientId: string): void {
+  filterJsonLines(dataPath("activity", "events.jsonl"), (value) => value.client_id !== clientId);
+}
+
+function filterJsonLines(file: string, keep: (value: Record<string, unknown>) => boolean): void {
+  try {
+    const lines = fs.readFileSync(file, "utf-8").split("\n").filter(Boolean);
+    const retained = lines.filter((line) => {
+      try { return keep(JSON.parse(line) as Record<string, unknown>); } catch { return true; }
+    });
+    fs.writeFileSync(file, retained.length ? `${retained.join("\n")}\n` : "", "utf-8");
+  } catch {
+    // No activity file means there is nothing to delete.
   }
 }
 

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { secret } from "./baoSecrets";
 import { findUserByClientId, type DbUser, type SubscriptionTier } from "./db";
 import { syncEntitlementState } from "./entitlementState";
+import { syncConsentState } from "./consentState";
 
 const SESSION_COOKIE = "spidr_session";
 const MFA_PENDING_COOKIE = "spidr_mfa_pending";
@@ -23,6 +24,8 @@ export type User = {
   subscriptionTier: SubscriptionTier;
   subscriptionStatus: string;
   stripeCustomerId: string | null;
+  aiProcessingConsentAt: Date | null;
+  aiProcessingConsentVersion: string | null;
   createdAt: Date;
 };
 
@@ -42,6 +45,8 @@ export function toUser(row: DbUser): User {
     subscriptionTier: row.subscription_tier || "free",
     subscriptionStatus: row.subscription_status || "active",
     stripeCustomerId: row.stripe_customer_id || null,
+    aiProcessingConsentAt: row.ai_processing_consent_at || null,
+    aiProcessingConsentVersion: row.ai_processing_consent_version || null,
     createdAt: row.created_at,
   };
 }
@@ -211,6 +216,7 @@ export async function currentUser(): Promise<User | null> {
   const activeUser = user as User;
   if (activeUser.sessionVersion !== session.sessionVersion) return null;
   syncEntitlementState(activeUser.clientId, activeUser.subscriptionTier, activeUser.subscriptionStatus);
+  syncConsentState(activeUser.clientId, activeUser.aiProcessingConsentAt, activeUser.aiProcessingConsentVersion);
   return activeUser;
 }
 
