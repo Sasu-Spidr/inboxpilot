@@ -148,6 +148,7 @@ export default async function Home() {
           <a href="/legal/cgv">CGV</a>
           <a href="/legal/cgu">CGU</a>
           <a href="/legal/privacy">Confidentialité</a>
+          <a href="/legal/mentions">Mentions légales</a>
         </nav>
         <small>© 2026 InboxPilot. Tous droits réservés.</small>
       </footer>

@@ -124,6 +124,7 @@ export default async function ConnexionPage({
           <a href="/legal/cgv">CGV</a>
           <a href="/legal/cgu">CGU</a>
           <a href="/legal/privacy">Confidentialité</a>
+          <a href="/legal/mentions">Mentions légales</a>
         </nav>
       </section>
     </main>

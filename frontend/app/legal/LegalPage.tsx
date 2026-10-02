@@ -5,6 +5,7 @@ export const LEGAL_VERSION = "2026-10-02";
 export const COMPANY = {
   name: "SPIDR",
   legalForm: "Société par actions simplifiée unipersonnelle au capital de 1 000 euros",
+  siret: "841 816 903 00022",
   registration: "RCS Pontoise B 841 816 903",
   vat: "FR43841816903",
   address: "60 rue de l’Aveyron, 95100 Argenteuil, France",
@@ -28,6 +29,7 @@ export default function LegalPage({
           <a href="/legal/cgv">CGV</a>
           <a href="/legal/cgu">CGU</a>
           <a href="/legal/privacy">Confidentialité</a>
+          <a href="/legal/mentions">Mentions légales</a>
         </nav>
         <a className="legal-back" href="/connexion">Connexion</a>
       </header>
@@ -48,6 +50,7 @@ export default function LegalPage({
           <a href="/legal/cgv">CGV</a>
           <a href="/legal/cgu">CGU</a>
           <a href="/legal/privacy">Politique de confidentialité</a>
+          <a href="/legal/mentions">Mentions légales</a>
         </nav>
       </footer>
     </main>
