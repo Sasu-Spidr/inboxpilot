@@ -1,4 +1,4 @@
-# CI-09 — Audit OpenBao et durcissement runtime
+# CI-09 - Audit OpenBao et durcissement runtime
 
 ## État d'implémentation
 
@@ -45,7 +45,7 @@ Trois propriétés de cette activation méritent d'être connues côté applicat
   `--environment` ne mélange pas dev et prod.
 - **`log_raw` reste à `false`.** Les chemins et les identités sont en clair, les
   valeurs sont HMAC. Si un device activé ne peut pas écrire, OpenBao refuse
-  toutes les requêtes — d'où l'activation de dev avant prod.
+  toutes les requêtes - d'où l'activation de dev avant prod.
 
 Vérification côté application, sans token administrateur :
 
@@ -92,14 +92,14 @@ perd jamais l'alerte.
 
 **Reste à faire** : ce contrôle n'est pas encore programmé. Sa place est le
 playbook `enable-audit.yml` de `spidr-infra`, à côté de la surveillance
-serveur — pas un déploiement séparé depuis ce dépôt, qui dupliquerait l'accès
+serveur - pas un déploiement séparé depuis ce dépôt, qui dupliquerait l'accès
 SSH au VPS OpenBao.
 
 Quand une URL d'alerte d'équipe existera, la déposer dans OpenBao à
 `secret/data/audit/alerting`, champ `webhook_url`, et passer `--approle-dir` au
 script : il lit l'URL à l'exécution avec un AppRole limité à ce seul chemin,
 révoque son token aussitôt, et ne la lit **que** lorsqu'une anomalie se
-déclenche — donc sans gonfler les compteurs de lecture qu'il surveille. Aucune
+déclenche - donc sans gonfler les compteurs de lecture qu'il surveille. Aucune
 copie de l'URL sur l'hôte ni dans GitHub. `--webhook-url` court-circuite
 l'AppRole, réservé au débogage : l'URL finit dans l'historique du shell.
 

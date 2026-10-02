@@ -1,6 +1,6 @@
 import LegalPage, { CompanyIdentity } from "../LegalPage";
 
-export const metadata = { title: "Conditions générales d’utilisation — InboxPilot" };
+export const metadata = { title: "Conditions générales d’utilisation - InboxPilot" };
 
 export default function CguPage() {
   return (

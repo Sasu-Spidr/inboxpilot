@@ -1,6 +1,6 @@
 import LegalPage, { CompanyIdentity } from "../LegalPage";
 
-export const metadata = { title: "Conditions générales de vente — InboxPilot" };
+export const metadata = { title: "Conditions générales de vente - InboxPilot" };
 
 export default function CgvPage() {
   return (

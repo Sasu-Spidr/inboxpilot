@@ -38,20 +38,20 @@
 ### `read-comment-fr-002`
 
 - Attendu : **À lire**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `read-compliment-fr-008`
 
 - Attendu : **À lire**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
   "libelle": "À lire",
   "urgence": "normale",
   "confiance": 0.97,
@@ -71,21 +71,21 @@
 ### `reply-automatic-question-014`
 
 - Attendu : **Notification**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
 
 
 ### `action-security-fr-003`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `action-access-fr-004`
 
@@ -99,20 +99,20 @@
 ### `action-document-en-006`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `action-tax-fr-007`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
   "libelle": "Notification",
   "urgence": "normale",
   "confiance": 0.97,
@@ -121,30 +121,30 @@
 ### `action-short-008`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `action-empty-subject-009`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
   "libelle":
 
 ### `action-bank-fr-010`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `action-account-fr-011`
 
@@ -158,11 +158,11 @@
 ### `action-consent-en-012`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
   "libelle": "À traiter",
   "urgence": "normale",
   "confiance": 0.96,
@@ -180,11 +180,11 @@
 ### `commercial-no-subject-004`
 
 - Attendu : **Commercial**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: {
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response: {
   "libelle": "Commercial",
   "urgence": "normale",
   "confiance": 0.98,
@@ -220,11 +220,11 @@
 ### `notification-automatic-question-009`
 
 - Attendu : **Notification**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response: 
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:
 
 ### `notification-app-mention-010`
 
@@ -247,8 +247,8 @@
 ### `notification-security-action-negative-014`
 
 - Attendu : **À traiter**
-- Obtenu : **—**
+- Obtenu : **-**
 - Statut : `technical_error`
 - Chemin : `model`
-- Confiance : —
-- Raison : — Erreur : `invalid_json` — No JSON object found in model response:
+- Confiance : -
+- Raison : - Erreur : `invalid_json` - No JSON object found in model response:

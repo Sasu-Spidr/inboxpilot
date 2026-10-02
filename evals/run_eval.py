@@ -389,10 +389,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.append("Aucun échec.")
     else:
         for row in failures:
-            confidence = "—" if row["confidence"] is None else f"{row['confidence']:.3f}"
-            obtained = row["predicted"] or "—"
+            confidence = "-" if row["confidence"] is None else f"{row['confidence']:.3f}"
+            obtained = row["predicted"] or "-"
             error = row["technical_error"]
-            detail = f" Erreur : `{error['kind']}` — {error['message']}" if error else ""
+            detail = f" Erreur : `{error['kind']}` - {error['message']}" if error else ""
             lines.extend([
                 f"### `{row['id']}`",
                 "",
@@ -401,7 +401,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"- Statut : `{row['status']}`",
                 f"- Chemin : `{row['path']}`",
                 f"- Confiance : {confidence}",
-                f"- Raison : {row['reason'] or '—'}{detail}",
+                f"- Raison : {row['reason'] or '-'}{detail}",
                 "",
             ])
     return "\n".join(lines).rstrip() + "\n"

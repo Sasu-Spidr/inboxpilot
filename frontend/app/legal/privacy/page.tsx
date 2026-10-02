@@ -1,6 +1,6 @@
 import LegalPage, { CompanyIdentity } from "../LegalPage";
 
-export const metadata = { title: "Politique de confidentialité — InboxPilot" };
+export const metadata = { title: "Politique de confidentialité - InboxPilot" };
 
 export default function PrivacyPage() {
   return (

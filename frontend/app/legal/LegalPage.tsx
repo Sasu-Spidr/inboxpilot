@@ -43,7 +43,7 @@ export default function LegalPage({
       </article>
 
       <footer className="legal-footer">
-        <span>© 2026 InboxPilot — {COMPANY.name}</span>
+        <span>© 2026 InboxPilot - {COMPANY.name}</span>
         <nav>
           <a href="/legal/cgv">CGV</a>
           <a href="/legal/cgu">CGU</a>
