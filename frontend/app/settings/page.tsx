@@ -146,12 +146,21 @@ export default async function SettingsPage({ searchParams }: { searchParams?: Pr
 function UpgradeNotice({ feature, requiredPlan }: { feature: string; requiredPlan: "Pro" | "Business" }) {
   return (
     <section className="upgrade-notice">
-      <div>
-        <p className="eyebrow">Fonctionnalité {requiredPlan}</p>
-        <h2>{feature}</h2>
-        <p>Passez à l'offre {requiredPlan} pour activer cette fonctionnalité.</p>
+      <div className="upgrade-notice-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M5 19V11M12 19V5M19 19v-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <path d="m4 8 5-4 4 3 7-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
-      <a className="primary-link" href="/#tarifs">Voir les offres</a>
+      <div className="upgrade-notice-copy">
+        <span className="upgrade-plan">Offre {requiredPlan}</span>
+        <h2>Débloquez {feature.toLocaleLowerCase("fr-FR")}</h2>
+        <p>Suivez les performances de l’agent et visualisez l’activité de vos boîtes en un coup d’œil.</p>
+      </div>
+      <a className="upgrade-notice-action" href="/#tarifs">
+        Découvrir {requiredPlan}
+        <span aria-hidden="true">→</span>
+      </a>
     </section>
   );
 }
