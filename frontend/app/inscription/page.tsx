@@ -58,9 +58,22 @@ export default async function InscriptionPage({
               </>
             )}
             {turnstileSiteKey && <div className="cf-turnstile" data-sitekey={turnstileSiteKey} />}
+            <input type="hidden" name="legalVersion" value="2026-10-02" />
+            <label className="legal-consent">
+              <input name="legalAccepted" type="checkbox" required />
+              <span>
+                J’accepte les <a href="/legal/cgu" target="_blank" rel="noreferrer">CGU</a> et les <a href="/legal/cgv" target="_blank" rel="noreferrer">CGV</a>,
+                et j’ai lu la <a href="/legal/privacy" target="_blank" rel="noreferrer">politique de confidentialité</a>.
+              </span>
+            </label>
             <button type="submit">Créer et continuer →</button>
           </form>
         </div>
+        <nav className="auth-legal-links" aria-label="Informations juridiques">
+          <a href="/legal/cgv">CGV</a>
+          <a href="/legal/cgu">CGU</a>
+          <a href="/legal/privacy">Confidentialité</a>
+        </nav>
       </section>
     </main>
   );

@@ -37,6 +37,8 @@ export async function POST(request: Request) {
   const startedAt = String(form.get("signupStartedAt") || "");
   const accessCode = String(form.get("signupAccessCode") || "");
   const turnstileToken = String(form.get("cf-turnstile-response") || "");
+  const legalAccepted = form.get("legalAccepted") === "on";
+  const legalVersion = String(form.get("legalVersion") || "").trim();
   const clientId = clientIdFromEmail(email);
   const limit = checkRateLimit({
     bucket: "register",
@@ -92,7 +94,7 @@ export async function POST(request: Request) {
     return redirectWithError(request, failurePath, "register");
   }
 
-  if (!ownerName || !email || !password || password.length < 8) {
+  if (!ownerName || !email || !password || password.length < 8 || !legalAccepted || legalVersion !== "2026-10-02") {
     await logSecurityEvent({
       eventType: "signup_invalid",
       email,
@@ -122,6 +124,7 @@ export async function POST(request: Request) {
     emailVerified: true,
     passwordHash: hash,
     passwordSalt: salt,
+    legalVersion,
   });
   await setSession(clientId);
   await touchLastLogin(clientId);

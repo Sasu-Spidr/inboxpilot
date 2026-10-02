@@ -145,6 +145,9 @@ export default async function Home() {
           <a href="#preview">Fonctionnement</a>
           <a href="#tarifs">Tarifs</a>
           <a href={connectionHref}>Connexion</a>
+          <a href="/legal/cgv">CGV</a>
+          <a href="/legal/cgu">CGU</a>
+          <a href="/legal/privacy">Confidentialité</a>
         </nav>
         <small>© 2026 InboxPilot. Tous droits réservés.</small>
       </footer>

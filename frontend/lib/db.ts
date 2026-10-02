@@ -25,6 +25,8 @@ export type DbUser = {
   subscription_status: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  legal_accepted_at: Date | null;
+  legal_version: string | null;
   created_at: Date;
 };
 
@@ -64,6 +66,8 @@ export async function ensureSchema(): Promise<void> {
   await getPool().query("alter table users add column if not exists subscription_status text not null default 'active'");
   await getPool().query("alter table users add column if not exists stripe_customer_id text");
   await getPool().query("alter table users add column if not exists stripe_subscription_id text");
+  await getPool().query("alter table users add column if not exists legal_accepted_at timestamptz");
+  await getPool().query("alter table users add column if not exists legal_version text");
   await getPool().query(`
     update users
     set status = 'ACTIVE',
@@ -322,12 +326,16 @@ export async function createUser(input: {
   emailVerified?: boolean;
   passwordHash: string;
   passwordSalt: string;
+  legalVersion?: string | null;
 }): Promise<void> {
   await ensureSchema();
   await getPool().query(
     `
-    insert into users (client_id, owner_name, email, role, status, email_verified, password_hash, password_salt)
-    values ($1, $2, $3, $4, $5, $6, $7, $8)
+    insert into users (
+      client_id, owner_name, email, role, status, email_verified, password_hash, password_salt,
+      legal_accepted_at, legal_version
+    )
+    values ($1, $2, $3, $4, $5, $6, $7, $8, case when $9::text is null then null else now() end, $9)
   `,
     [
       input.clientId,
@@ -338,6 +346,7 @@ export async function createUser(input: {
       input.emailVerified ?? true,
       input.passwordHash,
       input.passwordSalt,
+      input.legalVersion || null,
     ],
   );
   syncEntitlementState(input.clientId, "free", "active");
